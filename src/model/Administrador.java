@@ -6,3 +6,5 @@ public class Administrador extends Empleado {
         super(name, id);
     }
 }
+
+//hola
