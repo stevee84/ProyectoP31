@@ -153,13 +153,10 @@ public class ControladorReservaciones {
         return modelo.listarRecursosPorCategoria(idCategoria);
     }
 
-    public Reservacion crearReservacion(String codigoRecurso, LocalDateTime inicio, LocalDateTime fin) {
+    public Reservacion crearReservacion(List<String> idsCategorias, String descripcionActividad,
+                                         LocalDateTime inicio, LocalDateTime fin) {
         requireFuncionario();
-        Recurso recurso = modelo.buscarRecurso(codigoRecurso);
-        if (recurso == null) {
-            throw new IllegalArgumentException("No existe un recurso con código " + codigoRecurso + ".");
-        }
-        return modelo.reservar(sesionActual, recurso, inicio, fin);
+        return modelo.reservarPorCategorias(sesionActual, idsCategorias, descripcionActividad, inicio, fin);
     }
 
     public void cancelarReservacion(int id) {

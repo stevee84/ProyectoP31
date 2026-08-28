@@ -1,31 +1,42 @@
 package model;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class Reservacion implements Comparable<Reservacion> {
 
     private final int id;
     private Empleado empleado;
-    private Recurso recurso;
+    private List<Recurso> recursos;
+    private String descripcionActividad;
     private LocalDateTime inicio;
     private LocalDateTime fin;
     private EstadoReservacion estado;
 
-    public Reservacion(int id, Empleado empleado, Recurso recurso,
+    public Reservacion(int id, Empleado empleado, List<Recurso> recursos, String descripcionActividad,
                        LocalDateTime inicio, LocalDateTime fin) {
         this.id = id;
-        actualizarDatos(empleado, recurso, inicio, fin);
+        actualizarDatos(empleado, recursos, descripcionActividad, inicio, fin);
         this.estado = EstadoReservacion.ACTIVA;
     }
 
-    public void actualizarDatos(Empleado empleado, Recurso recurso,
+    public void actualizarDatos(Empleado empleado, List<Recurso> recursos, String descripcionActividad,
                                 LocalDateTime inicio, LocalDateTime fin) {
         if (empleado == null) {
             throw new IllegalArgumentException("El empleado es obligatorio.");
         }
-        if (recurso == null) {
-            throw new IllegalArgumentException("El recurso es obligatorio.");
+        if (recursos == null || recursos.isEmpty()) {
+            throw new IllegalArgumentException("Debe asignarse al menos un recurso.");
+        }
+        if (recursos.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("La lista de recursos no puede contener elementos nulos.");
+        }
+        if (descripcionActividad == null || descripcionActividad.isBlank()) {
+            throw new IllegalArgumentException("La descripción de la actividad es obligatoria.");
         }
         if (inicio == null || fin == null) {
             throw new IllegalArgumentException("La fecha de inicio y de terminación son obligatorias.");
@@ -34,7 +45,8 @@ public class Reservacion implements Comparable<Reservacion> {
             throw new IllegalArgumentException("La hora de inicio debe ser anterior a la de terminación.");
         }
         this.empleado = empleado;
-        this.recurso = recurso;
+        this.recursos = new ArrayList<>(recursos);
+        this.descripcionActividad = descripcionActividad.trim();
         this.inicio = inicio;
         this.fin = fin;
     }
@@ -53,8 +65,13 @@ public class Reservacion implements Comparable<Reservacion> {
         return estado == EstadoReservacion.ACTIVA;
     }
 
-    public boolean seSolapa(LocalDateTime inicio, LocalDateTime fin) {
+    public boolean incluyeRecurso(Recurso recurso) {
+        return recursos.contains(recurso);
+    }
+
+    public boolean seSolapa(Recurso recurso, LocalDateTime inicio, LocalDateTime fin) {
         return esActiva()
+                && incluyeRecurso(recurso)
                 && this.inicio.isBefore(fin)
                 && inicio.isBefore(this.fin);
     }
@@ -67,8 +84,12 @@ public class Reservacion implements Comparable<Reservacion> {
         return empleado;
     }
 
-    public Recurso getRecurso() {
-        return recurso;
+    public List<Recurso> getRecursos() {
+        return Collections.unmodifiableList(recursos);
+    }
+
+    public String getDescripcionActividad() {
+        return descripcionActividad;
     }
 
     public LocalDateTime getInicio() {
@@ -102,7 +123,10 @@ public class Reservacion implements Comparable<Reservacion> {
 
     @Override
     public String toString() {
-        return String.format("Reservacion[id=%d, empleado=%s, recurso=%s, inicio=%s, fin=%s, estado=%s]",
-                id, empleado.getName(), recurso.getDescripcion(), inicio, fin, estado);
+        String recursosTxt = recursos.stream()
+                .map(Recurso::getDescripcion)
+                .collect(Collectors.joining(", "));
+        return String.format("Reservacion[id=%d, empleado=%s, recursos=[%s], actividad='%s', inicio=%s, fin=%s, estado=%s]",
+                id, empleado.getName(), recursosTxt, descripcionActividad, inicio, fin, estado);
     }
 }

@@ -4,9 +4,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ModeloReservaciones {
@@ -198,12 +200,54 @@ public class ModeloReservaciones {
         return null;
     }
 
-    public Reservacion reservar(Empleado empleado, Recurso recurso,
-                                LocalDateTime inicio, LocalDateTime fin) {
-        verificarDisponibilidad(recurso, inicio, fin);
-        Reservacion reservacion = new Reservacion(siguienteIdReservacion++, empleado, recurso, inicio, fin);
+    public Reservacion reservarPorCategorias(Empleado empleado, List<String> idsCategorias,
+                                              String descripcionActividad,
+                                              LocalDateTime inicio, LocalDateTime fin) {
+        if (empleado == null) {
+            throw new IllegalArgumentException("El empleado es obligatorio.");
+        }
+        if (idsCategorias == null || idsCategorias.isEmpty()) {
+            throw new IllegalArgumentException("Debe seleccionar al menos una categoría.");
+        }
+        if (inicio == null || fin == null) {
+            throw new IllegalArgumentException("La fecha de inicio y de terminación son obligatorias.");
+        }
+        if (!inicio.isBefore(fin)) {
+            throw new IllegalArgumentException("La hora de inicio debe ser anterior a la de terminación.");
+        }
+
+        // Fase 1 (solo lectura): resolver TODOS los recursos candidatos antes de mutar nada.
+        // Si cualquier categoría se queda sin recurso libre, se lanza la excepción aquí y
+        // "reservaciones" queda exactamente como estaba -> operación todo o nada.
+        List<Recurso> recursosAsignados = new ArrayList<>();
+        Set<String> categoriasVistas = new HashSet<>();
+        for (String idCategoria : idsCategorias) {
+            if (!categoriasVistas.add(idCategoria)) {
+                continue; // categoría repetida en la selección: se ignora
+            }
+            CategoriaRecurso categoria = buscarOCategoriaInvalida(idCategoria);
+            Recurso disponible = primerRecursoDisponible(categoria, inicio, fin, recursosAsignados);
+            if (disponible == null) {
+                throw new IllegalArgumentException(
+                        "No hay recursos disponibles en la categoría '" + categoria.getDescripcion()
+                                + "' para el horario solicitado.");
+            }
+            recursosAsignados.add(disponible);
+        }
+
+        // Fase 2 (mutación): recién aquí se agrega la reservación, una sola vez.
+        Reservacion reservacion = new Reservacion(siguienteIdReservacion++, empleado, recursosAsignados,
+                descripcionActividad, inicio, fin);
         reservaciones.add(reservacion);
         return reservacion;
+    }
+
+    private Recurso primerRecursoDisponible(CategoriaRecurso categoria, LocalDateTime inicio, LocalDateTime fin,
+                                             List<Recurso> yaAsignados) {
+        return listarRecursosPorCategoria(categoria.getId()).stream()
+                .filter(r -> !yaAsignados.contains(r) && !estaOcupado(r, inicio, fin))
+                .findFirst()
+                .orElse(null);
     }
 
     public boolean actualizarReservacion(Reservacion reservacion) {
@@ -268,7 +312,7 @@ public class ModeloReservaciones {
 
     public List<Reservacion> listarReservacionesPorRecurso(Recurso recurso) {
         return reservaciones.stream()
-                .filter(r -> r.getRecurso().equals(recurso))
+                .filter(r -> r.incluyeRecurso(recurso))
                 .sorted()
                 .collect(Collectors.toList());
     }
@@ -276,7 +320,7 @@ public class ModeloReservaciones {
     public List<Reservacion> listarReservacionesPorCategoria(String idCategoria) {
         CategoriaRecurso categoria = buscarOCategoriaInvalida(idCategoria);
         return reservaciones.stream()
-                .filter(r -> r.getRecurso().getCategoria().equals(categoria))
+                .filter(r -> r.getRecursos().stream().anyMatch(rec -> rec.getCategoria().equals(categoria)))
                 .sorted()
                 .collect(Collectors.toList());
     }
@@ -305,12 +349,15 @@ public class ModeloReservaciones {
         if (!inicio.isBefore(fin)) {
             throw new IllegalArgumentException("La hora de inicio debe ser anterior a la de terminación.");
         }
-        boolean ocupado = reservaciones.stream()
-                .anyMatch(r -> r.getRecurso().equals(recurso) && r.seSolapa(inicio, fin));
-        if (ocupado) {
+        if (estaOcupado(recurso, inicio, fin)) {
             throw new IllegalArgumentException("El recurso ya está reservado en ese horario.");
         }
         return true;
+    }
+
+    private boolean estaOcupado(Recurso recurso, LocalDateTime inicio, LocalDateTime fin) {
+        return reservaciones.stream()
+                .anyMatch(r -> r.seSolapa(recurso, inicio, fin));
     }
 
     public int contarEmpleados() {
