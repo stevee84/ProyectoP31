@@ -1,62 +1,33 @@
 package controller;
 
-import model.Administrador;
 import model.CategoriaRecurso;
-
 import java.util.List;
 
 public class CategoriaController {
 
-    private final ControladorReservaciones controladorGeneral;
+    private ControladorReservaciones controlador;
 
-    public CategoriaController(ControladorReservaciones controladorGeneral) {
-        if (controladorGeneral == null) {
-            throw new IllegalArgumentException("El controlador general es obligatorio.");
-        }
-        this.controladorGeneral = controladorGeneral;
+    public CategoriaController(ControladorReservaciones controlador) {
+        this.controlador = controlador;
     }
 
-    public List<CategoriaRecurso> listar() {
-        validarAdministrador();
-        return controladorGeneral.listarCategorias();
+    public List<CategoriaRecurso> listarCategorias() {
+        return controlador.listarCategorias();
     }
 
-    public List<CategoriaRecurso> buscarPorDescripcion(String descripcion) {
-        validarAdministrador();
-        String texto = descripcion == null ? "" : descripcion.trim();
-        return controladorGeneral.buscarCategoriasPorDescripcion(texto);
+    public List<CategoriaRecurso> buscarCategorias(String descripcion) {
+        return controlador.buscarCategoriasPorDescripcion(descripcion);
     }
 
-    public CategoriaRecurso guardar(String id, String descripcion) {
-        validarAdministrador();
-
-        if (id == null || id.isBlank()) {
-            return controladorGeneral.registrarCategoria(descripcion);
-        }
-
-        boolean actualizada = controladorGeneral.actualizarCategoria(id, descripcion);
-        if (!actualizada) {
-            throw new IllegalArgumentException("No existe una categoría con id " + id + ".");
-        }
-        return controladorGeneral.buscarCategoria(id);
+    public CategoriaRecurso registrarCategoria(String descripcion) {
+        return controlador.registrarCategoria(descripcion);
     }
 
-    public void eliminar(String id) {
-        validarAdministrador();
-
-        if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("Debe seleccionar una categoría.");
-        }
-        if (!controladorGeneral.eliminarCategoria(id)) {
-            throw new IllegalArgumentException("No existe una categoría con id " + id + ".");
-        }
+    public boolean modificarCategoria(String id, String descripcion) {
+        return controlador.actualizarCategoria(id, descripcion);
     }
 
-    private void validarAdministrador() {
-        if (!(controladorGeneral.getSesionActual() instanceof Administrador)) {
-            throw new IllegalStateException(
-                    "Esta funcionalidad solo puede ejecutarla un administrador."
-            );
-        }
+    public boolean eliminarCategoria(String id) {
+        return controlador.eliminarCategoria(id);
     }
 }
