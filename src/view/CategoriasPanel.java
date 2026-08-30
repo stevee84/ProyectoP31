@@ -1,10 +1,10 @@
 package view;
-
+import controller.CategoriaController;
 import javax.swing.*;
 import java.awt.*;
 
 public class CategoriasPanel extends JPanel {
-
+    private CategoriaController controlador;
     private JTextField txtBusqueda;
     private JTextField txtId;
     private JTextField txtDescripcion;
@@ -16,7 +16,8 @@ public class CategoriasPanel extends JPanel {
 
     private JTable tablaCategorias;
 
-    public CategoriasPanel() {
+    public CategoriasPanel(CategoriaController controlador) {
+        this.controlador = controlador;
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
