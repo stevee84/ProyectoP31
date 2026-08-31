@@ -49,6 +49,6 @@ public class CategoriaRecurso implements Comparable<CategoriaRecurso> {
 
     @Override
     public String toString() {
-        return String.format("CategoriaRecurso[id=%s, descripcion='%s']", id, descripcion);
+        return descripcion;
     }
 }
