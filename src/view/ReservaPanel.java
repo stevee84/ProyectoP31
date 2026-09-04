@@ -5,8 +5,10 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import model.CategoriaRecurso;
+import model.DatosReservaExtraidos;
 import model.Reservacion;
 import model.Recurso;
+import model.ResultadoExtraccionIA;
 import model.ResultadoReserva;
 
 import java.time.LocalDate;
@@ -29,12 +31,23 @@ public class ReservaPanel extends JPanel {
     private JTextField txtFecha;
     private JTextField txtHoraInicio;
     private JTextField txtHoraFin;
+    private JTextField txtFrase;
     private JList<CategoriaRecurso> listaCategorias;
 
     public ReservaPanel(ReservaController controlador) {
         this.controlador = controlador;
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // --- Frase en lenguaje natural + botón para llenar con IA ---
+        txtFrase = new JTextField();
+        JButton btnLlenarConIA = new JButton("Extraer con IA");
+        btnLlenarConIA.addActionListener(e -> llenarConIA());
+
+        JPanel panelFrase = new JPanel(new BorderLayout(5, 5));
+        panelFrase.add(new JLabel("Frase:"), BorderLayout.WEST);
+        panelFrase.add(txtFrase, BorderLayout.CENTER);
+        panelFrase.add(btnLlenarConIA, BorderLayout.EAST);
 
         // --- Campos de texto del formulario ---
         txtActividad = new JTextField(20);
@@ -51,6 +64,10 @@ public class ReservaPanel extends JPanel {
         panelCampos.add(txtHoraInicio);
         panelCampos.add(new JLabel("Hora fin:"));
         panelCampos.add(txtHoraFin);
+
+        JPanel panelCamposCompleto = new JPanel(new BorderLayout(5, 5));
+        panelCamposCompleto.add(panelFrase, BorderLayout.NORTH);
+        panelCamposCompleto.add(panelCampos, BorderLayout.SOUTH);
 
         // --- Lista de categorías, selección múltiple ---
         listaCategorias = new JList<>();
@@ -80,14 +97,8 @@ public class ReservaPanel extends JPanel {
         JButton btnLimpiar = new JButton("Limpiar");
         btnLimpiar.addActionListener(e -> limpiarFormulario());
 
-        // Placeholders: la extracción con IA es el paso 8 (pendiente), y el reporte
-        // PDF probablemente use una utilidad compartida por todo el equipo, todavía
-        // no definida. Se dejan deshabilitados para no prometer una funcionalidad
-        // que todavía no existe.
-        JButton btnLlenarConIA = new JButton("Llenar con IA");
-        btnLlenarConIA.setEnabled(false);
-        btnLlenarConIA.setToolTipText("Pendiente: integración con IA (paso 8)");
-
+        // Placeholder: el reporte PDF probablemente use una utilidad compartida por
+        // todo el equipo, todavía no definida. Se deja deshabilitado por ahora.
         JButton btnGenerarPdf = new JButton("Generar PDF");
         btnGenerarPdf.setEnabled(false);
         btnGenerarPdf.setToolTipText("Pendiente: utilidad de reportes PDF");
@@ -96,12 +107,11 @@ public class ReservaPanel extends JPanel {
         panelBotones.add(btnAplicar);
         panelBotones.add(btnCancelarSeleccionada);
         panelBotones.add(btnLimpiar);
-        panelBotones.add(btnLlenarConIA);
         panelBotones.add(btnGenerarPdf);
 
         JPanel panelFormulario = new JPanel(new BorderLayout(5, 5));
         panelFormulario.setBorder(BorderFactory.createTitledBorder("Nueva reserva"));
-        panelFormulario.add(panelCampos, BorderLayout.NORTH);
+        panelFormulario.add(panelCamposCompleto, BorderLayout.NORTH);
         panelFormulario.add(scrollCategorias, BorderLayout.CENTER);
         panelFormulario.add(panelBotones, BorderLayout.SOUTH);
 
@@ -209,11 +219,63 @@ public class ReservaPanel extends JPanel {
     }
 
     private void limpiarFormulario() {
+        txtFrase.setText("");
         txtActividad.setText("");
         txtFecha.setText("aaaa-mm-dd");
         txtHoraInicio.setText("HH:mm");
         txtHoraFin.setText("HH:mm");
         listaCategorias.clearSelection();
+    }
+
+    private void llenarConIA() {
+        String frase = txtFrase.getText().trim();
+        if (frase.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Escriba una frase describiendo la reserva antes de extraer.",
+                    "Frase vacía", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        ResultadoExtraccionIA resultado = controlador.extraerDatosDesdeFrase(frase);
+
+        if (!resultado.esExito()) {
+            JOptionPane.showMessageDialog(this,
+                    "No se pudo extraer la información: " + resultado.getMensajeError()
+                            + "\nPuede completar el formulario manualmente.",
+                    "Extracción con IA falló", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Rellenamos SOLO lo que la IA logró identificar; lo que vino nulo se deja
+        // como estaba, para que el funcionario lo complete a mano.
+        DatosReservaExtraidos datos = resultado.getDatos();
+
+        if (datos.descripcionActividad() != null) {
+            txtActividad.setText(datos.descripcionActividad());
+        }
+        if (datos.fecha() != null) {
+            txtFecha.setText(datos.fecha().format(FORMATO_FECHA));
+        }
+        if (datos.horaInicio() != null) {
+            txtHoraInicio.setText(datos.horaInicio().format(FORMATO_HORA));
+        }
+        if (datos.horaFin() != null) {
+            txtHoraFin.setText(datos.horaFin().format(FORMATO_HORA));
+        }
+        if (!datos.idsCategorias().isEmpty()) {
+            seleccionarCategoriasPorId(datos.idsCategorias());
+        }
+
+        JOptionPane.showMessageDialog(this,
+                "Formulario rellenado con IA. Revise y modifique lo que haga falta antes de aplicar.");
+    }
+
+    private void seleccionarCategoriasPorId(List<String> idsCategorias) {
+        List<CategoriaRecurso> todas = controlador.listarCategorias();
+        int[] indices = java.util.stream.IntStream.range(0, todas.size())
+                .filter(i -> idsCategorias.contains(todas.get(i).getId()))
+                .toArray();
+        listaCategorias.setSelectedIndices(indices);
     }
 
     private void cancelarReservaSeleccionada() {

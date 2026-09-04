@@ -2,10 +2,16 @@ package view;
 
 import controller.ControladorReservaciones;
 import controller.ReservaController;
+import model.DatosReservaExtraidos;
+import model.ExtractorReservaIA;
+import model.ExtractorReservaIAFalso;
+import model.ResultadoExtraccionIA;
 import model.ResultadoReserva;
 
 import javax.swing.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 public class PruebaReservaPanel {
@@ -40,7 +46,17 @@ public class PruebaReservaPanel {
         System.out.println("Reserva de prueba creada: " + resultado.esExito());
 
         // 3) Abrir la ventana ya logueado como ese mismo funcionario.
-        ReservaController reservaController = new ReservaController(controladorGeneral);
+        // Extractor falso: simula que la IA identificó actividad, fecha, horas y la
+        // categoría "Laptop Windows" a partir de una frase.
+        ExtractorReservaIA extractorDePrueba = new ExtractorReservaIAFalso(
+                ResultadoExtraccionIA.exito(new DatosReservaExtraidos(
+                        "Reunion extraida por IA",
+                        LocalDate.of(2026, 9, 8),
+                        LocalTime.of(14, 0),
+                        LocalTime.of(15, 0),
+                        List.of(idCategoriaLaptop))));
+
+        ReservaController reservaController = new ReservaController(controladorGeneral, extractorDePrueba);
 
         JFrame ventana = new JFrame("Reservas");
         ventana.setSize(700, 500);
