@@ -53,12 +53,11 @@ public class Recurso implements Comparable<Recurso> {
 
     @Override
     public int compareTo(Recurso otro) {
-        return this.descripcion.compareToIgnoreCase(otro.descripcion);
+        return this.codigo.compareToIgnoreCase(otro.codigo);
     }
 
     @Override
     public String toString() {
-        return String.format("Recurso[codigo=%s, categoria='%s', descripcion='%s']",
-                codigo, categoria.getDescripcion(), descripcion);
+        return String.format("Recurso[codigo=%s, categoria='%s', descripcion='%s']", codigo, categoria.getDescripcion(), descripcion);
     }
 }
