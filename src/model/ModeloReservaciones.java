@@ -111,6 +111,15 @@ public class ModeloReservaciones {
     }
 
     public boolean eliminarRecurso(String codigo) {
+        Recurso recurso = buscarRecurso(codigo);
+        if (recurso == null) {
+            return false;
+        }
+        boolean enUso = reservaciones.stream()
+                .anyMatch(r -> r.esActiva() && r.incluyeRecurso(recurso));
+        if (enUso) {
+            throw new IllegalStateException("No se puede eliminar el recurso porque tiene reservaciones activas.");
+        }
         return recursos.remove(codigo) != null;
     }
 
@@ -155,6 +164,15 @@ public class ModeloReservaciones {
     }
 
     public boolean eliminarEmpleado(String id) {
+        Empleado empleado = buscarEmpleado(id);
+        if (empleado == null) {
+            return false;
+        }
+        boolean enUso = reservaciones.stream()
+                .anyMatch(r -> r.esActiva() && r.getEmpleado().equals(empleado));
+        if (enUso) {
+            throw new IllegalStateException("No se puede eliminar el empleado porque tiene reservaciones activas.");
+        }
         return empleados.remove(id) != null;
     }
 

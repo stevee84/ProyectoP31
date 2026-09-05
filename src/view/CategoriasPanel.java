@@ -126,9 +126,11 @@ public class CategoriasPanel extends JPanel {
         );
 
         tablaCategorias.getSelectionModel()
-                .addListSelectionListener(
-                        e -> seleccionarCategoria()
-                );
+                .addListSelectionListener(e -> {
+                    if (!e.getValueIsAdjusting()) {
+                        seleccionarCategoria();
+                    }
+                });
     }
 
     public void cargarCategorias() {
@@ -235,26 +237,35 @@ public class CategoriasPanel extends JPanel {
             return;
         }
 
-        if (id.isBlank()) {
-            controlador.registrarCategoria(descripcion);
+        try {
+            if (id.isBlank()) {
+                controlador.registrarCategoria(descripcion);
 
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Categoría registrada correctamente."
+                );
+            } else {
+                controlador.modificarCategoria(
+                        id,
+                        descripcion
+                );
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Categoría modificada correctamente."
+                );
+            }
+
+            limpiarCampos();
+        } catch (Exception error) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Categoría registrada correctamente."
-            );
-        } else {
-            controlador.modificarCategoria(
-                    id,
-                    descripcion
-            );
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Categoría modificada correctamente."
+                    error.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
             );
         }
-
-        limpiarCampos();
     }
 
     private void borrarCategoria() {

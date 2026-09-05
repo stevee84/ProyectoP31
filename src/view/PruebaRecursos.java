@@ -8,31 +8,33 @@ import javax.swing.*;
 public class PruebaRecursos {
 
     public static void main(String[] args) {
-        ControladorReservaciones controladorGeneral =
-                new ControladorReservaciones();
+        SwingUtilities.invokeLater(() -> {
+            ControladorReservaciones controladorGeneral =
+                    new ControladorReservaciones();
 
-        controladorGeneral.iniciarSesion(
-                "ADMIN",
-                "ADMIN"
-        );
+            controladorGeneral.iniciarSesion(
+                    "ADMIN",
+                    "ADMIN"
+            );
 
-        RecursoController recursoController =
-                new RecursoController(
-                        controladorGeneral
-                );
+            RecursoController recursoController =
+                    new RecursoController(
+                            controladorGeneral
+                    );
 
-        JFrame ventana = new JFrame("Recursos");
+            JFrame ventana = new JFrame("Recursos");
 
-        ventana.setSize(750, 550);
-        ventana.setDefaultCloseOperation(
-                JFrame.EXIT_ON_CLOSE
-        );
-        ventana.setLocationRelativeTo(null);
+            ventana.setSize(750, 550);
+            ventana.setDefaultCloseOperation(
+                    JFrame.EXIT_ON_CLOSE
+            );
+            ventana.setLocationRelativeTo(null);
 
-        ventana.add(
-                new RecursosPanel(recursoController)
-        );
+            ventana.add(
+                    new RecursosPanel(recursoController)
+            );
 
-        ventana.setVisible(true);
+            ventana.setVisible(true);
+        });
     }
 }

@@ -18,6 +18,7 @@ import java.awt.FlowLayout;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -45,7 +46,7 @@ public class EstadisticasPanel extends JPanel {
                 }
             };
     private final JTable tabla = new JTable(modeloTabla);
-    private final GraficoBarrasPanel grafico = new GraficoBarrasPanel();
+    private final GraficaRecursosPanel grafico = new GraficaRecursosPanel();
 
     public EstadisticasPanel(UsuariosActividadesController controller) {
         this.controller = controller;
@@ -92,7 +93,15 @@ public class EstadisticasPanel extends JPanel {
         try {
             List<EstadisticaSemana> estadisticas = controller.contarPorSemana(desde, hasta);
             cargarTabla(estadisticas);
-            grafico.setDatos(estadisticas);
+
+            List<String> etiquetas = new ArrayList<>();
+            List<Integer> cantidades = new ArrayList<>();
+            for (EstadisticaSemana e : estadisticas) {
+                String semana = FORMATO_CORTO.format(e.inicioSemana()) + " - " + FORMATO_CORTO.format(e.finSemana());
+                etiquetas.add(semana);
+                cantidades.add(e.cantidad());
+            }
+            grafico.actualizarDatos(etiquetas, cantidades);
         } catch (IllegalArgumentException ex) {
             mostrarError(ex.getMessage());
         }

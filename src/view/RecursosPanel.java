@@ -151,9 +151,11 @@ public class RecursosPanel extends JPanel {
         btnBorrar.addActionListener(e -> borrarRecurso());
 
         tablaRecursos.getSelectionModel()
-                .addListSelectionListener(
-                        e -> seleccionarRecurso()
-                );
+                .addListSelectionListener(e -> {
+                    if (!e.getValueIsAdjusting()) {
+                        seleccionarRecurso();
+                    }
+                });
     }
     private void cargarCategorias() {
         comboFiltro.removeAllItems();
@@ -264,51 +266,60 @@ public class RecursosPanel extends JPanel {
             return;
         }
 
-        int fila = tablaRecursos.getSelectedRow();
+        try {
+            int fila = tablaRecursos.getSelectedRow();
 
-        if (fila == -1) {
-            boolean registrado =
-                    controlador.registrarRecurso(
-                            codigo,
-                            categoria.getId(),
-                            descripcion
+            if (fila == -1) {
+                boolean registrado =
+                        controlador.registrarRecurso(
+                                codigo,
+                                categoria.getId(),
+                                descripcion
+                        );
+
+                if (!registrado) {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Ya existe un recurso con ese código."
                     );
+                    return;
+                }
 
-            if (!registrado) {
                 JOptionPane.showMessageDialog(
                         this,
-                        "Ya existe un recurso con ese código."
+                        "Recurso registrado correctamente."
                 );
-                return;
-            }
+            } else {
+                boolean modificado =
+                        controlador.modificarRecurso(
+                                codigo,
+                                categoria.getId(),
+                                descripcion
+                        );
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Recurso registrado correctamente."
-            );
-        } else {
-            boolean modificado =
-                    controlador.modificarRecurso(
-                            codigo,
-                            categoria.getId(),
-                            descripcion
+                if (!modificado) {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "No se encontró el recurso."
                     );
+                    return;
+                }
 
-            if (!modificado) {
                 JOptionPane.showMessageDialog(
                         this,
-                        "No se encontró el recurso."
+                        "Recurso modificado correctamente."
                 );
-                return;
             }
 
+            limpiarCampos();
+        } catch (Exception error) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Recurso modificado correctamente."
+                    error.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
             );
         }
-
-        limpiarCampos();
     }
     private void limpiarCampos() {
         txtCodigo.setText("");
@@ -394,20 +405,29 @@ public class RecursosPanel extends JPanel {
         );
 
         if (respuesta == JOptionPane.YES_OPTION) {
-            boolean eliminado =
-                    controlador.eliminarRecurso(codigo);
+            try {
+                boolean eliminado =
+                        controlador.eliminarRecurso(codigo);
 
-            if (eliminado) {
+                if (eliminado) {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Recurso eliminado correctamente."
+                    );
+
+                    limpiarCampos();
+                } else {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "No se encontró el recurso."
+                    );
+                }
+            } catch (IllegalStateException error) {
                 JOptionPane.showMessageDialog(
                         this,
-                        "Recurso eliminado correctamente."
-                );
-
-                limpiarCampos();
-            } else {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "No se encontró el recurso."
+                        error.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
                 );
             }
         }
