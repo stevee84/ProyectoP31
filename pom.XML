@@ -27,12 +27,23 @@
     </dependencies>
 
     <build>
+        <sourceDirectory>src</sourceDirectory>
+        <testSourceDirectory>src-test</testSourceDirectory>
         <plugins>
             <!-- Compilador: le dice a Maven qué versión de Java usar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
+                <configuration>
+                    <!-- Main.java (el scaffold por defecto de IntelliJ) usa una función
+                         preview de Java y todavía no es el "Main tradicional" que el equipo
+                         acordó usar. Se excluye acá para no bloquear la compilación mientras
+                         cada quien trabaja en su rama; el equipo lo resuelve en la integración. -->
+                    <excludes>
+                        <exclude>Main.java</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
 
             <!-- Surefire: corre los tests UNITARIOS durante "mvn test".

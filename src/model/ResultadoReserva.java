@@ -32,7 +32,7 @@ public final class ResultadoReserva {
 
     public Reservacion getReservacion() {
         if (!exito) {
-            throw new IllegalArgumentException("No hay reservacion: el intento de reserva fallo");
+            throw new IllegalStateException("No hay reservacion: el intento de reserva fallo");
         }
         return reservacion;
     }
