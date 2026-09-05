@@ -2,16 +2,12 @@ package view;
 
 import controller.ControladorReservaciones;
 import controller.ReservaController;
-import model.DatosReservaExtraidos;
 import model.ExtractorReservaIA;
-import model.ExtractorReservaIAFalso;
-import model.ResultadoExtraccionIA;
+import model.ExtractorReservaIAGemini;
 import model.ResultadoReserva;
 
 import javax.swing.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 public class PruebaReservaPanel {
@@ -46,17 +42,14 @@ public class PruebaReservaPanel {
         System.out.println("Reserva de prueba creada: " + resultado.esExito());
 
         // 3) Abrir la ventana ya logueado como ese mismo funcionario.
-        // Extractor falso: simula que la IA identificó actividad, fecha, horas y la
-        // categoría "Laptop Windows" a partir de una frase.
-        ExtractorReservaIA extractorDePrueba = new ExtractorReservaIAFalso(
-                ResultadoExtraccionIA.exito(new DatosReservaExtraidos(
-                        "Reunion extraida por IA",
-                        LocalDate.of(2026, 9, 8),
-                        LocalTime.of(14, 0),
-                        LocalTime.of(15, 0),
-                        List.of(idCategoriaLaptop))));
+        // Extractor REAL de Gemini (usa la variable de entorno GEMINI_API_KEY).
+        String apiKey = System.getenv("GEMINI_API_KEY");
+        if (apiKey == null || apiKey.isBlank()) {
+            System.out.println("ADVERTENCIA: no se encontró GEMINI_API_KEY. El botón 'Extraer con IA' fallará.");
+        }
+        ExtractorReservaIA extractor = new ExtractorReservaIAGemini(apiKey);
 
-        ReservaController reservaController = new ReservaController(controladorGeneral, extractorDePrueba);
+        ReservaController reservaController = new ReservaController(controladorGeneral, extractor);
 
         JFrame ventana = new JFrame("Reservas");
         ventana.setSize(700, 500);

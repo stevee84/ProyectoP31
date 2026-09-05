@@ -4,7 +4,7 @@
     <property name="java.specification.version" value="26"/>
     <property name="sun.cpu.isalist" value="amd64"/>
     <property name="sun.jnu.encoding" value="Cp1252"/>
-    <property name="java.class.path" value="C:\Users\ahara\Downloads\Progra 3\Practica sintaxis\ProyectoP31\target\test-classes;C:\Users\ahara\Downloads\Progra 3\Practica sintaxis\ProyectoP31\target\classes;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter\5.10.2\junit-jupiter-5.10.2.jar;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.2\junit-jupiter-api-5.10.2.jar;C:\Users\ahara\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\ahara\.m2\repository\org\junit\platform\junit-platform-commons\1.10.2\junit-platform-commons-1.10.2.jar;C:\Users\ahara\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter-params\5.10.2\junit-jupiter-params-5.10.2.jar;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.2\junit-jupiter-engine-5.10.2.jar;C:\Users\ahara\.m2\repository\org\junit\platform\junit-platform-engine\1.10.2\junit-platform-engine-1.10.2.jar;"/>
+    <property name="java.class.path" value="C:\Users\ahara\Downloads\Progra 3\Practica sintaxis\ProyectoP31\target\test-classes;C:\Users\ahara\Downloads\Progra 3\Practica sintaxis\ProyectoP31\target\classes;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter\5.10.2\junit-jupiter-5.10.2.jar;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.2\junit-jupiter-api-5.10.2.jar;C:\Users\ahara\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\ahara\.m2\repository\org\junit\platform\junit-platform-commons\1.10.2\junit-platform-commons-1.10.2.jar;C:\Users\ahara\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter-params\5.10.2\junit-jupiter-params-5.10.2.jar;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.2\junit-jupiter-engine-5.10.2.jar;C:\Users\ahara\.m2\repository\org\junit\platform\junit-platform-engine\1.10.2\junit-platform-engine-1.10.2.jar;C:\Users\ahara\.m2\repository\org\json\json\20240303\json-20240303.jar;"/>
     <property name="java.vm.vendor" value="Oracle Corporation"/>
     <property name="sun.arch.data.model" value="64"/>
     <property name="user.variant" value=""/>
@@ -15,9 +15,9 @@
     <property name="user.country" value="CR"/>
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="sun.boot.library.path" value="C:\Users\ahara\.jdks\openjdk-26.0.2\bin"/>
-    <property name="sun.java.command" value="C:\Users\ahara\AppData\Local\Temp\surefire17404508393775772180\surefirebooter-20260904210342941_3.jar C:\Users\ahara\AppData\Local\Temp\surefire17404508393775772180 2026-09-04T21-03-41_366-jvmRun1 surefire-20260904210342941_1tmp surefire_0-20260904210342941_2tmp"/>
+    <property name="sun.java.command" value="C:\Users\ahara\AppData\Local\Temp\surefire17215584752717499929\surefirebooter-20260905151721834_3.jar C:\Users\ahara\AppData\Local\Temp\surefire17215584752717499929 2026-09-05T15-17-21_728-jvmRun1 surefire-20260905151721834_1tmp surefire_0-20260905151721834_2tmp"/>
     <property name="jdk.debug" value="release"/>
-    <property name="surefire.test.class.path" value="C:\Users\ahara\Downloads\Progra 3\Practica sintaxis\ProyectoP31\target\test-classes;C:\Users\ahara\Downloads\Progra 3\Practica sintaxis\ProyectoP31\target\classes;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter\5.10.2\junit-jupiter-5.10.2.jar;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.2\junit-jupiter-api-5.10.2.jar;C:\Users\ahara\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\ahara\.m2\repository\org\junit\platform\junit-platform-commons\1.10.2\junit-platform-commons-1.10.2.jar;C:\Users\ahara\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter-params\5.10.2\junit-jupiter-params-5.10.2.jar;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.2\junit-jupiter-engine-5.10.2.jar;C:\Users\ahara\.m2\repository\org\junit\platform\junit-platform-engine\1.10.2\junit-platform-engine-1.10.2.jar;"/>
+    <property name="surefire.test.class.path" value="C:\Users\ahara\Downloads\Progra 3\Practica sintaxis\ProyectoP31\target\test-classes;C:\Users\ahara\Downloads\Progra 3\Practica sintaxis\ProyectoP31\target\classes;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter\5.10.2\junit-jupiter-5.10.2.jar;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.2\junit-jupiter-api-5.10.2.jar;C:\Users\ahara\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\ahara\.m2\repository\org\junit\platform\junit-platform-commons\1.10.2\junit-platform-commons-1.10.2.jar;C:\Users\ahara\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter-params\5.10.2\junit-jupiter-params-5.10.2.jar;C:\Users\ahara\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.2\junit-jupiter-engine-5.10.2.jar;C:\Users\ahara\.m2\repository\org\junit\platform\junit-platform-engine\1.10.2\junit-platform-engine-1.10.2.jar;C:\Users\ahara\.m2\repository\org\json\json\20240303\json-20240303.jar;"/>
     <property name="sun.cpu.endian" value="little"/>
     <property name="user.home" value="C:\Users\ahara"/>
     <property name="user.language" value="es"/>
@@ -31,7 +31,7 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
-    <property name="surefire.real.class.path" value="C:\Users\ahara\AppData\Local\Temp\surefire17404508393775772180\surefirebooter-20260904210342941_3.jar"/>
+    <property name="surefire.real.class.path" value="C:\Users\ahara\AppData\Local\Temp\surefire17215584752717499929\surefirebooter-20260905151721834_3.jar"/>
     <property name="user.script" value=""/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="26.0.2+10-55"/>
@@ -64,8 +64,8 @@
     <property name="maven.repo.local" value="C:\Users\ahara\.m2\repository"/>
     <property name="java.class.version" value="70.0"/>
   </properties>
-  <testcase name="reservaFallidaReportaTodasLasCategoriasSinDisponibilidad_noSoloLaPrimera" classname="model.ModeloReservacionesTest" time="0.025"/>
+  <testcase name="reservaFallidaReportaTodasLasCategoriasSinDisponibilidad_noSoloLaPrimera" classname="model.ModeloReservacionesTest" time="0.026"/>
   <testcase name="reservaFallidaNoDejaNingunRecursoAsignado_todoNada" classname="model.ModeloReservacionesTest" time="0.001"/>
-  <testcase name="getReservacionLanzaExcepcionSiElResultadoFueFracaso" classname="model.ModeloReservacionesTest" time="0.003"/>
-  <testcase name="reservaExitosaCuandoTodasLasCategoriasTienenRecursoLibre" classname="model.ModeloReservacionesTest" time="0.001"/>
+  <testcase name="getReservacionLanzaExcepcionSiElResultadoFueFracaso" classname="model.ModeloReservacionesTest" time="0.002"/>
+  <testcase name="reservaExitosaCuandoTodasLasCategoriasTienenRecursoLibre" classname="model.ModeloReservacionesTest" time="0.003"/>
 </testsuite>
