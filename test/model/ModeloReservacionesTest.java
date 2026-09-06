@@ -1,5 +1,7 @@
 package model;
 
+import exception.DisponibilidadException;
+import exception.RecursoEnUsoException;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -89,7 +91,7 @@ public class ModeloReservacionesTest {
         CategoriaRecurso cat = modelo.listarCategorias().get(0);
         modelo.registrarRecurso("REC-X01", cat.getId(), "Recurso de prueba");
 
-        assertThrows(IllegalStateException.class, () -> {
+        assertThrows(RecursoEnUsoException.class, () -> {
             modelo.eliminarCategoria(cat.getId());
         });
     }
@@ -126,7 +128,7 @@ public class ModeloReservacionesTest {
         modelo.reservarPorCategorias(new SolicitudReserva(func, List.of(cat.getId()), "Actividad",
                 manana, manana.plusHours(1)));
 
-        assertThrows(IllegalStateException.class, () -> {
+        assertThrows(RecursoEnUsoException.class, () -> {
             modelo.eliminarRecurso("REC-DEL");
         });
     }
@@ -143,7 +145,7 @@ public class ModeloReservacionesTest {
         modelo.reservarPorCategorias(new SolicitudReserva(func, List.of(cat.getId()), "Actividad emp",
                 manana, manana.plusHours(1)));
 
-        assertThrows(IllegalStateException.class, () -> {
+        assertThrows(RecursoEnUsoException.class, () -> {
             modelo.eliminarEmpleado("FEMP");
         });
     }
@@ -220,6 +222,6 @@ public class ModeloReservacionesTest {
         Reservacion reservacion = new Reservacion(9999, func, List.of(modelo.buscarRecurso("REC-PAS")),
                 "Actividad pasada", pasado, pasado.plusHours(1));
 
-        assertThrows(IllegalStateException.class, reservacion::cancelar);
+        assertThrows(DisponibilidadException.class, reservacion::cancelar);
     }
 }

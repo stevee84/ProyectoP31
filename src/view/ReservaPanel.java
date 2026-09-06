@@ -97,11 +97,9 @@ public class ReservaPanel extends JPanel {
         JButton btnLimpiar = new JButton("Limpiar");
         btnLimpiar.addActionListener(e -> limpiarFormulario());
 
-        // Placeholder: el reporte PDF probablemente use una utilidad compartida por
-        // todo el equipo, todavía no definida. Se deja deshabilitado por ahora.
         JButton btnGenerarPdf = new JButton("Generar PDF");
-        btnGenerarPdf.setEnabled(false);
-        btnGenerarPdf.setToolTipText("Pendiente: utilidad de reportes PDF");
+        btnGenerarPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
+                "Funcionalidad de PDF pendiente de implementación.", "PDF", JOptionPane.INFORMATION_MESSAGE));
 
         JPanel panelBotones = new JPanel(new FlowLayout());
         panelBotones.add(btnAplicar);
@@ -196,7 +194,7 @@ public class ReservaPanel extends JPanel {
         ResultadoReserva resultado;
         try {
             resultado = controlador.crearReservacion(idsCategorias, txtActividad.getText().trim(), inicio, fin);
-        } catch (IllegalArgumentException error) {
+        } catch (RuntimeException error) {
             JOptionPane.showMessageDialog(this, error.getMessage(), "Datos inválidos",
                     JOptionPane.WARNING_MESSAGE);
             return;
@@ -300,7 +298,7 @@ public class ReservaPanel extends JPanel {
             controlador.cancelarReservacion(id);
             JOptionPane.showMessageDialog(this, "Reserva cancelada correctamente.");
             cargarReservas();
-        } catch (IllegalStateException error) {
+        } catch (RuntimeException error) {
             JOptionPane.showMessageDialog(this, error.getMessage(),
                     "No se pudo cancelar", JOptionPane.WARNING_MESSAGE);
         }

@@ -58,11 +58,16 @@ public class CategoriasPanel extends JPanel {
         btnGuardar.setEnabled(false);
         btnBorrar.setEnabled(false);
 
+        JButton btnPdf = new JButton("Generar PDF");
+        btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
+                "Funcionalidad de PDF pendiente de implementación.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+
         JPanel panelBotones = new JPanel(new FlowLayout());
         panelBotones.add(btnNuevo);
         panelBotones.add(btnGuardar);
         panelBotones.add(btnBorrar);
         panelBotones.add(btnLimpiar);
+        panelBotones.add(btnPdf);
 
         JPanel panelFormulario = new JPanel(new BorderLayout());
         panelFormulario.setBorder(
@@ -299,7 +304,7 @@ public class CategoriasPanel extends JPanel {
 
                     limpiarCampos();
                 }
-            } catch (IllegalStateException error) {
+            } catch (RuntimeException error) {
                 JOptionPane.showMessageDialog(
                         this,
                         error.getMessage()

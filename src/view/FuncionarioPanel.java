@@ -105,11 +105,16 @@ public class FuncionarioPanel extends JPanel {
         campos.add(new JLabel("Teléfono:"));
         campos.add(campoTelefono);
 
+        JButton btnPdf = new JButton("Generar PDF");
+        btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
+                "Funcionalidad de PDF pendiente de implementación.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+
         JPanel botones = new JPanel(new FlowLayout(FlowLayout.CENTER));
         botones.add(btnAgregar);
         botones.add(btnModificar);
         botones.add(btnEliminar);
         botones.add(btnLimpiar);
+        botones.add(btnPdf);
 
         panel.add(campos, BorderLayout.CENTER);
         panel.add(botones, BorderLayout.SOUTH);
@@ -140,7 +145,7 @@ public class FuncionarioPanel extends JPanel {
                     campoTelefono.getText().trim());
             cargarFuncionarios(controller.listarFuncionarios());
             limpiarFormulario();
-        } catch (IllegalArgumentException | IllegalStateException ex) {
+        } catch (RuntimeException ex) {
             mostrarError(ex);
         }
     }
@@ -157,7 +162,7 @@ public class FuncionarioPanel extends JPanel {
                     campoTelefono.getText().trim());
             cargarFuncionarios(controller.listarFuncionarios());
             limpiarFormulario();
-        } catch (IllegalArgumentException | IllegalStateException ex) {
+        } catch (RuntimeException ex) {
             mostrarError(ex);
         }
     }
@@ -180,7 +185,7 @@ public class FuncionarioPanel extends JPanel {
             controller.eliminarFuncionario(id);
             cargarFuncionarios(controller.listarFuncionarios());
             limpiarFormulario();
-        } catch (IllegalArgumentException | IllegalStateException ex) {
+        } catch (RuntimeException ex) {
             mostrarError(ex);
         }
     }

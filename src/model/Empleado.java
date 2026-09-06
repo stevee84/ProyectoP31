@@ -1,5 +1,7 @@
 package model;
 
+import exception.ValidacionException;
+
 import java.util.Objects;
 
 public abstract class Empleado implements Comparable<Empleado> {
@@ -17,10 +19,10 @@ public abstract class Empleado implements Comparable<Empleado> {
 
     public void actualizarDatos(String name, String id) {
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("El nombre es obligatorio.");
+            throw new ValidacionException("El nombre es obligatorio.");
         }
         if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("La identificación es obligatoria.");
+            throw new ValidacionException("La identificación es obligatoria.");
         }
         this.name = name.trim();
         this.id = id.trim();
@@ -28,7 +30,7 @@ public abstract class Empleado implements Comparable<Empleado> {
 
     public void cambiarContraseña(String nueva) {
         if (nueva == null || nueva.isBlank()) {
-            throw new IllegalArgumentException("La contraseña no puede estar vacía.");
+            throw new ValidacionException("La contraseña no puede estar vacía.");
         }
         this.pass = nueva;
         this.firstLog = false;
@@ -52,6 +54,10 @@ public abstract class Empleado implements Comparable<Empleado> {
 
     public String getPass() {
         return pass;
+    }
+
+    public void setPass(String pass) {
+        this.pass = pass;
     }
 
     public boolean isFirstLog() {

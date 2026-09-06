@@ -69,7 +69,12 @@ public class EstadisticasRecursosPanel
         panelFechas.add(new JLabel("Hasta:"));
         panelFechas.add(txtHasta);
 
+        JButton btnPdf = new JButton("Generar PDF");
+        btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
+                "Funcionalidad de PDF pendiente de implementación.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+
         panelFechas.add(btnCalcular);
+        panelFechas.add(btnPdf);
 
         DefaultTableModel modeloTabla =
                 new DefaultTableModel(

@@ -72,7 +72,7 @@ public class CambioClaveDialog extends JDialog {
             controller.cambiarContrasena(nueva);
             cambiada = true;
             dispose();
-        } catch (IllegalArgumentException | IllegalStateException ex) {
+        } catch (RuntimeException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }

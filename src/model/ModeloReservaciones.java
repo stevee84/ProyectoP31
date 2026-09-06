@@ -1,5 +1,9 @@
 package model;
 
+import exception.DisponibilidadException;
+import exception.RecursoEnUsoException;
+import exception.ValidacionException;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -25,6 +29,14 @@ public class ModeloReservaciones {
         inicializarCategorias();
     }
 
+    /**
+     * Constructor para persistencia: crea un modelo vacío sin datos iniciales.
+     * Usar {@code true} para indicar que se cargará desde XML.
+     */
+    public ModeloReservaciones(boolean vacio) {
+        // No inicializa datos por defecto
+    }
+
     private void inicializarEmpleados() {
         registrarEmpleado(new Administrador("Administrador", "ADMIN"));
     }
@@ -37,7 +49,7 @@ public class ModeloReservaciones {
 
     public CategoriaRecurso registrarCategoria(String descripcion) {
         if (descripcion == null || descripcion.isBlank()) {
-            throw new IllegalArgumentException("La descripción de la categoría es obligatoria.");
+            throw new ValidacionException("La descripción de la categoría es obligatoria.");
         }
         CategoriaRecurso categoria = new CategoriaRecurso(generarIdCategoria(), descripcion);
         categorias.put(categoria.getId(), categoria);
@@ -65,7 +77,7 @@ public class ModeloReservaciones {
         boolean enUso = recursos.values().stream()
                 .anyMatch(r -> r.getCategoria().equals(categoria));
         if (enUso) {
-            throw new IllegalStateException("No se puede eliminar la categoría porque tiene recursos asociados.");
+            throw new RecursoEnUsoException("No se puede eliminar la categoría porque tiene recursos asociados.");
         }
         return categorias.remove(id) != null;
     }
@@ -91,7 +103,7 @@ public class ModeloReservaciones {
     public boolean registrarRecurso(String codigo, String idCategoria, String descripcion) {
         CategoriaRecurso categoria = buscarOCategoriaInvalida(idCategoria);
         if (codigo == null || codigo.isBlank()) {
-            throw new IllegalArgumentException("El código del recurso es obligatorio.");
+            throw new ValidacionException("El código del recurso es obligatorio.");
         }
         if (recursos.containsKey(codigo.trim())) {
             return false;
@@ -118,7 +130,7 @@ public class ModeloReservaciones {
         boolean enUso = reservaciones.stream()
                 .anyMatch(r -> r.esActiva() && r.incluyeRecurso(recurso));
         if (enUso) {
-            throw new IllegalStateException("No se puede eliminar el recurso porque tiene reservaciones activas.");
+            throw new RecursoEnUsoException("No se puede eliminar el recurso porque tiene reservaciones activas.");
         }
         return recursos.remove(codigo) != null;
     }
@@ -143,7 +155,7 @@ public class ModeloReservaciones {
 
     public boolean registrarEmpleado(Empleado empleado) {
         if (empleado == null) {
-            throw new IllegalArgumentException("El empleado no puede ser nulo.");
+            throw new ValidacionException("El empleado no puede ser nulo.");
         }
         if (empleados.containsKey(empleado.getId())) {
             return false;
@@ -154,7 +166,7 @@ public class ModeloReservaciones {
 
     public boolean actualizarEmpleado(Empleado empleado) {
         if (empleado == null) {
-            throw new IllegalArgumentException("El empleado no puede ser nulo.");
+            throw new ValidacionException("El empleado no puede ser nulo.");
         }
         if (!empleados.containsKey(empleado.getId())) {
             return false;
@@ -171,7 +183,7 @@ public class ModeloReservaciones {
         boolean enUso = reservaciones.stream()
                 .anyMatch(r -> r.esActiva() && r.getEmpleado().equals(empleado));
         if (enUso) {
-            throw new IllegalStateException("No se puede eliminar el empleado porque tiene reservaciones activas.");
+            throw new RecursoEnUsoException("No se puede eliminar el empleado porque tiene reservaciones activas.");
         }
         return empleados.remove(id) != null;
     }
@@ -263,7 +275,7 @@ public class ModeloReservaciones {
 
     public boolean actualizarReservacion(Reservacion reservacion) {
         if (reservacion == null) {
-            throw new IllegalArgumentException("La reservación no puede ser nula.");
+            throw new ValidacionException("La reservación no puede ser nula.");
         }
         int indice = reservaciones.indexOf(reservacion);
         if (indice < 0) {
@@ -289,7 +301,7 @@ public class ModeloReservaciones {
     public void cancelarReservacion(int id) {
         Reservacion reservacion = buscarReservacion(id);
         if (reservacion == null) {
-            throw new IllegalArgumentException("No existe una reservación con id " + id + ".");
+            throw new ValidacionException("No existe una reservación con id " + id + ".");
         }
         reservacion.cancelar();
     }
@@ -352,16 +364,16 @@ public class ModeloReservaciones {
 
     public boolean verificarDisponibilidad(Recurso recurso, LocalDateTime inicio, LocalDateTime fin) {
         if (recurso == null) {
-            throw new IllegalArgumentException("El recurso es obligatorio.");
+            throw new ValidacionException("El recurso es obligatorio.");
         }
         if (inicio == null || fin == null) {
-            throw new IllegalArgumentException("La fecha de inicio y de terminación son obligatorias.");
+            throw new ValidacionException("La fecha de inicio y de terminación son obligatorias.");
         }
         if (!inicio.isBefore(fin)) {
-            throw new IllegalArgumentException("La hora de inicio debe ser anterior a la de terminación.");
+            throw new ValidacionException("La hora de inicio debe ser anterior a la de terminación.");
         }
         if (estaOcupado(recurso, inicio, fin)) {
-            throw new IllegalArgumentException("El recurso ya está reservado en ese horario.");
+            throw new DisponibilidadException("El recurso ya está reservado en ese horario.");
         }
         return true;
     }
@@ -387,10 +399,60 @@ public class ModeloReservaciones {
         return reservaciones.size();
     }
 
+    // --- Métodos para persistencia XML ---
+
+    public Map<String, Empleado> getEmpleados() {
+        return empleados;
+    }
+
+    public Map<String, CategoriaRecurso> getCategorias() {
+        return categorias;
+    }
+
+    public Map<String, Recurso> getRecursos() {
+        return recursos;
+    }
+
+    public List<Reservacion> getReservaciones() {
+        return reservaciones;
+    }
+
+    public int getSiguienteIdCategoria() {
+        return siguienteIdCategoria;
+    }
+
+    public void setSiguienteIdCategoria(int siguiente) {
+        this.siguienteIdCategoria = siguiente;
+    }
+
+    public int getSiguienteIdReservacion() {
+        return siguienteIdReservacion;
+    }
+
+    public void setSiguienteIdReservacion(int siguiente) {
+        this.siguienteIdReservacion = siguiente;
+    }
+
+    public void registrarEmpleadoCargado(Empleado empleado) {
+        empleados.put(empleado.getId(), empleado);
+    }
+
+    public void registrarCategoriaCargada(CategoriaRecurso categoria) {
+        categorias.put(categoria.getId(), categoria);
+    }
+
+    public void registrarRecursoCargado(Recurso recurso) {
+        recursos.put(recurso.getCodigo(), recurso);
+    }
+
+    public void registrarReservacionCargada(Reservacion reservacion) {
+        reservaciones.add(reservacion);
+    }
+
     private CategoriaRecurso buscarOCategoriaInvalida(String idCategoria) {
         CategoriaRecurso categoria = buscarCategoria(idCategoria);
         if (categoria == null) {
-            throw new IllegalArgumentException("No existe una categoría con id " + idCategoria + ".");
+            throw new ValidacionException("No existe una categoría con id " + idCategoria + ".");
         }
         return categoria;
     }

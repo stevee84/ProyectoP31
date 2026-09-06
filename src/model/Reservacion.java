@@ -1,5 +1,8 @@
 package model;
 
+import exception.DisponibilidadException;
+import exception.ValidacionException;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,22 +30,22 @@ public class Reservacion implements Comparable<Reservacion> {
     public void actualizarDatos(Empleado empleado, List<Recurso> recursos, String descripcionActividad,
                                 LocalDateTime inicio, LocalDateTime fin) {
         if (empleado == null) {
-            throw new IllegalArgumentException("El empleado es obligatorio.");
+            throw new ValidacionException("El empleado es obligatorio.");
         }
         if (recursos == null || recursos.isEmpty()) {
-            throw new IllegalArgumentException("Debe asignarse al menos un recurso.");
+            throw new ValidacionException("Debe asignarse al menos un recurso.");
         }
         if (recursos.stream().anyMatch(Objects::isNull)) {
-            throw new IllegalArgumentException("La lista de recursos no puede contener elementos nulos.");
+            throw new ValidacionException("La lista de recursos no puede contener elementos nulos.");
         }
         if (descripcionActividad == null || descripcionActividad.isBlank()) {
-            throw new IllegalArgumentException("La descripción de la actividad es obligatoria.");
+            throw new ValidacionException("La descripción de la actividad es obligatoria.");
         }
         if (inicio == null || fin == null) {
-            throw new IllegalArgumentException("La fecha de inicio y de terminación son obligatorias.");
+            throw new ValidacionException("La fecha de inicio y de terminación son obligatorias.");
         }
         if (!inicio.isBefore(fin)) {
-            throw new IllegalArgumentException("La hora de inicio debe ser anterior a la de terminación.");
+            throw new ValidacionException("La hora de inicio debe ser anterior a la de terminación.");
         }
         this.empleado = empleado;
         this.recursos = new ArrayList<>(recursos);
@@ -53,10 +56,10 @@ public class Reservacion implements Comparable<Reservacion> {
 
     public void cancelar() {
         if (estado == EstadoReservacion.CANCELADA) {
-            throw new IllegalStateException("La reservación ya está cancelada.");
+            throw new DisponibilidadException("La reservación ya está cancelada.");
         }
         if (!inicio.isAfter(LocalDateTime.now())) {
-            throw new IllegalStateException("Solo se pueden cancelar reservaciones futuras.");
+            throw new DisponibilidadException("Solo se pueden cancelar reservaciones futuras.");
         }
         this.estado = EstadoReservacion.CANCELADA;
     }
@@ -102,6 +105,10 @@ public class Reservacion implements Comparable<Reservacion> {
 
     public EstadoReservacion getEstado() {
         return estado;
+    }
+
+    public void setEstado(EstadoReservacion estado) {
+        this.estado = estado;
     }
 
     @Override

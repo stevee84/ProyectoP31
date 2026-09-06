@@ -91,6 +91,11 @@ public class CalendarizacionRecursosPanel
                 )
         );
 
+        JButton btnPdf = new JButton("Generar PDF");
+        btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
+                "Funcionalidad de PDF pendiente de implementación.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+        panelSeleccion.add(btnPdf);
+
         add(panelSeleccion, BorderLayout.NORTH);
         add(scrollTabla, BorderLayout.CENTER);
 

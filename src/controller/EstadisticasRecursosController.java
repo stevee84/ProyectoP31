@@ -1,5 +1,6 @@
 package controller;
 
+import exception.ValidacionException;
 import model.CategoriaRecurso;
 import model.Recurso;
 import model.Reservacion;
@@ -28,19 +29,19 @@ public class EstadisticasRecursosController {
             LocalDate hasta
     ) {
         if (categoria == null) {
-            throw new IllegalArgumentException(
+            throw new ValidacionException(
                     "La categoría es obligatoria."
             );
         }
 
         if (desde == null || hasta == null) {
-            throw new IllegalArgumentException(
+            throw new ValidacionException(
                     "Las fechas son obligatorias."
             );
         }
 
         if (desde.isAfter(hasta)) {
-            throw new IllegalArgumentException(
+            throw new ValidacionException(
                     "La fecha desde no puede ser posterior a la fecha hasta."
             );
         }

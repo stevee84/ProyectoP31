@@ -1,5 +1,9 @@
 package controller;
 
+import exception.DisponibilidadException;
+import exception.RecursoEnUsoException;
+import exception.SesionException;
+import exception.ValidacionException;
 import model.Administrador;
 import model.CategoriaRecurso;
 import model.Empleado;
@@ -22,6 +26,14 @@ public class ControladorReservaciones {
 
     public ControladorReservaciones() {
         this.modelo = new ModeloReservaciones();
+    }
+
+    public ControladorReservaciones(ModeloReservaciones modelo) {
+        this.modelo = modelo;
+    }
+
+    public ModeloReservaciones getModelo() {
+        return modelo;
     }
 
     public ResultadoSesion iniciarSesion(String id, String pass) {
@@ -72,7 +84,7 @@ public class ControladorReservaciones {
         validarSesion();
         Funcionario funcionario = modelo.buscarEmpleado(id) instanceof Funcionario f ? f : null;
         if (funcionario == null) {
-            throw new IllegalArgumentException("No existe un funcionario con id " + id + ".");
+            throw new ValidacionException("No existe un funcionario con id " + id + ".");
         }
         return funcionario;
     }
@@ -106,7 +118,7 @@ public class ControladorReservaciones {
         validarSesion();
         CategoriaRecurso categoria = modelo.buscarCategoria(id);
         if (categoria == null) {
-            throw new IllegalArgumentException("No existe una categoría con id " + id + ".");
+            throw new ValidacionException("No existe una categoría con id " + id + ".");
         }
         return categoria;
     }
@@ -140,7 +152,7 @@ public class ControladorReservaciones {
         validarSesion();
         Recurso recurso = modelo.buscarRecurso(codigo);
         if (recurso == null) {
-            throw new IllegalArgumentException("No existe un recurso con código " + codigo + ".");
+            throw new ValidacionException("No existe un recurso con código " + codigo + ".");
         }
         return recurso;
     }
@@ -167,10 +179,10 @@ public class ControladorReservaciones {
         requireFuncionario();
         Reservacion reservacion = modelo.buscarReservacion(id);
         if (reservacion == null) {
-            throw new IllegalArgumentException("No existe una reservación con id " + id + ".");
+            throw new ValidacionException("No existe una reservación con id " + id + ".");
         }
         if (!reservacion.getEmpleado().equals(sesionActual)) {
-            throw new IllegalStateException("Solo puede cancelar sus propias reservaciones.");
+            throw new SesionException("Solo puede cancelar sus propias reservaciones.");
         }
         reservacion.cancelar();
     }
@@ -246,28 +258,28 @@ public class ControladorReservaciones {
 
     private void validarSesion() {
         if (sesionActual == null) {
-            throw new IllegalStateException("Debe iniciar sesión.");
+            throw new SesionException("Debe iniciar sesión.");
         }
     }
 
     private void requireAdmin() {
         validarSesion();
         if (!(sesionActual instanceof Administrador)) {
-            throw new IllegalStateException("Esta funcionalidad solo puede ejecutarla un administrador.");
+            throw new SesionException("Esta funcionalidad solo puede ejecutarla un administrador.");
         }
     }
 
     private void requireFuncionario() {
         validarSesion();
         if (!(sesionActual instanceof Funcionario)) {
-            throw new IllegalStateException("Esta funcionalidad solo puede ejecutarla un funcionario.");
+            throw new SesionException("Esta funcionalidad solo puede ejecutarla un funcionario.");
         }
     }
 
     private Funcionario buscarFuncionarioOInvalido(String id) {
         Funcionario funcionario = modelo.buscarEmpleado(id) instanceof Funcionario f ? f : null;
         if (funcionario == null) {
-            throw new IllegalArgumentException("No existe un funcionario con id " + id + ".");
+            throw new ValidacionException("No existe un funcionario con id " + id + ".");
         }
         return funcionario;
     }

@@ -73,9 +73,14 @@ public class EstadisticasPanel extends JPanel {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panel.add(new JLabel("Desde (dd/MM/aaaa):"));
         panel.add(campoDesde);
+        JButton btnPdf = new JButton("Generar PDF");
+        btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
+                "Funcionalidad de PDF pendiente de implementación.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+
         panel.add(new JLabel("Hasta (dd/MM/aaaa):"));
         panel.add(campoHasta);
         panel.add(btnGenerar);
+        panel.add(btnPdf);
         return panel;
     }
 
@@ -102,7 +107,7 @@ public class EstadisticasPanel extends JPanel {
                 cantidades.add(e.cantidad());
             }
             grafico.actualizarDatos(etiquetas, cantidades);
-        } catch (IllegalArgumentException ex) {
+        } catch (RuntimeException ex) {
             mostrarError(ex.getMessage());
         }
     }

@@ -1,5 +1,7 @@
 package controller;
 
+import exception.RecursoEnUsoException;
+import exception.ValidacionException;
 import consulta.InfoReserva;
 import consulta.ReservaConsulta;
 import model.Empleado;
@@ -62,7 +64,7 @@ public class UsuariosActividadesController {
     public boolean agregarFuncionario(String nombre, String id, String telefono) {
         boolean registrado = controlador.registrarFuncionario(nombre, id, telefono);
         if (!registrado) {
-            throw new IllegalArgumentException("Identificación duplicada.");
+            throw new ValidacionException("Identificación duplicada.");
         }
         return true;
     }
@@ -71,7 +73,7 @@ public class UsuariosActividadesController {
         boolean tieneReservacionesActivas = controlador.listarReservacionesPorEmpleado(id).stream()
                 .anyMatch(Reservacion::esActiva);
         if (tieneReservacionesActivas) {
-            throw new IllegalArgumentException("El funcionario tiene reservaciones activas.");
+            throw new RecursoEnUsoException("El funcionario tiene reservaciones activas.");
         }
         return controlador.eliminarFuncionario(id);
     }
@@ -151,10 +153,10 @@ public class UsuariosActividadesController {
      */
     public List<EstadisticaSemana> contarPorSemana(LocalDate desde, LocalDate hasta) {
         if (desde == null || hasta == null) {
-            throw new IllegalArgumentException("Debe indicar ambas fechas.");
+            throw new ValidacionException("Debe indicar ambas fechas.");
         }
         if (desde.isAfter(hasta)) {
-            throw new IllegalArgumentException("La fecha 'desde' no puede ser posterior a 'hasta'.");
+            throw new ValidacionException("La fecha 'desde' no puede ser posterior a 'hasta'.");
         }
 
         List<EstadisticaSemana> resultado = new ArrayList<>();

@@ -1,5 +1,6 @@
 package controller;
 
+import exception.SesionException;
 import model.Empleado;
 import model.Funcionario;
 import model.Reservacion;
@@ -48,7 +49,7 @@ public class ControladorReservacionesTest {
     @Test
     void testAccesoSinSesion() {
         // Sin iniciar sesión, listar categorías debe lanzar excepción
-        assertThrows(IllegalStateException.class, () -> {
+        assertThrows(SesionException.class, () -> {
             controlador.listarCategorias();
         });
     }
@@ -75,7 +76,7 @@ public class ControladorReservacionesTest {
         controlador.iniciarSesion("FLUIS", "FLUIS");
 
         // Intentar crear otro funcionario debe fallar
-        assertThrows(IllegalStateException.class, () -> {
+        assertThrows(SesionException.class, () -> {
             controlador.registrarFuncionario("Otro", "FOTRO", "5555-0000");
         });
     }

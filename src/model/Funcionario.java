@@ -1,5 +1,7 @@
 package model;
 
+import exception.ValidacionException;
+
 public class Funcionario extends Empleado {
 
     private String telefono;
@@ -16,7 +18,7 @@ public class Funcionario extends Empleado {
 
     public void actualizarTelefono(String telefono) {
         if (telefono == null || telefono.isBlank()) {
-            throw new IllegalArgumentException("El teléfono es obligatorio.");
+            throw new ValidacionException("El teléfono es obligatorio.");
         }
         this.telefono = telefono.trim();
     }

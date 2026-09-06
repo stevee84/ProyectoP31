@@ -1,5 +1,7 @@
 package model;
 
+import exception.ValidacionException;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -21,7 +23,7 @@ public final class ResultadoReserva {
 
     public static ResultadoReserva fracaso(List<CategoriaRecurso> categoriasNoDisponibles) {
         if (categoriasNoDisponibles == null || categoriasNoDisponibles.isEmpty()) {
-            throw new IllegalArgumentException("Un resultado no exitoso debe indicar al menos una categoria sin disponibilidad");
+            throw new ValidacionException("Un resultado no exitoso debe indicar al menos una categoria sin disponibilidad");
         }
         return new ResultadoReserva(false, null, List.copyOf(categoriasNoDisponibles));
     }
@@ -32,7 +34,7 @@ public final class ResultadoReserva {
 
     public Reservacion getReservacion() {
         if (!exito) {
-            throw new IllegalStateException("No hay reservacion: el intento de reserva fallo");
+            throw new ValidacionException("No hay reservacion: el intento de reserva fallo");
         }
         return reservacion;
     }

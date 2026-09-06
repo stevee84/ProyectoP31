@@ -5,6 +5,7 @@ import controller.UsuariosActividadesController;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -73,10 +74,15 @@ public class AgendaSemanalPanel extends JPanel {
             cargarSemana();
         });
 
+        JButton btnPdf = new JButton("Generar PDF");
+        btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
+                "Funcionalidad de PDF pendiente de implementación.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+
         panel.add(btnAnterior);
         panel.add(etiquetaSemana);
         panel.add(btnHoy);
         panel.add(btnSiguiente);
+        panel.add(btnPdf);
         return panel;
     }
 

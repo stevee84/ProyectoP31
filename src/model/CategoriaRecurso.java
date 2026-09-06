@@ -1,5 +1,7 @@
 package model;
 
+import exception.ValidacionException;
+
 import java.util.Objects;
 
 public class CategoriaRecurso implements Comparable<CategoriaRecurso> {
@@ -13,10 +15,10 @@ public class CategoriaRecurso implements Comparable<CategoriaRecurso> {
 
     public void actualizarDatos(String id, String descripcion) {
         if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("El id de la categoría es obligatorio.");
+            throw new ValidacionException("El id de la categoría es obligatorio.");
         }
         if (descripcion == null || descripcion.isBlank()) {
-            throw new IllegalArgumentException("La descripción de la categoría es obligatoria.");
+            throw new ValidacionException("La descripción de la categoría es obligatoria.");
         }
         this.id = id.trim();
         this.descripcion = descripcion.trim();
