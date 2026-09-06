@@ -8,6 +8,8 @@ import model.Funcionario;
 import model.ModeloReservaciones;
 import model.Recurso;
 import model.Reservacion;
+import model.ResultadoReserva;
+import model.SolicitudReserva;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -153,10 +155,12 @@ public class ControladorReservaciones {
         return modelo.listarRecursosPorCategoria(idCategoria);
     }
 
-    public Reservacion crearReservacion(List<String> idsCategorias, String descripcionActividad,
-                                         LocalDateTime inicio, LocalDateTime fin) {
+    public ResultadoReserva crearReservacion(List<String> idsCategorias, String descripcionActividad,
+                                              LocalDateTime inicio, LocalDateTime fin) {
         requireFuncionario();
-        return modelo.reservarPorCategorias(sesionActual, idsCategorias, descripcionActividad, inicio, fin);
+        SolicitudReserva solicitud = new SolicitudReserva(sesionActual, idsCategorias,
+                descripcionActividad, inicio, fin);
+        return modelo.reservarPorCategorias(solicitud);
     }
 
     public void cancelarReservacion(int id) {

@@ -5,9 +5,14 @@ import controller.CategoriaController;
 import controller.ControladorReservaciones;
 import controller.EstadisticasRecursosController;
 import controller.RecursoController;
+import controller.ReservaController;
 import controller.UsuariosActividadesController;
 import model.Administrador;
 import model.Empleado;
+import model.ExtractorReservaIA;
+import model.ExtractorReservaIAFalso;
+import model.ExtractorReservaIAGemini;
+import model.ResultadoExtraccionIA;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -78,8 +83,7 @@ public class VentanaPrincipal extends JFrame {
             tabs.addTab("Estadísticas", crearPanelEstadisticas());
         } else {
             // Pestañas de funcionario
-            // TODO: crear ReservasPanel cuando esté disponible
-            tabs.addTab("Reservas", new javax.swing.JPanel());
+            tabs.addTab("Reservas", new ReservaPanel(crearReservaController()));
             tabs.addTab("Calendarización",
                     new CalendarizacionRecursosPanel(new CalendarizacionRecursosController(controlador)));
             tabs.addTab("Actividades", new AgendaSemanalPanel(usuariosCtrl));
@@ -99,6 +103,18 @@ public class VentanaPrincipal extends JFrame {
         subTabs.addTab("Recursos",
                 new EstadisticasRecursosPanel(new EstadisticasRecursosController(controlador)));
         return subTabs;
+    }
+
+    private ReservaController crearReservaController() {
+        ExtractorReservaIA extractor;
+        String geminiKey = System.getenv("GEMINI_API_KEY");
+        if (geminiKey != null && !geminiKey.isBlank()) {
+            extractor = new ExtractorReservaIAGemini(geminiKey);
+        } else {
+            extractor = new ExtractorReservaIAFalso(
+                    ResultadoExtraccionIA.fallo("No se configuró GEMINI_API_KEY. Complete el formulario manualmente."));
+        }
+        return new ReservaController(controlador, extractor);
     }
 
     private void cerrarSesion() {

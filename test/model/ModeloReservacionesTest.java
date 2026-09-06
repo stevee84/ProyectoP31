@@ -7,6 +7,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import model.SolicitudReserva;
+import model.ResultadoReserva;
+
 public class ModeloReservacionesTest {
 
     private ModeloReservaciones modelo;
@@ -120,8 +123,8 @@ public class ModeloReservacionesTest {
         modelo.registrarEmpleado(func);
 
         LocalDateTime manana = LocalDate.now().plusDays(1).atTime(10, 0);
-        modelo.reservarPorCategorias(func, List.of(cat.getId()), "Actividad",
-                manana, manana.plusHours(1));
+        modelo.reservarPorCategorias(new SolicitudReserva(func, List.of(cat.getId()), "Actividad",
+                manana, manana.plusHours(1)));
 
         assertThrows(IllegalStateException.class, () -> {
             modelo.eliminarRecurso("REC-DEL");
@@ -137,8 +140,8 @@ public class ModeloReservacionesTest {
         modelo.registrarEmpleado(func);
 
         LocalDateTime manana = LocalDate.now().plusDays(1).atTime(10, 0);
-        modelo.reservarPorCategorias(func, List.of(cat.getId()), "Actividad emp",
-                manana, manana.plusHours(1));
+        modelo.reservarPorCategorias(new SolicitudReserva(func, List.of(cat.getId()), "Actividad emp",
+                manana, manana.plusHours(1)));
 
         assertThrows(IllegalStateException.class, () -> {
             modelo.eliminarEmpleado("FEMP");
@@ -154,9 +157,11 @@ public class ModeloReservacionesTest {
         modelo.registrarEmpleado(func);
 
         LocalDateTime manana = LocalDate.now().plusDays(1).atTime(8, 0);
-        Reservacion reservacion = modelo.reservarPorCategorias(func, List.of(cat.getId()),
-                "Reunión", manana, manana.plusHours(2));
+        ResultadoReserva resultado = modelo.reservarPorCategorias(new SolicitudReserva(func, List.of(cat.getId()),
+                "Reunión", manana, manana.plusHours(2)));
 
+        assertTrue(resultado.esExito());
+        Reservacion reservacion = resultado.getReservacion();
         assertNotNull(reservacion);
         assertTrue(reservacion.esActiva());
         assertEquals(func, reservacion.getEmpleado());
@@ -173,14 +178,15 @@ public class ModeloReservacionesTest {
         LocalDateTime manana = LocalDate.now().plusDays(1).atTime(10, 0);
 
         // Primera reservación exitosa
-        modelo.reservarPorCategorias(func, List.of(cat.getId()),
-                "Primera", manana, manana.plusHours(2));
+        ResultadoReserva primera = modelo.reservarPorCategorias(new SolicitudReserva(func, List.of(cat.getId()),
+                "Primera", manana, manana.plusHours(2)));
+        assertTrue(primera.esExito());
 
         // Segunda reservación en el mismo horario debe fallar (solo hay 1 recurso en esa categoría)
-        assertThrows(IllegalArgumentException.class, () -> {
-            modelo.reservarPorCategorias(func, List.of(cat.getId()),
-                    "Segunda", manana, manana.plusHours(1));
-        });
+        ResultadoReserva segunda = modelo.reservarPorCategorias(new SolicitudReserva(func, List.of(cat.getId()),
+                "Segunda", manana, manana.plusHours(1)));
+        assertFalse(segunda.esExito());
+        assertFalse(segunda.getCategoriasNoDisponibles().isEmpty());
     }
 
     @Test
@@ -192,8 +198,10 @@ public class ModeloReservacionesTest {
         modelo.registrarEmpleado(func);
 
         LocalDateTime manana = LocalDate.now().plusDays(1).atTime(14, 0);
-        Reservacion reservacion = modelo.reservarPorCategorias(func, List.of(cat.getId()),
-                "Para cancelar", manana, manana.plusHours(1));
+        ResultadoReserva resultado = modelo.reservarPorCategorias(new SolicitudReserva(func, List.of(cat.getId()),
+                "Para cancelar", manana, manana.plusHours(1)));
+        assertTrue(resultado.esExito());
+        Reservacion reservacion = resultado.getReservacion();
 
         assertDoesNotThrow(() -> modelo.cancelarReservacion(reservacion.getId()));
         assertFalse(reservacion.esActiva());

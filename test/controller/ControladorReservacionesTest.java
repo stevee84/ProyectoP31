@@ -3,6 +3,7 @@ package controller;
 import model.Empleado;
 import model.Funcionario;
 import model.Reservacion;
+import model.ResultadoReserva;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -93,9 +94,11 @@ public class ControladorReservacionesTest {
         controlador.iniciarSesion("FTEST", "FTEST");
 
         LocalDateTime manana = LocalDate.now().plusDays(1).atTime(9, 0);
-        Reservacion reservacion = controlador.crearReservacion(
+        ResultadoReserva resultado = controlador.crearReservacion(
                 List.of(catId), "Actividad test", manana, manana.plusHours(1));
 
+        assertTrue(resultado.esExito());
+        Reservacion reservacion = resultado.getReservacion();
         assertNotNull(reservacion);
         assertTrue(reservacion.esActiva());
 

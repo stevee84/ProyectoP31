@@ -218,26 +218,16 @@ public class ModeloReservaciones {
         return null;
     }
 
-    public Reservacion reservarPorCategorias(Empleado empleado, List<String> idsCategorias,
-                                              String descripcionActividad,
-                                              LocalDateTime inicio, LocalDateTime fin) {
-        if (empleado == null) {
-            throw new IllegalArgumentException("El empleado es obligatorio.");
-        }
-        if (idsCategorias == null || idsCategorias.isEmpty()) {
-            throw new IllegalArgumentException("Debe seleccionar al menos una categoría.");
-        }
-        if (inicio == null || fin == null) {
-            throw new IllegalArgumentException("La fecha de inicio y de terminación son obligatorias.");
-        }
-        if (!inicio.isBefore(fin)) {
-            throw new IllegalArgumentException("La hora de inicio debe ser anterior a la de terminación.");
-        }
+    public ResultadoReserva reservarPorCategorias(SolicitudReserva solicitud) {
+        Empleado empleado = solicitud.empleado();
+        List<String> idsCategorias = solicitud.idsCategorias();
+        String descripcionActividad = solicitud.descripcionActividad();
+        LocalDateTime inicio = solicitud.inicio();
+        LocalDateTime fin = solicitud.fin();
 
         // Fase 1 (solo lectura): resolver TODOS los recursos candidatos antes de mutar nada.
-        // Si cualquier categoría se queda sin recurso libre, se lanza la excepción aquí y
-        // "reservaciones" queda exactamente como estaba -> operación todo o nada.
         List<Recurso> recursosAsignados = new ArrayList<>();
+        List<CategoriaRecurso> categoriasNoDisponibles = new ArrayList<>();
         Set<String> categoriasVistas = new HashSet<>();
         for (String idCategoria : idsCategorias) {
             if (!categoriasVistas.add(idCategoria)) {
@@ -246,18 +236,21 @@ public class ModeloReservaciones {
             CategoriaRecurso categoria = buscarOCategoriaInvalida(idCategoria);
             Recurso disponible = primerRecursoDisponible(categoria, inicio, fin, recursosAsignados);
             if (disponible == null) {
-                throw new IllegalArgumentException(
-                        "No hay recursos disponibles en la categoría '" + categoria.getDescripcion()
-                                + "' para el horario solicitado.");
+                categoriasNoDisponibles.add(categoria);
+            } else {
+                recursosAsignados.add(disponible);
             }
-            recursosAsignados.add(disponible);
+        }
+
+        if (!categoriasNoDisponibles.isEmpty()) {
+            return ResultadoReserva.fracaso(categoriasNoDisponibles);
         }
 
         // Fase 2 (mutación): recién aquí se agrega la reservación, una sola vez.
         Reservacion reservacion = new Reservacion(siguienteIdReservacion++, empleado, recursosAsignados,
                 descripcionActividad, inicio, fin);
         reservaciones.add(reservacion);
-        return reservacion;
+        return ResultadoReserva.exito(reservacion);
     }
 
     private Recurso primerRecursoDisponible(CategoriaRecurso categoria, LocalDateTime inicio, LocalDateTime fin,
