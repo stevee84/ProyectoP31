@@ -25,8 +25,11 @@ public record SolicitudReserva (
         if (inicio == null || fin == null) {
             throw new ValidacionException("Las fechas de inicio y fin son obligatorias");
         }
-        if (inicio.isAfter(fin)) {
-            throw new ValidacionException("La hora de inicio no puede ser posterior a la hora finalizada");
+        if (!inicio.isBefore(fin)) {
+            throw new ValidacionException("La hora de inicio debe ser anterior a la hora de fin");
+        }
+        if (inicio.isBefore(LocalDateTime.now())) {
+            throw new ValidacionException("No se pueden crear reservaciones en el pasado.");
         }
         idsCategorias = List.copyOf(idsCategorias);
     }

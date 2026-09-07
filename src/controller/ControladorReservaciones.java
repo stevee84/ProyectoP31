@@ -1,7 +1,5 @@
 package controller;
 
-import exception.DisponibilidadException;
-import exception.RecursoEnUsoException;
 import exception.SesionException;
 import exception.ValidacionException;
 import model.Administrador;
@@ -14,6 +12,7 @@ import model.Recurso;
 import model.Reservacion;
 import model.ResultadoReserva;
 import model.SolicitudReserva;
+import repository.PersistenciaXml;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,6 +21,7 @@ import java.util.List;
 public class ControladorReservaciones {
 
     private final ModeloReservaciones modelo;
+    private PersistenciaXml persistencia;
     private Empleado sesionActual;
 
     public ControladorReservaciones() {
@@ -30,6 +30,22 @@ public class ControladorReservaciones {
 
     public ControladorReservaciones(ModeloReservaciones modelo) {
         this.modelo = modelo;
+    }
+
+    public ControladorReservaciones(ModeloReservaciones modelo, PersistenciaXml persistencia) {
+        this.modelo = modelo;
+        this.persistencia = persistencia;
+    }
+
+    /** Guarda todos los datos a XML. Seguro de llamar desde cualquier hilo. */
+    public void guardarDatos() {
+        if (persistencia != null) {
+            try {
+                persistencia.guardarTodo();
+            } catch (Exception e) {
+                System.err.println("Error al guardar datos: " + e.getMessage());
+            }
+        }
     }
 
     public ModeloReservaciones getModelo() {
@@ -48,6 +64,7 @@ public class ControladorReservaciones {
     public void cambiarContraseña(String nueva) {
         validarSesion();
         sesionActual.cambiarContraseña(nueva);
+        guardarDatos();
     }
 
     public void cerrarSesion() {
@@ -60,24 +77,31 @@ public class ControladorReservaciones {
 
     public boolean registrarAdministrador(String nombre, String id) {
         requireAdmin();
-        return modelo.registrarEmpleado(new Administrador(nombre, id));
+        boolean ok = modelo.registrarEmpleado(new Administrador(nombre, id));
+        if (ok) guardarDatos();
+        return ok;
     }
 
     public boolean registrarFuncionario(String nombre, String id, String telefono) {
         requireAdmin();
-        return modelo.registrarEmpleado(new Funcionario(nombre, id, telefono));
+        boolean ok = modelo.registrarEmpleado(new Funcionario(nombre, id, telefono));
+        if (ok) guardarDatos();
+        return ok;
     }
 
     public boolean actualizarFuncionario(String id, String nombre, String telefono) {
         requireAdmin();
         Funcionario funcionario = buscarFuncionarioOInvalido(id);
         funcionario.actualizarDatos(nombre, id, telefono);
+        guardarDatos();
         return true;
     }
 
     public boolean eliminarFuncionario(String id) {
         requireAdmin();
-        return modelo.eliminarEmpleado(id);
+        boolean ok = modelo.eliminarEmpleado(id);
+        if (ok) guardarDatos();
+        return ok;
     }
 
     public Funcionario buscarFuncionario(String id) {
@@ -101,17 +125,23 @@ public class ControladorReservaciones {
 
     public CategoriaRecurso registrarCategoria(String descripcion) {
         requireAdmin();
-        return modelo.registrarCategoria(descripcion);
+        CategoriaRecurso cat = modelo.registrarCategoria(descripcion);
+        guardarDatos();
+        return cat;
     }
 
     public boolean actualizarCategoria(String id, String descripcion) {
         requireAdmin();
-        return modelo.actualizarCategoria(id, descripcion);
+        boolean ok = modelo.actualizarCategoria(id, descripcion);
+        if (ok) guardarDatos();
+        return ok;
     }
 
     public boolean eliminarCategoria(String id) {
         requireAdmin();
-        return modelo.eliminarCategoria(id);
+        boolean ok = modelo.eliminarCategoria(id);
+        if (ok) guardarDatos();
+        return ok;
     }
 
     public CategoriaRecurso buscarCategoria(String id) {
@@ -135,17 +165,23 @@ public class ControladorReservaciones {
 
     public boolean registrarRecurso(String codigo, String idCategoria, String descripcion) {
         requireAdmin();
-        return modelo.registrarRecurso(codigo, idCategoria, descripcion);
+        boolean ok = modelo.registrarRecurso(codigo, idCategoria, descripcion);
+        if (ok) guardarDatos();
+        return ok;
     }
 
     public boolean actualizarRecurso(String codigo, String idCategoria, String descripcion) {
         requireAdmin();
-        return modelo.actualizarRecurso(codigo, idCategoria, descripcion);
+        boolean ok = modelo.actualizarRecurso(codigo, idCategoria, descripcion);
+        if (ok) guardarDatos();
+        return ok;
     }
 
     public boolean eliminarRecurso(String codigo) {
         requireAdmin();
-        return modelo.eliminarRecurso(codigo);
+        boolean ok = modelo.eliminarRecurso(codigo);
+        if (ok) guardarDatos();
+        return ok;
     }
 
     public Recurso buscarRecurso(String codigo) {
@@ -172,7 +208,9 @@ public class ControladorReservaciones {
         requireFuncionario();
         SolicitudReserva solicitud = new SolicitudReserva(sesionActual, idsCategorias,
                 descripcionActividad, inicio, fin);
-        return modelo.reservarPorCategorias(solicitud);
+        ResultadoReserva resultado = modelo.reservarPorCategorias(solicitud);
+        if (resultado.esExito()) guardarDatos();
+        return resultado;
     }
 
     public void cancelarReservacion(int id) {
@@ -185,6 +223,7 @@ public class ControladorReservaciones {
             throw new SesionException("Solo puede cancelar sus propias reservaciones.");
         }
         reservacion.cancelar();
+        guardarDatos();
     }
 
     public List<Reservacion> listarReservacionesSesionActual() {

@@ -41,15 +41,23 @@ public class CategoriaXmlRepository {
         Element root = doc.getDocumentElement();
         String siguienteId = root.getAttribute("siguienteId");
         if (!siguienteId.isEmpty()) {
-            modelo.setSiguienteIdCategoria(Integer.parseInt(siguienteId));
+            try {
+                modelo.setSiguienteIdCategoria(Integer.parseInt(siguienteId));
+            } catch (NumberFormatException e) {
+                System.err.println("Advertencia: siguienteId de categorías malformado: " + siguienteId);
+            }
         }
 
         NodeList nodos = doc.getElementsByTagName("categoria");
         for (int i = 0; i < nodos.getLength(); i++) {
-            Element elem = (Element) nodos.item(i);
-            String id = elem.getAttribute("id");
-            String descripcion = elem.getAttribute("descripcion");
-            modelo.registrarCategoriaCargada(new CategoriaRecurso(id, descripcion));
+            try {
+                Element elem = (Element) nodos.item(i);
+                String id = elem.getAttribute("id");
+                String descripcion = elem.getAttribute("descripcion");
+                modelo.registrarCategoriaCargada(new CategoriaRecurso(id, descripcion));
+            } catch (Exception e) {
+                System.err.println("Advertencia: se omitió categoría malformada (índice " + i + "): " + e.getMessage());
+            }
         }
     }
 }

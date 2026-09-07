@@ -22,8 +22,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
 
 /**
- * Ventana principal del sistema. Se muestra después de un login exitoso
- * y arma las pestañas según el rol del usuario autenticado.
+ * Ventana principal del sistema. Se muestra despues de un login exitoso
+ * y arma las pestanas segun el rol del usuario autenticado.
  */
 public class VentanaPrincipal extends JFrame {
 
@@ -41,8 +41,9 @@ public class VentanaPrincipal extends JFrame {
         this.usuario = usuario;
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(900, 600);
+        setSize(950, 650);
         setLocationRelativeTo(null);
+        getContentPane().setBackground(EstiloUI.BACKGROUND);
 
         crearMenuBar();
         crearPestanas();
@@ -50,15 +51,19 @@ public class VentanaPrincipal extends JFrame {
 
     private void crearMenuBar() {
         JMenuBar menuBar = new JMenuBar();
+        menuBar.setFont(EstiloUI.NORMAL);
 
-        JMenu menuSesion = new JMenu("Sesión");
+        JMenu menuSesion = new JMenu("Sesion");
+        menuSesion.setFont(EstiloUI.NORMAL);
 
-        JMenuItem itemCambiarClave = new JMenuItem("Cambiar contraseña");
+        JMenuItem itemCambiarClave = new JMenuItem("Cambiar contrasena");
+        itemCambiarClave.setFont(EstiloUI.NORMAL);
         itemCambiarClave.addActionListener(e -> {
             CambioClaveDialog.solicitarCambio(this, usuariosCtrl);
         });
 
-        JMenuItem itemCerrarSesion = new JMenuItem("Cerrar sesión");
+        JMenuItem itemCerrarSesion = new JMenuItem("Cerrar sesion");
+        itemCerrarSesion.setFont(EstiloUI.NORMAL);
         itemCerrarSesion.addActionListener(e -> cerrarSesion());
 
         menuSesion.add(itemCambiarClave);
@@ -71,34 +76,34 @@ public class VentanaPrincipal extends JFrame {
 
     private void crearPestanas() {
         JTabbedPane tabs = new JTabbedPane();
+        tabs.setFont(EstiloUI.BOLD);
 
         if (usuario instanceof Administrador) {
-            // Pestañas de administrador
             tabs.addTab("Funcionarios", new FuncionarioPanel(usuariosCtrl));
-            tabs.addTab("Categorías", new CategoriasPanel(new CategoriaController(controlador)));
+            tabs.addTab("Categorias", new CategoriasPanel(new CategoriaController(controlador)));
             tabs.addTab("Recursos", new RecursosPanel(new RecursoController(controlador)));
-            tabs.addTab("Calendarización",
+            tabs.addTab("Calendarizacion",
                     new CalendarizacionRecursosPanel(new CalendarizacionRecursosController(controlador)));
             tabs.addTab("Actividades", new AgendaSemanalPanel(usuariosCtrl));
-            tabs.addTab("Estadísticas", crearPanelEstadisticas());
+            tabs.addTab("Estadisticas", crearPanelEstadisticas());
         } else {
-            // Pestañas de funcionario
             tabs.addTab("Reservas", new ReservaPanel(crearReservaController()));
-            tabs.addTab("Calendarización",
+            tabs.addTab("Calendarizacion",
                     new CalendarizacionRecursosPanel(new CalendarizacionRecursosController(controlador)));
             tabs.addTab("Actividades", new AgendaSemanalPanel(usuariosCtrl));
-            tabs.addTab("Estadísticas", crearPanelEstadisticas());
+            tabs.addTab("Estadisticas", crearPanelEstadisticas());
         }
 
         add(tabs);
     }
 
     /**
-     * Crea un panel con sub-pestañas para las estadísticas de actividades
-     * y las estadísticas de recursos.
+     * Crea un panel con sub-pestanas para las estadisticas de actividades
+     * y las estadisticas de recursos.
      */
     private JTabbedPane crearPanelEstadisticas() {
         JTabbedPane subTabs = new JTabbedPane();
+        subTabs.setFont(EstiloUI.NORMAL);
         subTabs.addTab("Actividades", new EstadisticasPanel(usuariosCtrl));
         subTabs.addTab("Recursos",
                 new EstadisticasRecursosPanel(new EstadisticasRecursosController(controlador)));
@@ -112,19 +117,19 @@ public class VentanaPrincipal extends JFrame {
             extractor = new ExtractorReservaIAGemini(geminiKey);
         } else {
             extractor = new ExtractorReservaIAFalso(
-                    ResultadoExtraccionIA.fallo("No se configuró GEMINI_API_KEY. Complete el formulario manualmente."));
+                    ResultadoExtraccionIA.fallo("No se configuro GEMINI_API_KEY. Complete el formulario manualmente."));
         }
         return new ReservaController(controlador, extractor);
     }
 
     private void cerrarSesion() {
         int opcion = JOptionPane.showConfirmDialog(this,
-                "¿Desea cerrar la sesión actual?", "Cerrar sesión",
+                "¿Desea cerrar la sesion actual?", "Cerrar sesion",
                 JOptionPane.YES_NO_OPTION);
         if (opcion == JOptionPane.YES_OPTION) {
+            controlador.guardarDatos();
             controlador.cerrarSesion();
             dispose();
-            // Volver a mostrar el login reutilizando el mismo controller
             LoginFrame login = new LoginFrame(usuariosCtrl, empleado -> {
                 new VentanaPrincipal(controlador, usuariosCtrl, empleado).setVisible(true);
             });

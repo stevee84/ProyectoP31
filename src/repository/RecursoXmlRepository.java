@@ -41,14 +41,18 @@ public class RecursoXmlRepository {
 
         NodeList nodos = doc.getElementsByTagName("recurso");
         for (int i = 0; i < nodos.getLength(); i++) {
-            Element elem = (Element) nodos.item(i);
-            String codigo = elem.getAttribute("codigo");
-            String categoriaId = elem.getAttribute("categoriaId");
-            String descripcion = elem.getAttribute("descripcion");
+            try {
+                Element elem = (Element) nodos.item(i);
+                String codigo = elem.getAttribute("codigo");
+                String categoriaId = elem.getAttribute("categoriaId");
+                String descripcion = elem.getAttribute("descripcion");
 
-            CategoriaRecurso categoria = modelo.buscarCategoria(categoriaId);
-            if (categoria != null) {
-                modelo.registrarRecursoCargado(new Recurso(codigo, categoria, descripcion));
+                CategoriaRecurso categoria = modelo.buscarCategoria(categoriaId);
+                if (categoria != null) {
+                    modelo.registrarRecursoCargado(new Recurso(codigo, categoria, descripcion));
+                }
+            } catch (Exception e) {
+                System.err.println("Advertencia: se omitió recurso malformado (índice " + i + "): " + e.getMessage());
             }
         }
     }

@@ -22,10 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Panel de estadísticas de actividades (pestaña "Estadísticas" del mockup):
- * cuenta reservaciones por semana en un rango de fechas y las muestra en
- * tabla y en un gráfico de barras. Solo depende de
- * {@link UsuariosActividadesController}.
+ * Panel de estadisticas de actividades: cuenta reservaciones por semana
+ * en un rango de fechas y las muestra en tabla y en un grafico de barras.
  */
 public class EstadisticasPanel extends JPanel {
 
@@ -51,11 +49,16 @@ public class EstadisticasPanel extends JPanel {
     public EstadisticasPanel(UsuariosActividadesController controller) {
         this.controller = controller;
 
-        setLayout(new BorderLayout(8, 8));
+        setLayout(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
+        setBorder(EstiloUI.margenEstandar());
+        setBackground(EstiloUI.BACKGROUND);
+
         add(construirPanelFiltro(), BorderLayout.NORTH);
 
+        EstiloUI.estilizarTabla(tabla);
         JScrollPane scrollTabla = new JScrollPane(tabla);
         scrollTabla.setPreferredSize(new Dimension(760, 140));
+        scrollTabla.setBorder(EstiloUI.crearTitledBorder("Resultados por semana"));
 
         JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, scrollTabla, grafico);
         split.setResizeWeight(0.4);
@@ -70,14 +73,26 @@ public class EstadisticasPanel extends JPanel {
     }
 
     private JPanel construirPanelFiltro() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panel.add(new JLabel("Desde (dd/MM/aaaa):"));
-        panel.add(campoDesde);
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
+        panel.setBackground(EstiloUI.BACKGROUND);
+        panel.setBorder(EstiloUI.crearTitledBorder("Periodo de consulta"));
+
+        JLabel lblDesde = new JLabel("Desde (dd/MM/aaaa):");
+        JLabel lblHasta = new JLabel("Hasta (dd/MM/aaaa):");
+        EstiloUI.estilizarEtiqueta(lblDesde);
+        EstiloUI.estilizarEtiqueta(lblHasta);
+        EstiloUI.estilizarCampo(campoDesde);
+        EstiloUI.estilizarCampo(campoHasta);
+        EstiloUI.estilizarBoton(btnGenerar);
+
         JButton btnPdf = new JButton("Generar PDF");
         btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Funcionalidad de PDF pendiente de implementación.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+                "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+        EstiloUI.estilizarBoton(btnPdf);
 
-        panel.add(new JLabel("Hasta (dd/MM/aaaa):"));
+        panel.add(lblDesde);
+        panel.add(campoDesde);
+        panel.add(lblHasta);
         panel.add(campoHasta);
         panel.add(btnGenerar);
         panel.add(btnPdf);

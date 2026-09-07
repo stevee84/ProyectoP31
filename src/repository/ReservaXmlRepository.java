@@ -61,41 +61,49 @@ public class ReservaXmlRepository {
         Element root = doc.getDocumentElement();
         String siguienteId = root.getAttribute("siguienteId");
         if (!siguienteId.isEmpty()) {
-            modelo.setSiguienteIdReservacion(Integer.parseInt(siguienteId));
+            try {
+                modelo.setSiguienteIdReservacion(Integer.parseInt(siguienteId));
+            } catch (NumberFormatException e) {
+                System.err.println("Advertencia: siguienteId de reservaciones malformado: " + siguienteId);
+            }
         }
 
         NodeList nodos = doc.getElementsByTagName("reservacion");
         for (int i = 0; i < nodos.getLength(); i++) {
-            Element elem = (Element) nodos.item(i);
+            try {
+                Element elem = (Element) nodos.item(i);
 
-            int id = Integer.parseInt(elem.getAttribute("id"));
-            String empleadoId = elem.getAttribute("empleadoId");
-            String descripcion = elem.getAttribute("descripcionActividad");
-            LocalDateTime inicio = LocalDateTime.parse(elem.getAttribute("inicio"));
-            LocalDateTime fin = LocalDateTime.parse(elem.getAttribute("fin"));
-            String estadoStr = elem.getAttribute("estado");
-            String codigosStr = elem.getAttribute("recursoCodigos");
+                int id = Integer.parseInt(elem.getAttribute("id"));
+                String empleadoId = elem.getAttribute("empleadoId");
+                String descripcion = elem.getAttribute("descripcionActividad");
+                LocalDateTime inicio = LocalDateTime.parse(elem.getAttribute("inicio"));
+                LocalDateTime fin = LocalDateTime.parse(elem.getAttribute("fin"));
+                String estadoStr = elem.getAttribute("estado");
+                String codigosStr = elem.getAttribute("recursoCodigos");
 
-            Empleado empleado = modelo.buscarEmpleado(empleadoId);
-            if (empleado == null) {
-                continue;
-            }
-
-            List<Recurso> recursos = new ArrayList<>();
-            for (String codigo : codigosStr.split(",")) {
-                Recurso recurso = modelo.buscarRecurso(codigo.trim());
-                if (recurso != null) {
-                    recursos.add(recurso);
+                Empleado empleado = modelo.buscarEmpleado(empleadoId);
+                if (empleado == null) {
+                    continue;
                 }
-            }
 
-            if (recursos.isEmpty()) {
-                continue;
-            }
+                List<Recurso> recursos = new ArrayList<>();
+                for (String codigo : codigosStr.split(",")) {
+                    Recurso recurso = modelo.buscarRecurso(codigo.trim());
+                    if (recurso != null) {
+                        recursos.add(recurso);
+                    }
+                }
 
-            Reservacion reservacion = new Reservacion(id, empleado, recursos, descripcion, inicio, fin);
-            reservacion.setEstado(EstadoReservacion.valueOf(estadoStr));
-            modelo.registrarReservacionCargada(reservacion);
+                if (recursos.isEmpty()) {
+                    continue;
+                }
+
+                Reservacion reservacion = new Reservacion(id, empleado, recursos, descripcion, inicio, fin);
+                reservacion.setEstado(EstadoReservacion.valueOf(estadoStr));
+                modelo.registrarReservacionCargada(reservacion);
+            } catch (Exception e) {
+                System.err.println("Advertencia: se omitió reservación malformada (índice " + i + "): " + e.getMessage());
+            }
         }
     }
 }

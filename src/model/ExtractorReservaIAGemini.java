@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -36,7 +37,9 @@ public class ExtractorReservaIAGemini implements ExtractorReservaIA {
 
     public ExtractorReservaIAGemini(String apiKey) {
         this.apiKey = apiKey;
-        this.httpClient = HttpClient.newHttpClient();
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
     }
 
     @Override
@@ -45,6 +48,7 @@ public class ExtractorReservaIAGemini implements ExtractorReservaIA {
         HttpRequest solicitud = HttpRequest.newBuilder()
                 .uri(URI.create(URL_BASE + MODELO + ":generateContent?key=" + apiKey))
                 .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(30))
                 .POST(HttpRequest.BodyPublishers.ofString(cuerpoSolicitud))
                 .build();
 

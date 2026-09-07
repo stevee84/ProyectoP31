@@ -24,6 +24,7 @@ public class ReservaConsultaAdapter implements ReservaConsulta {
     @Override
     public List<InfoReserva> listarEnRango(LocalDateTime desde, LocalDateTime hasta) {
         return controlador.listarReservacionesEnRango(desde, hasta).stream()
+                .filter(Reservacion::esActiva)
                 .map(ReservaConsultaAdapter::toInfoReserva)
                 .sorted((a, b) -> a.inicio().compareTo(b.inicio()))
                 .collect(Collectors.toList());

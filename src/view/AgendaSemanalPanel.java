@@ -20,11 +20,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Panel de la agenda semanal (pestaña "Actividades" del mockup): muestra en
- * una tabla día × hora las actividades programadas, con navegación entre
- * semanas. Solo depende de {@link UsuariosActividadesController}, que a su
- * vez arma la matriz a partir de un {@code consulta.ReservaConsulta}
- * desacoplado del módulo real de reservas.
+ * Panel de la agenda semanal (pestana "Actividades" del mockup): muestra en
+ * una tabla dia x hora las actividades programadas, con navegacion entre
+ * semanas.
  */
 public class AgendaSemanalPanel extends JPanel {
 
@@ -45,21 +43,34 @@ public class AgendaSemanalPanel extends JPanel {
     public AgendaSemanalPanel(UsuariosActividadesController controller) {
         this.controller = controller;
 
-        setLayout(new BorderLayout(8, 8));
+        setLayout(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
+        setBorder(EstiloUI.margenEstandar());
+        setBackground(EstiloUI.BACKGROUND);
+
         add(construirPanelNavegacion(), BorderLayout.NORTH);
 
+        EstiloUI.estilizarTabla(tabla);
         JScrollPane scroll = new JScrollPane(tabla);
         scroll.setPreferredSize(new Dimension(760, 260));
+        scroll.setBorder(EstiloUI.crearTitledBorder("Agenda semanal"));
         add(scroll, BorderLayout.CENTER);
 
         cargarSemana();
     }
 
     private JPanel construirPanelNavegacion() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, EstiloUI.GAP, EstiloUI.GAP));
+        panel.setBackground(EstiloUI.BACKGROUND);
+        panel.setBorder(EstiloUI.crearTitledBorder("Navegacion"));
+
         JButton btnAnterior = new JButton("<< Semana anterior");
         JButton btnHoy = new JButton("Semana actual");
         JButton btnSiguiente = new JButton("Semana siguiente >>");
+
+        EstiloUI.estilizarBoton(btnAnterior);
+        EstiloUI.estilizarBoton(btnHoy);
+        EstiloUI.estilizarBoton(btnSiguiente);
+        EstiloUI.estilizarEtiquetaTitulo(etiquetaSemana);
 
         btnAnterior.addActionListener(e -> {
             semanaActual = semanaActual.minusWeeks(1);
@@ -76,7 +87,8 @@ public class AgendaSemanalPanel extends JPanel {
 
         JButton btnPdf = new JButton("Generar PDF");
         btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Funcionalidad de PDF pendiente de implementación.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+                "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+        EstiloUI.estilizarBoton(btnPdf);
 
         panel.add(btnAnterior);
         panel.add(etiquetaSemana);
@@ -131,10 +143,10 @@ public class AgendaSemanalPanel extends JPanel {
         return switch (dia) {
             case MONDAY -> "Lunes";
             case TUESDAY -> "Martes";
-            case WEDNESDAY -> "Miércoles";
+            case WEDNESDAY -> "Miercoles";
             case THURSDAY -> "Jueves";
             case FRIDAY -> "Viernes";
-            case SATURDAY -> "Sábado";
+            case SATURDAY -> "Sabado";
             case SUNDAY -> "Domingo";
         };
     }

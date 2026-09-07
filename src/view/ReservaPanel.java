@@ -2,6 +2,7 @@ package view;
 
 import controller.ReservaController;
 import javax.swing.*;
+import javax.swing.SwingWorker;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import model.CategoriaRecurso;
@@ -32,20 +33,27 @@ public class ReservaPanel extends JPanel {
     private JTextField txtHoraInicio;
     private JTextField txtHoraFin;
     private JTextField txtFrase;
+    private JButton btnLlenarConIA;
     private JList<CategoriaRecurso> listaCategorias;
 
     public ReservaPanel(ReservaController controlador) {
         this.controlador = controlador;
-        setLayout(new BorderLayout(10, 10));
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setLayout(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
+        setBorder(EstiloUI.margenEstandar());
+        setBackground(EstiloUI.BACKGROUND);
 
-        // --- Frase en lenguaje natural + botón para llenar con IA ---
+        // --- Frase en lenguaje natural + boton para llenar con IA ---
         txtFrase = new JTextField();
-        JButton btnLlenarConIA = new JButton("Extraer con IA");
+        EstiloUI.estilizarCampo(txtFrase);
+        btnLlenarConIA = new JButton("Extraer con IA");
+        EstiloUI.estilizarBotonPrimario(btnLlenarConIA);
         btnLlenarConIA.addActionListener(e -> llenarConIA());
 
-        JPanel panelFrase = new JPanel(new BorderLayout(5, 5));
-        panelFrase.add(new JLabel("Frase:"), BorderLayout.WEST);
+        JPanel panelFrase = new JPanel(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
+        panelFrase.setBackground(EstiloUI.BACKGROUND);
+        JLabel lblFrase = new JLabel("Frase:");
+        EstiloUI.estilizarEtiqueta(lblFrase);
+        panelFrase.add(lblFrase, BorderLayout.WEST);
         panelFrase.add(txtFrase, BorderLayout.CENTER);
         panelFrase.add(btnLlenarConIA, BorderLayout.EAST);
 
@@ -54,25 +62,45 @@ public class ReservaPanel extends JPanel {
         txtFecha = new JTextField("aaaa-mm-dd", 10);
         txtHoraInicio = new JTextField("HH:mm", 6);
         txtHoraFin = new JTextField("HH:mm", 6);
+        EstiloUI.estilizarCampo(txtActividad);
+        EstiloUI.estilizarCampo(txtFecha);
+        EstiloUI.estilizarCampo(txtHoraInicio);
+        EstiloUI.estilizarCampo(txtHoraFin);
 
-        JPanel panelCampos = new JPanel(new GridLayout(2, 4, 5, 5));
-        panelCampos.add(new JLabel("Actividad:"));
-        panelCampos.add(txtActividad);
-        panelCampos.add(new JLabel("Fecha:"));
-        panelCampos.add(txtFecha);
-        panelCampos.add(new JLabel("Hora inicio:"));
-        panelCampos.add(txtHoraInicio);
-        panelCampos.add(new JLabel("Hora fin:"));
-        panelCampos.add(txtHoraFin);
+        JPanel panelCampos = new JPanel(new GridBagLayout());
+        panelCampos.setBackground(EstiloUI.BACKGROUND);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(4, 4, 4, 4);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        JPanel panelCamposCompleto = new JPanel(new BorderLayout(5, 5));
+        String[] etiquetas = {"Actividad:", "Fecha:", "Hora inicio:", "Hora fin:"};
+        JTextField[] campos = {txtActividad, txtFecha, txtHoraInicio, txtHoraFin};
+        for (int i = 0; i < etiquetas.length; i++) {
+            JLabel lbl = new JLabel(etiquetas[i]);
+            EstiloUI.estilizarEtiqueta(lbl);
+            gbc.gridx = (i % 2) * 2;
+            gbc.gridy = i / 2;
+            gbc.anchor = GridBagConstraints.EAST;
+            gbc.weightx = 0;
+            panelCampos.add(lbl, gbc);
+            gbc.gridx = (i % 2) * 2 + 1;
+            gbc.anchor = GridBagConstraints.WEST;
+            gbc.weightx = 1.0;
+            panelCampos.add(campos[i], gbc);
+        }
+
+        JPanel panelCamposCompleto = new JPanel(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
+        panelCamposCompleto.setBackground(EstiloUI.BACKGROUND);
         panelCamposCompleto.add(panelFrase, BorderLayout.NORTH);
         panelCamposCompleto.add(panelCampos, BorderLayout.SOUTH);
 
-        // --- Lista de categorías, selección múltiple ---
+        // --- Lista de categorias, seleccion multiple ---
         listaCategorias = new JList<>();
+        listaCategorias.setFont(EstiloUI.NORMAL);
         listaCategorias.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         listaCategorias.setVisibleRowCount(4);
+        listaCategorias.setSelectionBackground(EstiloUI.PRIMARY);
+        listaCategorias.setSelectionForeground(Color.WHITE);
         listaCategorias.setCellRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index,
@@ -85,45 +113,44 @@ public class ReservaPanel extends JPanel {
             }
         });
         JScrollPane scrollCategorias = new JScrollPane(listaCategorias);
-        scrollCategorias.setBorder(BorderFactory.createTitledBorder("Categorías requeridas (selección múltiple)"));
+        scrollCategorias.setBorder(EstiloUI.crearTitledBorder("Categorias requeridas (seleccion multiple)"));
         cargarCategorias();
 
         JButton btnAplicar = new JButton("Aplicar");
-        btnAplicar.addActionListener(e -> aplicarReserva());
-
         JButton btnCancelarSeleccionada = new JButton("Cancelar reserva seleccionada");
-        btnCancelarSeleccionada.addActionListener(e -> cancelarReservaSeleccionada());
-
         JButton btnLimpiar = new JButton("Limpiar");
-        btnLimpiar.addActionListener(e -> limpiarFormulario());
-
         JButton btnGenerarPdf = new JButton("Generar PDF");
         btnGenerarPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Funcionalidad de PDF pendiente de implementación.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+                "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
 
-        JPanel panelBotones = new JPanel(new FlowLayout());
-        panelBotones.add(btnAplicar);
-        panelBotones.add(btnCancelarSeleccionada);
-        panelBotones.add(btnLimpiar);
-        panelBotones.add(btnGenerarPdf);
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, EstiloUI.GAP, EstiloUI.GAP));
+        panelBotones.setBackground(EstiloUI.BACKGROUND);
+        for (JButton btn : new JButton[]{btnAplicar, btnCancelarSeleccionada, btnLimpiar, btnGenerarPdf}) {
+            EstiloUI.estilizarBoton(btn);
+            panelBotones.add(btn);
+        }
 
-        JPanel panelFormulario = new JPanel(new BorderLayout(5, 5));
-        panelFormulario.setBorder(BorderFactory.createTitledBorder("Nueva reserva"));
+        btnAplicar.addActionListener(e -> aplicarReserva());
+        btnCancelarSeleccionada.addActionListener(e -> cancelarReservaSeleccionada());
+        btnLimpiar.addActionListener(e -> limpiarFormulario());
+
+        JPanel panelFormulario = new JPanel(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
+        panelFormulario.setBackground(EstiloUI.BACKGROUND);
+        panelFormulario.setBorder(EstiloUI.crearTitledBorder("Nueva reserva"));
         panelFormulario.add(panelCamposCompleto, BorderLayout.NORTH);
         panelFormulario.add(scrollCategorias, BorderLayout.CENTER);
         panelFormulario.add(panelBotones, BorderLayout.SOUTH);
 
         // --- Tabla "Mis reservas" ---
         DefaultTableModel modeloTabla = new DefaultTableModel(
-                new String[]{"Id", "Actividad", "Fecha", "Horario", "Recursos", "Estado"},
-                0
+                new String[]{"Id", "Actividad", "Fecha", "Horario", "Recursos", "Estado"}, 0
         );
-
         tablaReservas = new JTable(modeloTabla);
         tablaReservas.setDefaultEditor(Object.class, null);
+        EstiloUI.estilizarTabla(tablaReservas);
 
         JScrollPane scrollTabla = new JScrollPane(tablaReservas);
-        scrollTabla.setBorder(BorderFactory.createTitledBorder("Mis reservas"));
+        scrollTabla.setBorder(EstiloUI.crearTitledBorder("Mis reservas"));
 
         add(panelFormulario, BorderLayout.NORTH);
         add(scrollTabla, BorderLayout.CENTER);
@@ -160,7 +187,6 @@ public class ReservaPanel extends JPanel {
     }
 
     private void aplicarReserva() {
-        // --- Parsear fecha y horas. Si el formato está mal, avisamos y no seguimos. ---
         LocalDate fecha;
         LocalTime horaInicio;
         LocalTime horaFin;
@@ -171,16 +197,15 @@ public class ReservaPanel extends JPanel {
         } catch (DateTimeParseException error) {
             JOptionPane.showMessageDialog(this,
                     "Revise el formato: fecha aaaa-mm-dd, horas HH:mm (ej. 09:00).",
-                    "Datos inválidos", JOptionPane.WARNING_MESSAGE);
+                    "Datos invalidos", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        // --- Categorías seleccionadas en la lista ---
         List<CategoriaRecurso> categoriasSeleccionadas = listaCategorias.getSelectedValuesList();
         if (categoriasSeleccionadas.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                    "Debe seleccionar al menos una categoría.",
-                    "Datos inválidos", JOptionPane.WARNING_MESSAGE);
+                    "Debe seleccionar al menos una categoria.",
+                    "Datos invalidos", JOptionPane.WARNING_MESSAGE);
             return;
         }
         List<String> idsCategorias = categoriasSeleccionadas.stream()
@@ -190,12 +215,11 @@ public class ReservaPanel extends JPanel {
         LocalDateTime inicio = LocalDateTime.of(fecha, horaInicio);
         LocalDateTime fin = LocalDateTime.of(fecha, horaFin);
 
-        // --- Intentar la reserva. SolicitudReserva valida lo que falte (actividad vacía, etc.) ---
         ResultadoReserva resultado;
         try {
             resultado = controlador.crearReservacion(idsCategorias, txtActividad.getText().trim(), inicio, fin);
         } catch (RuntimeException error) {
-            JOptionPane.showMessageDialog(this, error.getMessage(), "Datos inválidos",
+            JOptionPane.showMessageDialog(this, error.getMessage(), "Datos invalidos",
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -212,7 +236,6 @@ public class ReservaPanel extends JPanel {
             JOptionPane.showMessageDialog(this,
                     "No hay disponibilidad en: " + categorias + ". Corrija e intente de nuevo.",
                     "Sin disponibilidad", JOptionPane.WARNING_MESSAGE);
-            // OJO: a propósito NO se limpia el formulario acá -> el funcionario puede corregir y reintentar.
         }
     }
 
@@ -230,42 +253,61 @@ public class ReservaPanel extends JPanel {
         if (frase.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "Escriba una frase describiendo la reserva antes de extraer.",
-                    "Frase vacía", JOptionPane.WARNING_MESSAGE);
+                    "Frase vacia", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        ResultadoExtraccionIA resultado = controlador.extraerDatosDesdeFrase(frase);
+        btnLlenarConIA.setEnabled(false);
+        btnLlenarConIA.setText("Extrayendo...");
 
-        if (!resultado.esExito()) {
-            JOptionPane.showMessageDialog(this,
-                    "No se pudo extraer la información: " + resultado.getMensajeError()
-                            + "\nPuede completar el formulario manualmente.",
-                    "Extracción con IA falló", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        new SwingWorker<ResultadoExtraccionIA, Void>() {
+            @Override
+            protected ResultadoExtraccionIA doInBackground() {
+                return controlador.extraerDatosDesdeFrase(frase);
+            }
 
-        // Rellenamos SOLO lo que la IA logró identificar; lo que vino nulo se deja
-        // como estaba, para que el funcionario lo complete a mano.
-        DatosReservaExtraidos datos = resultado.getDatos();
+            @Override
+            protected void done() {
+                btnLlenarConIA.setEnabled(true);
+                btnLlenarConIA.setText("Extraer con IA");
+                try {
+                    ResultadoExtraccionIA resultado = get();
 
-        if (datos.descripcionActividad() != null) {
-            txtActividad.setText(datos.descripcionActividad());
-        }
-        if (datos.fecha() != null) {
-            txtFecha.setText(datos.fecha().format(FORMATO_FECHA));
-        }
-        if (datos.horaInicio() != null) {
-            txtHoraInicio.setText(datos.horaInicio().format(FORMATO_HORA));
-        }
-        if (datos.horaFin() != null) {
-            txtHoraFin.setText(datos.horaFin().format(FORMATO_HORA));
-        }
-        if (!datos.idsCategorias().isEmpty()) {
-            seleccionarCategoriasPorId(datos.idsCategorias());
-        }
+                    if (!resultado.esExito()) {
+                        JOptionPane.showMessageDialog(ReservaPanel.this,
+                                "No se pudo extraer la informacion: " + resultado.getMensajeError()
+                                        + "\nPuede completar el formulario manualmente.",
+                                "Extraccion con IA fallo", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
 
-        JOptionPane.showMessageDialog(this,
-                "Formulario rellenado con IA. Revise y modifique lo que haga falta antes de aplicar.");
+                    DatosReservaExtraidos datos = resultado.getDatos();
+
+                    if (datos.descripcionActividad() != null) {
+                        txtActividad.setText(datos.descripcionActividad());
+                    }
+                    if (datos.fecha() != null) {
+                        txtFecha.setText(datos.fecha().format(FORMATO_FECHA));
+                    }
+                    if (datos.horaInicio() != null) {
+                        txtHoraInicio.setText(datos.horaInicio().format(FORMATO_HORA));
+                    }
+                    if (datos.horaFin() != null) {
+                        txtHoraFin.setText(datos.horaFin().format(FORMATO_HORA));
+                    }
+                    if (!datos.idsCategorias().isEmpty()) {
+                        seleccionarCategoriasPorId(datos.idsCategorias());
+                    }
+
+                    JOptionPane.showMessageDialog(ReservaPanel.this,
+                            "Formulario rellenado con IA. Revise y modifique lo que haga falta antes de aplicar.");
+                } catch (Exception error) {
+                    JOptionPane.showMessageDialog(ReservaPanel.this,
+                            "Error al extraer datos con IA: " + error.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
     private void seleccionarCategoriasPorId(List<String> idsCategorias) {

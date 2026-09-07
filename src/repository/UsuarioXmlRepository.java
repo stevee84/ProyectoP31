@@ -51,24 +51,28 @@ public class UsuarioXmlRepository {
 
         NodeList nodos = doc.getElementsByTagName("empleado");
         for (int i = 0; i < nodos.getLength(); i++) {
-            Element elem = (Element) nodos.item(i);
-            String id = elem.getAttribute("id");
-            String nombre = elem.getAttribute("nombre");
-            String clave = elem.getAttribute("clave");
-            boolean firstLog = Boolean.parseBoolean(elem.getAttribute("firstLog"));
-            String rol = elem.getAttribute("rol");
+            try {
+                Element elem = (Element) nodos.item(i);
+                String id = elem.getAttribute("id");
+                String nombre = elem.getAttribute("nombre");
+                String clave = elem.getAttribute("clave");
+                boolean firstLog = Boolean.parseBoolean(elem.getAttribute("firstLog"));
+                String rol = elem.getAttribute("rol");
 
-            Empleado empleado;
-            if ("admin".equals(rol)) {
-                empleado = new Administrador(nombre, id);
-            } else {
-                String telefono = elem.getAttribute("telefono");
-                empleado = new Funcionario(nombre, id, telefono);
+                Empleado empleado;
+                if ("admin".equals(rol)) {
+                    empleado = new Administrador(nombre, id);
+                } else {
+                    String telefono = elem.getAttribute("telefono");
+                    empleado = new Funcionario(nombre, id, telefono);
+                }
+
+                empleado.setPass(clave);
+                empleado.setFirstLog(firstLog);
+                modelo.registrarEmpleadoCargado(empleado);
+            } catch (Exception e) {
+                System.err.println("Advertencia: se omitió empleado malformado (índice " + i + "): " + e.getMessage());
             }
-
-            empleado.setPass(clave);
-            empleado.setFirstLog(firstLog);
-            modelo.registrarEmpleadoCargado(empleado);
         }
     }
 }

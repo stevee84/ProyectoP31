@@ -25,14 +25,14 @@ public class PersistenciaXml {
         this(modelo, "data");
     }
 
-    public void guardarTodo() {
+    public synchronized void guardarTodo() {
         usuarioRepo.guardar(modelo);
         categoriaRepo.guardar(modelo);
         recursoRepo.guardar(modelo);
         reservaRepo.guardar(modelo);
     }
 
-    public void cargarTodo() {
+    public synchronized void cargarTodo() {
         usuarioRepo.cargar(modelo);
         categoriaRepo.cargar(modelo);
         recursoRepo.cargar(modelo);
