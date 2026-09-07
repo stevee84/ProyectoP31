@@ -75,6 +75,13 @@ public class CalendarizacionRecursosPanel extends JPanel {
         add(scrollTabla, BorderLayout.CENTER);
 
         cargarCategorias();
+
+        addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
+                cargarCategorias();
+            }
+        });
+
         btnMostrar.addActionListener(e -> mostrarCalendarizacion());
     }
 

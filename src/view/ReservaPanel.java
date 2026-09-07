@@ -115,6 +115,14 @@ public class ReservaPanel extends JPanel {
         JScrollPane scrollCategorias = new JScrollPane(listaCategorias);
         scrollCategorias.setBorder(EstiloUI.crearTitledBorder("Categorias requeridas (seleccion multiple)"));
         cargarCategorias();
+        cargarReservas();
+
+        addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
+                cargarCategorias();
+                cargarReservas();
+            }
+        });
 
         JButton btnAplicar = new JButton("Aplicar");
         JButton btnCancelarSeleccionada = new JButton("Cancelar reserva seleccionada");

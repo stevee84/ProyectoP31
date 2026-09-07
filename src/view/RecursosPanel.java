@@ -119,6 +119,15 @@ public class RecursosPanel extends JPanel {
 
         cargarCategorias();
         cargarRecursos();
+
+        // Recargar categorías y recursos cada vez que esta pestaña se hace visible
+        addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
+                cargarCategorias();
+                cargarRecursos();
+            }
+        });
+
         btnNuevo.addActionListener(e -> nuevoRecurso());
         btnGuardar.addActionListener(e -> guardarRecurso());
         btnLimpiar.addActionListener(e -> limpiarCampos());
