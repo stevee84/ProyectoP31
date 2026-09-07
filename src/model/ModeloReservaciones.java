@@ -27,7 +27,6 @@ public class ModeloReservaciones {
     public ModeloReservaciones() {
         inicializarEmpleados();
         inicializarCategorias();
-        inicializarRecursosYReservas();
     }
 
     /**
@@ -40,86 +39,12 @@ public class ModeloReservaciones {
 
     private void inicializarEmpleados() {
         registrarEmpleado(new Administrador("Administrador", "ADMIN"));
-        registrarEmpleado(new Funcionario("Steve Moya", "SMOYA", "8888-1111"));
-        registrarEmpleado(new Funcionario("Josua Pérez", "JPEREZ", "8888-2222"));
-        registrarEmpleado(new Funcionario("Scott Ramírez", "SRAMIREZ", "8888-3333"));
-        registrarEmpleado(new Funcionario("María López", "MLOPEZ", "8888-4444"));
-        registrarEmpleado(new Funcionario("Carlos Ureña", "CURENA", "8888-5555"));
     }
 
     private void inicializarCategorias() {
-        registrarCategoria("Sala para 10 personas");   // CAT-000001
-        registrarCategoria("Laptop Windows");           // CAT-000002
-        registrarCategoria("Sala de juntas");           // CAT-000003
-        registrarCategoria("Proyector");                // CAT-000004
-        registrarCategoria("Laboratorio de cómputo");   // CAT-000005
-    }
-
-    private void inicializarRecursosYReservas() {
-        // --- Recursos ---
-        registrarRecurso("SALA-101", "CAT-000001", "Sala 101 - Edificio A");
-        registrarRecurso("SALA-102", "CAT-000001", "Sala 102 - Edificio A");
-        registrarRecurso("SALA-201", "CAT-000001", "Sala 201 - Edificio B");
-        registrarRecurso("LAP-001", "CAT-000002", "Laptop Dell Latitude #1");
-        registrarRecurso("LAP-002", "CAT-000002", "Laptop Dell Latitude #2");
-        registrarRecurso("LAP-003", "CAT-000002", "Laptop HP ProBook #3");
-        registrarRecurso("JUNTAS-A", "CAT-000003", "Sala de juntas - Piso 1");
-        registrarRecurso("JUNTAS-B", "CAT-000003", "Sala de juntas - Piso 2");
-        registrarRecurso("PROY-01", "CAT-000004", "Proyector Epson #1");
-        registrarRecurso("PROY-02", "CAT-000004", "Proyector Epson #2");
-        registrarRecurso("LAB-A", "CAT-000005", "Laboratorio A - 30 PCs");
-        registrarRecurso("LAB-B", "CAT-000005", "Laboratorio B - 25 PCs");
-
-        // --- Reservaciones de ejemplo (futuras para que sean válidas) ---
-        LocalDate manana = LocalDate.now().plusDays(1);
-        LocalDate pasado = LocalDate.now().plusDays(2);
-        LocalDate enTres = LocalDate.now().plusDays(3);
-
-        Empleado steve = buscarEmpleado("SMOYA");
-        Empleado josua = buscarEmpleado("JPEREZ");
-        Empleado scott = buscarEmpleado("SRAMIREZ");
-        Empleado maria = buscarEmpleado("MLOPEZ");
-
-        // Steve reserva Sala 101 mañana 8-10am
-        crearReservaQuemada(steve, List.of(buscarRecurso("SALA-101")),
-                "Reunión de proyecto EIF206",
-                manana.atTime(8, 0), manana.atTime(10, 0));
-
-        // Steve reserva Laptop mañana 10-12
-        crearReservaQuemada(steve, List.of(buscarRecurso("LAP-001")),
-                "Desarrollo de módulo de reservas",
-                manana.atTime(10, 0), manana.atTime(12, 0));
-
-        // Josua reserva Sala de juntas pasado mañana 9-11
-        crearReservaQuemada(josua, List.of(buscarRecurso("JUNTAS-A")),
-                "Presentación avance del proyecto",
-                pasado.atTime(9, 0), pasado.atTime(11, 0));
-
-        // Josua reserva Lab A pasado mañana 13-15
-        crearReservaQuemada(josua, List.of(buscarRecurso("LAB-A")),
-                "Práctica de laboratorio",
-                pasado.atTime(13, 0), pasado.atTime(15, 0));
-
-        // Scott reserva Proyector + Sala 201 en 3 días 14-16
-        crearReservaQuemada(scott, List.of(buscarRecurso("PROY-01"), buscarRecurso("SALA-201")),
-                "Capacitación sobre API REST",
-                enTres.atTime(14, 0), enTres.atTime(16, 0));
-
-        // María reserva Lab B mañana 8-10
-        crearReservaQuemada(maria, List.of(buscarRecurso("LAB-B")),
-                "Taller de programación Java",
-                manana.atTime(8, 0), manana.atTime(10, 0));
-
-        // María reserva Sala 102 en 3 días 10-12
-        crearReservaQuemada(maria, List.of(buscarRecurso("SALA-102")),
-                "Reunión con tutor",
-                enTres.atTime(10, 0), enTres.atTime(12, 0));
-    }
-
-    private void crearReservaQuemada(Empleado empleado, List<Recurso> recursos,
-                                      String descripcion, LocalDateTime inicio, LocalDateTime fin) {
-        Reservacion r = new Reservacion(siguienteIdReservacion++, empleado, recursos, descripcion, inicio, fin);
-        reservaciones.add(r);
+        registrarCategoria("Sala para 10 personas");
+        registrarCategoria("Laptop Windows");
+        registrarCategoria("Sala de juntas");
     }
 
     public CategoriaRecurso registrarCategoria(String descripcion) {
