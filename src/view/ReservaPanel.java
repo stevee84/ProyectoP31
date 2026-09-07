@@ -115,7 +115,6 @@ public class ReservaPanel extends JPanel {
         JScrollPane scrollCategorias = new JScrollPane(listaCategorias);
         scrollCategorias.setBorder(EstiloUI.crearTitledBorder("Categorias requeridas (seleccion multiple)"));
         cargarCategorias();
-        cargarReservas();
 
         addHierarchyListener(e -> {
             if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
