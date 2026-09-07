@@ -2,37 +2,42 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Panel de grafico de barras verticales con estilo limpio:
+ * fondo blanco, borde negro, titulo centrado en negritas,
+ * leyenda inferior, ejes con valores decimales y gridlines.
+ */
 public class GraficaRecursosPanel extends JPanel {
-
-    private static final Color[] PALETA = {
-        new Color(41, 128, 185),   // blue
-        new Color(39, 174, 96),    // green
-        new Color(192, 57, 43),    // red
-        new Color(142, 68, 173),   // purple
-        new Color(243, 156, 18),   // orange
-        new Color(22, 160, 133),   // teal
-        new Color(211, 84, 0),     // dark orange
-        new Color(44, 62, 80)      // dark blue
-    };
 
     private List<String> categorias;
     private List<Integer> cantidades;
+    private String titulo = "Grafico";
+    private String leyenda = "Datos";
+    private Color colorBarras = new Color(41, 128, 185); // azul por defecto
 
     public GraficaRecursosPanel() {
         categorias = new ArrayList<>();
         cantidades = new ArrayList<>();
-        setBackground(EstiloUI.SURFACE);
-        setBorder(EstiloUI.crearTitledBorder("Grafica de barras"));
+        setBackground(Color.WHITE);
+        setBorder(BorderFactory.createCompoundBorder(
+                EstiloUI.crearTitledBorder("Grafico"),
+                BorderFactory.createLineBorder(Color.BLACK, 1)
+        ));
     }
 
-    public void actualizarDatos(
-            List<String> nuevasCategorias,
-            List<Integer> nuevasCantidades
-    ) {
+    /** Configura el titulo centrado del grafico y la etiqueta de leyenda. */
+    public void configurar(String titulo, String leyenda, Color color) {
+        this.titulo = titulo;
+        this.leyenda = leyenda;
+        this.colorBarras = color;
+        repaint();
+    }
+
+    public void actualizarDatos(List<String> nuevasCategorias, List<Integer> nuevasCantidades) {
         categorias = new ArrayList<>(nuevasCategorias);
         cantidades = new ArrayList<>(nuevasCantidades);
         repaint();
@@ -46,113 +51,141 @@ public class GraficaRecursosPanel extends JPanel {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
 
+        Insets ins = getInsets();
+        int areaX = ins.left;
+        int areaY = ins.top;
+        int areaW = getWidth() - ins.left - ins.right;
+        int areaH = getHeight() - ins.top - ins.bottom;
+
+        // Fondo blanco interior
+        g2.setColor(Color.WHITE);
+        g2.fillRect(areaX, areaY, areaW, areaH);
+
         if (categorias.isEmpty()) {
             g2.setColor(EstiloUI.TEXT_LIGHT);
             g2.setFont(EstiloUI.NORMAL);
-            g2.drawString("No hay datos para mostrar.", 20, 40);
+            g2.drawString("No hay datos para mostrar.", areaX + 20, areaY + 40);
             return;
         }
 
-        int margenIzquierdo = 50;
-        int margenDerecho = 20;
-        int margenSuperior = 50;
-        int margenInferior = 70;
+        // Margenes internos
+        int margenIzq = 55;
+        int margenDer = 15;
+        int margenSup = 35;
+        int margenInf = 55;
 
-        int anchoDisponible = getWidth() - margenIzquierdo - margenDerecho;
-        int altoDisponible = getHeight() - margenSuperior - margenInferior;
+        int chartX = areaX + margenIzq;
+        int chartY = areaY + margenSup;
+        int chartW = areaW - margenIzq - margenDer;
+        int chartH = areaH - margenSup - margenInf;
 
-        if (anchoDisponible <= 0 || altoDisponible <= 0) return;
+        if (chartW <= 0 || chartH <= 0) return;
 
-        int cantidadMayor = 1;
-        for (int cantidad : cantidades) {
-            if (cantidad > cantidadMayor) {
-                cantidadMayor = cantidad;
-            }
+        // Titulo centrado en negritas
+        g2.setColor(Color.BLACK);
+        g2.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        FontMetrics fmTitulo = g2.getFontMetrics();
+        int tituloW = fmTitulo.stringWidth(titulo);
+        g2.drawString(titulo, areaX + (areaW - tituloW) / 2, areaY + margenSup - 10);
+
+        // Calcular maximo
+        int maxVal = 1;
+        for (int c : cantidades) {
+            if (c > maxVal) maxVal = c;
         }
 
-        // Axes
-        g2.setColor(EstiloUI.BORDER);
+        // Escala Y: dividir en 8 pasos (0.00, 0.25, 0.50, ... hasta maxVal)
+        int numDivisiones = 8;
+        double paso = (double) maxVal / numDivisiones;
+
+        // Gridlines y etiquetas Y
+        g2.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        FontMetrics fmY = g2.getFontMetrics();
+        for (int i = 0; i <= numDivisiones; i++) {
+            double valor = i * paso;
+            int y = chartY + chartH - (int) (i * chartH / (double) numDivisiones);
+
+            // Gridline
+            g2.setColor(new Color(200, 200, 200));
+            g2.setStroke(new BasicStroke(0.5f));
+            if (i > 0) {
+                g2.drawLine(chartX, y, chartX + chartW, y);
+            }
+
+            // Etiqueta Y
+            g2.setColor(Color.BLACK);
+            String etiqueta = String.format("%.2f", valor);
+            int etqW = fmY.stringWidth(etiqueta);
+            g2.drawString(etiqueta, chartX - etqW - 4, y + fmY.getAscent() / 2 - 1);
+        }
+
+        // Ejes
+        g2.setColor(Color.BLACK);
         g2.setStroke(new BasicStroke(1.5f));
-        g2.drawLine(margenIzquierdo, margenSuperior, margenIzquierdo, margenSuperior + altoDisponible);
-        g2.drawLine(margenIzquierdo, margenSuperior + altoDisponible,
-                margenIzquierdo + anchoDisponible, margenSuperior + altoDisponible);
+        g2.drawLine(chartX, chartY, chartX, chartY + chartH);
+        g2.drawLine(chartX, chartY + chartH, chartX + chartW, chartY + chartH);
 
-        // Grid lines
-        g2.setStroke(new BasicStroke(0.5f));
-        g2.setColor(new Color(220, 220, 220));
-        int gridLines = 4;
-        for (int i = 1; i <= gridLines; i++) {
-            int y = margenSuperior + altoDisponible - (i * altoDisponible / gridLines);
-            g2.drawLine(margenIzquierdo + 1, y, margenIzquierdo + anchoDisponible, y);
-            // Y-axis labels
-            g2.setColor(EstiloUI.TEXT_LIGHT);
-            g2.setFont(EstiloUI.SMALL);
-            String val = String.valueOf(i * cantidadMayor / gridLines);
-            FontMetrics fmSmall = g2.getFontMetrics();
-            g2.drawString(val, margenIzquierdo - fmSmall.stringWidth(val) - 5, y + fmSmall.getAscent() / 2);
-            g2.setColor(new Color(220, 220, 220));
-        }
+        // Etiqueta eje Y: "Cantidad" rotada
+        g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        Graphics2D g2r = (Graphics2D) g2.create();
+        FontMetrics fmEjeY = g2r.getFontMetrics();
+        String ejeY = "Cantidad";
+        g2r.setColor(Color.BLACK);
+        g2r.translate(areaX + 14, chartY + (chartH + fmEjeY.stringWidth(ejeY)) / 2);
+        g2r.rotate(-Math.PI / 2);
+        g2r.drawString(ejeY, 0, 0);
+        g2r.dispose();
 
-        int espacio = anchoDisponible / categorias.size();
-        int anchoBarra = Math.min(60, espacio * 2 / 3);
-        int radioEsquina = 6;
+        // Barras
+        int n = categorias.size();
+        int espacio = chartW / n;
+        int anchoBarra = Math.min(50, espacio * 2 / 3);
 
-        for (int i = 0; i < categorias.size(); i++) {
+        for (int i = 0; i < n; i++) {
             int cantidad = cantidades.get(i);
-            int altoBarra = cantidad * altoDisponible / cantidadMayor;
+            int altoBarra = (int) ((double) cantidad / maxVal * chartH);
 
-            int posicionX = margenIzquierdo + (i * espacio) + ((espacio - anchoBarra) / 2);
-            int posicionY = margenSuperior + altoDisponible - altoBarra;
+            int bx = chartX + i * espacio + (espacio - anchoBarra) / 2;
+            int by = chartY + chartH - altoBarra;
 
-            Color colorBarra = PALETA[i % PALETA.length];
+            // Barra con color solido
+            g2.setColor(colorBarras);
+            g2.fill(new Rectangle2D.Double(bx, by, anchoBarra, altoBarra));
 
-            // Gradient fill with rounded top
-            GradientPaint gradiente = new GradientPaint(
-                    posicionX, posicionY, colorBarra,
-                    posicionX, posicionY + altoBarra, colorBarra.darker()
-            );
-            g2.setPaint(gradiente);
+            // Borde de la barra
+            g2.setColor(colorBarras.darker());
+            g2.setStroke(new BasicStroke(1f));
+            g2.draw(new Rectangle2D.Double(bx, by, anchoBarra, altoBarra));
 
-            // Rounded rectangle (only top corners rounded via clip)
-            Shape barShape = new RoundRectangle2D.Float(
-                    posicionX, posicionY, anchoBarra, altoBarra, radioEsquina, radioEsquina
-            );
-            g2.fill(barShape);
-
-            // Value label above bar
-            g2.setColor(EstiloUI.TEXT);
-            g2.setFont(EstiloUI.BOLD);
-            String valorTexto = String.valueOf(cantidad);
-            FontMetrics fm = g2.getFontMetrics();
-            int textoAncho = fm.stringWidth(valorTexto);
-            g2.drawString(valorTexto, posicionX + (anchoBarra - textoAncho) / 2, posicionY - 6);
-
-            // Category label below axis (rotated if many categories)
+            // Etiqueta de categoria debajo del eje X
             String nombre = categorias.get(i);
-            if (nombre.length() > 15) {
-                nombre = nombre.substring(0, 12) + "...";
+            if (nombre.length() > 12) {
+                nombre = nombre.substring(0, 9) + "...";
             }
-
-            g2.setFont(EstiloUI.SMALL);
-            FontMetrics fmLabel = g2.getFontMetrics();
-
-            if (categorias.size() > 5) {
-                // Rotate labels 45 degrees
-                Graphics2D g2copy = (Graphics2D) g2.create();
-                int labelX = posicionX + anchoBarra / 2;
-                int labelY = margenSuperior + altoDisponible + 8;
-                g2copy.setColor(EstiloUI.TEXT);
-                g2copy.translate(labelX, labelY);
-                g2copy.rotate(Math.toRadians(35));
-                g2copy.drawString(nombre, 0, 0);
-                g2copy.dispose();
-            } else {
-                g2.setColor(EstiloUI.TEXT);
-                int labelWidth = fmLabel.stringWidth(nombre);
-                g2.drawString(nombre,
-                        posicionX + (anchoBarra - labelWidth) / 2,
-                        margenSuperior + altoDisponible + 18);
-            }
+            g2.setColor(Color.BLACK);
+            g2.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+            FontMetrics fmCat = g2.getFontMetrics();
+            int catW = fmCat.stringWidth(nombre);
+            g2.drawString(nombre, bx + (anchoBarra - catW) / 2, chartY + chartH + 15);
         }
+
+        // Leyenda centrada al fondo
+        int leyendaY = chartY + chartH + 35;
+        g2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        FontMetrics fmLeg = g2.getFontMetrics();
+        int cuadroSize = 12;
+        int legTextW = fmLeg.stringWidth(leyenda);
+        int legTotalW = cuadroSize + 5 + legTextW;
+        int legX = areaX + (areaW - legTotalW) / 2;
+
+        // Cuadro de color
+        g2.setColor(colorBarras);
+        g2.fillRect(legX, leyendaY - cuadroSize + 2, cuadroSize, cuadroSize);
+        g2.setColor(Color.BLACK);
+        g2.drawRect(legX, leyendaY - cuadroSize + 2, cuadroSize, cuadroSize);
+
+        // Texto de leyenda
+        g2.setColor(Color.BLACK);
+        g2.drawString(leyenda, legX + cuadroSize + 5, leyendaY);
     }
 }

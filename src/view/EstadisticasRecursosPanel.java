@@ -73,6 +73,7 @@ public class EstadisticasRecursosPanel extends JPanel {
         scrollTabla.setBorder(EstiloUI.crearTitledBorder("Resultados"));
 
         panelGrafica = new GraficaRecursosPanel();
+        panelGrafica.configurar("Recursos Usados", "Recurso", new java.awt.Color(41, 128, 185));
 
         JPanel panelCentro = new JPanel(new GridLayout(1, 2, EstiloUI.GAP, EstiloUI.GAP));
         panelCentro.setBackground(EstiloUI.BACKGROUND);

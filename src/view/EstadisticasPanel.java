@@ -44,7 +44,13 @@ public class EstadisticasPanel extends JPanel {
                 }
             };
     private final JTable tabla = new JTable(modeloTabla);
-    private final GraficaRecursosPanel grafico = new GraficaRecursosPanel();
+    private final GraficaRecursosPanel grafico = crearGraficoActividades();
+
+    private static GraficaRecursosPanel crearGraficoActividades() {
+        GraficaRecursosPanel g = new GraficaRecursosPanel();
+        g.configurar("Actividades Realizadas", "Semana", new java.awt.Color(192, 57, 43));
+        return g;
+    }
 
     public EstadisticasPanel(UsuariosActividadesController controller) {
         this.controller = controller;
