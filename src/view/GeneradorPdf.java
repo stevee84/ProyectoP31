@@ -182,4 +182,3 @@ public final class GeneradorPdf {
         documento.add(parPie);
     }
 }
-}
