@@ -12,10 +12,8 @@ import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 
 import javax.swing.JComponent;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableModel;
 import java.awt.Desktop;
 import java.io.File;
@@ -63,21 +61,22 @@ public final class GeneradorPdf {
             throw new IllegalArgumentException("El titulo no puede ser nulo.");
         }
 
-        File carpetaDocumentos = javax.swing.filechooser.FileSystemView.getFileSystemView().getDefaultDirectory();
-        JFileChooser fileChooser = new JFileChooser(carpetaDocumentos);
-        fileChooser.setDialogTitle("Guardar reporte PDF");
-        fileChooser.setSelectedFile(new File(carpetaDocumentos, nombreArchivo));
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Archivo PDF (*.pdf)", "pdf"));
+        // Usar FileDialog nativo de Windows (mismo explorador que Chrome, Word, etc.)
+        java.awt.Frame frame = (java.awt.Frame) javax.swing.SwingUtilities.getWindowAncestor(padre);
+        java.awt.FileDialog fileDialog = new java.awt.FileDialog(frame, "Guardar reporte PDF", java.awt.FileDialog.SAVE);
+        fileDialog.setFile(nombreArchivo);
+        fileDialog.setFilenameFilter((dir, name) -> name.toLowerCase().endsWith(".pdf"));
+        fileDialog.setVisible(true);
 
-        int resultado = fileChooser.showSaveDialog(padre);
-        if (resultado != JFileChooser.APPROVE_OPTION) {
+        if (fileDialog.getFile() == null) {
             return;
         }
 
-        File archivo = fileChooser.getSelectedFile();
-        if (!archivo.getName().toLowerCase().endsWith(".pdf")) {
-            archivo = new File(archivo.getAbsolutePath() + ".pdf");
+        String nombreFinal = fileDialog.getFile();
+        if (!nombreFinal.toLowerCase().endsWith(".pdf")) {
+            nombreFinal = nombreFinal + ".pdf";
         }
+        File archivo = new File(fileDialog.getDirectory(), nombreFinal);
 
         try {
             TableModel modelo = tabla.getModel();
