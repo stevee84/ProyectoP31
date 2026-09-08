@@ -45,10 +45,10 @@ public class FuncionarioPanel extends JPanel {
     private final JTextField campoNombre = new JTextField(18);
     private final JTextField campoTelefono = new JTextField(18);
 
-    private final JButton btnAgregar = new JButton("➕ Agregar");
-    private final JButton btnModificar = new JButton("✏️ Modificar");
-    private final JButton btnEliminar = new JButton("🗑️ Eliminar");
-    private final JButton btnLimpiar = new JButton("🧹 Limpiar");
+    private final JButton btnAgregar = new JButton("Agregar");
+    private final JButton btnModificar = new JButton("Modificar");
+    private final JButton btnEliminar = new JButton("Eliminar");
+    private final JButton btnLimpiar = new JButton("Limpiar");
 
     public FuncionarioPanel(UsuariosActividadesController controller) {
         this.controller = controller;
@@ -87,8 +87,8 @@ public class FuncionarioPanel extends JPanel {
         panel.setBackground(EstiloUI.BACKGROUND);
         panel.setBorder(EstiloUI.crearTitledBorder("Busqueda"));
 
-        JButton btnBuscar = new JButton("🔍 Buscar");
-        JButton btnMostrarTodos = new JButton("📋 Mostrar todos");
+        JButton btnBuscar = new JButton("Buscar");
+        JButton btnMostrarTodos = new JButton("Mostrar todos");
 
         JLabel lbl = new JLabel("Buscar:");
         EstiloUI.estilizarEtiqueta(lbl);
@@ -135,7 +135,7 @@ public class FuncionarioPanel extends JPanel {
             campos.add(fieldArray[i], gbc);
         }
 
-        JButton btnPdf = new JButton("📄 Generar PDF");
+        JButton btnPdf = new JButton("Generar PDF");
         btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
                 "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
 

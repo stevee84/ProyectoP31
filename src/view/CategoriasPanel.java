@@ -27,7 +27,7 @@ public class CategoriasPanel extends JPanel {
         setBackground(EstiloUI.BACKGROUND);
 
         txtBusqueda = new JTextField(20);
-        btnBuscar = new JButton("🔍 Buscar");
+        btnBuscar = new JButton("Buscar");
 
         JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
         panelBusqueda.setBackground(EstiloUI.BACKGROUND);
@@ -67,15 +67,15 @@ public class CategoriasPanel extends JPanel {
         gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
         panelCampos.add(txtDescripcion, gbc);
 
-        btnNuevo = new JButton("➕ Nuevo");
-        btnGuardar = new JButton("💾 Guardar");
-        btnBorrar = new JButton("🗑️ Borrar");
-        btnLimpiar = new JButton("🧹 Limpiar");
+        btnNuevo = new JButton("Nuevo");
+        btnGuardar = new JButton("Guardar");
+        btnBorrar = new JButton("Borrar");
+        btnLimpiar = new JButton("Limpiar");
 
         btnGuardar.setEnabled(false);
         btnBorrar.setEnabled(false);
 
-        JButton btnPdf = new JButton("📄 Generar PDF");
+        JButton btnPdf = new JButton("Generar PDF");
         btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
                 "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
 

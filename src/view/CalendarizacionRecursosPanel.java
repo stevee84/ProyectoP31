@@ -37,7 +37,7 @@ public class CalendarizacionRecursosPanel extends JPanel {
         comboCategoria = new JComboBox<>();
         comboCategoria.setFont(EstiloUI.NORMAL);
 
-        btnMostrar = new JButton("📅 Mostrar");
+        btnMostrar = new JButton("Mostrar");
 
         JPanel panelSeleccion = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
         panelSeleccion.setBackground(EstiloUI.BACKGROUND);
@@ -65,7 +65,7 @@ public class CalendarizacionRecursosPanel extends JPanel {
         JScrollPane scrollTabla = new JScrollPane(tablaCalendarizacion);
         scrollTabla.setBorder(EstiloUI.crearTitledBorder("Calendarizacion de recursos"));
 
-        JButton btnPdf = new JButton("📄 Generar PDF");
+        JButton btnPdf = new JButton("Generar PDF");
         btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
                 "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
         EstiloUI.estilizarBoton(btnPdf);

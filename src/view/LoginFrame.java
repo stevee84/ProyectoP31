@@ -39,7 +39,7 @@ public class LoginFrame extends JFrame {
 
     private final JTextField campoId = new JTextField(18);
     private final JPasswordField campoClave = new JPasswordField(18);
-    private final JButton btnIngresar = new JButton("🔑 Ingresar");
+    private final JButton btnIngresar = new JButton("Ingresar");
 
     public LoginFrame(UsuariosActividadesController controller, Consumer<Empleado> alIniciarSesion) {
         super("Sistema de Reservas - Iniciar sesion");

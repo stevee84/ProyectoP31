@@ -34,7 +34,7 @@ public class EstadisticasPanel extends JPanel {
 
     private final JTextField campoDesde = new JTextField(10);
     private final JTextField campoHasta = new JTextField(10);
-    private final JButton btnGenerar = new JButton("✅ Cargar");
+    private final JButton btnGenerar = new JButton("Cargar");
 
     private final DefaultTableModel modeloTabla =
             new DefaultTableModel(new Object[]{"Semana", "Cantidad"}, 0) {
@@ -59,7 +59,7 @@ public class EstadisticasPanel extends JPanel {
 
         EstiloUI.estilizarTabla(tabla);
         JScrollPane scrollTabla = new JScrollPane(tabla);
-        scrollTabla.setBorder(EstiloUI.crearTitledBorder("📋 Estadisticas"));
+        scrollTabla.setBorder(EstiloUI.crearTitledBorder("Estadisticas"));
 
         JPanel panelCentro = new JPanel(new GridLayout(1, 2, EstiloUI.GAP, EstiloUI.GAP));
         panelCentro.setBackground(EstiloUI.BACKGROUND);
@@ -89,7 +89,7 @@ public class EstadisticasPanel extends JPanel {
         EstiloUI.estilizarCampo(campoHasta);
         EstiloUI.estilizarBoton(btnGenerar);
 
-        JButton btnPdf = new JButton("📄 Generar PDF");
+        JButton btnPdf = new JButton("Generar PDF");
         btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
                 "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
         EstiloUI.estilizarBoton(btnPdf);

@@ -79,19 +79,19 @@ public class VentanaPrincipal extends JFrame {
         tabs.setFont(EstiloUI.BOLD);
 
         if (usuario instanceof Administrador) {
-            tabs.addTab("👥 Funcionarios", new FuncionarioPanel(usuariosCtrl));
-            tabs.addTab("📂 Categorias", new CategoriasPanel(new CategoriaController(controlador)));
-            tabs.addTab("💻 Recursos", new RecursosPanel(new RecursoController(controlador)));
-            tabs.addTab("📅 Calendarizacion",
+            tabs.addTab("Funcionarios", new FuncionarioPanel(usuariosCtrl));
+            tabs.addTab("Categorias", new CategoriasPanel(new CategoriaController(controlador)));
+            tabs.addTab("Recursos", new RecursosPanel(new RecursoController(controlador)));
+            tabs.addTab("Calendarizacion",
                     new CalendarizacionRecursosPanel(new CalendarizacionRecursosController(controlador)));
-            tabs.addTab("📋 Actividades", new AgendaSemanalPanel(usuariosCtrl));
-            tabs.addTab("📊 Estadisticas", crearPanelEstadisticas());
+            tabs.addTab("Actividades", new AgendaSemanalPanel(usuariosCtrl));
+            tabs.addTab("Estadisticas", crearPanelEstadisticas());
         } else {
-            tabs.addTab("📝 Reservas", new ReservaPanel(crearReservaController()));
-            tabs.addTab("📅 Calendarizacion",
+            tabs.addTab("Reservas", new ReservaPanel(crearReservaController()));
+            tabs.addTab("Calendarizacion",
                     new CalendarizacionRecursosPanel(new CalendarizacionRecursosController(controlador)));
-            tabs.addTab("📋 Actividades", new AgendaSemanalPanel(usuariosCtrl));
-            tabs.addTab("📊 Estadisticas", crearPanelEstadisticas());
+            tabs.addTab("Actividades", new AgendaSemanalPanel(usuariosCtrl));
+            tabs.addTab("Estadisticas", crearPanelEstadisticas());
         }
 
         add(tabs);
@@ -104,8 +104,8 @@ public class VentanaPrincipal extends JFrame {
     private JTabbedPane crearPanelEstadisticas() {
         JTabbedPane subTabs = new JTabbedPane();
         subTabs.setFont(EstiloUI.NORMAL);
-        subTabs.addTab("📋 Actividades", new EstadisticasPanel(usuariosCtrl));
-        subTabs.addTab("💻 Recursos",
+        subTabs.addTab("Actividades", new EstadisticasPanel(usuariosCtrl));
+        subTabs.addTab("Recursos",
                 new EstadisticasRecursosPanel(new EstadisticasRecursosController(controlador)));
         return subTabs;
     }
