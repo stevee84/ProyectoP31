@@ -63,9 +63,10 @@ public final class GeneradorPdf {
             throw new IllegalArgumentException("El titulo no puede ser nulo.");
         }
 
-        JFileChooser fileChooser = new JFileChooser();
+        File carpetaDocumentos = javax.swing.filechooser.FileSystemView.getFileSystemView().getDefaultDirectory();
+        JFileChooser fileChooser = new JFileChooser(carpetaDocumentos);
         fileChooser.setDialogTitle("Guardar reporte PDF");
-        fileChooser.setSelectedFile(new File(nombreArchivo));
+        fileChooser.setSelectedFile(new File(carpetaDocumentos, nombreArchivo));
         fileChooser.setFileFilter(new FileNameExtensionFilter("Archivo PDF (*.pdf)", "pdf"));
 
         int resultado = fileChooser.showSaveDialog(padre);
