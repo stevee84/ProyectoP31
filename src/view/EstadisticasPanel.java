@@ -8,13 +8,13 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
+import java.awt.Color;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -34,26 +34,22 @@ public class EstadisticasPanel extends JPanel {
 
     private final JTextField campoDesde = new JTextField(10);
     private final JTextField campoHasta = new JTextField(10);
-    private final JButton btnGenerar = new JButton("Generar");
+    private final JButton btnGenerar = new JButton("✅ Cargar");
 
     private final DefaultTableModel modeloTabla =
-            new DefaultTableModel(new Object[]{"Semana", "Cantidad de actividades"}, 0) {
+            new DefaultTableModel(new Object[]{"Semana", "Cantidad"}, 0) {
                 @Override
                 public boolean isCellEditable(int row, int column) {
                     return false;
                 }
             };
     private final JTable tabla = new JTable(modeloTabla);
-    private final GraficaRecursosPanel grafico = crearGraficoActividades();
-
-    private static GraficaRecursosPanel crearGraficoActividades() {
-        GraficaRecursosPanel g = new GraficaRecursosPanel();
-        g.configurar("Actividades Realizadas", "Semana", new java.awt.Color(192, 57, 43));
-        return g;
-    }
+    private final GraficaRecursosPanel grafico;
 
     public EstadisticasPanel(UsuariosActividadesController controller) {
         this.controller = controller;
+        grafico = new GraficaRecursosPanel();
+        grafico.configurar("Actividades Realizadas", "Semana", new Color(192, 57, 43));
 
         setLayout(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
         setBorder(EstiloUI.margenEstandar());
@@ -63,12 +59,14 @@ public class EstadisticasPanel extends JPanel {
 
         EstiloUI.estilizarTabla(tabla);
         JScrollPane scrollTabla = new JScrollPane(tabla);
-        scrollTabla.setPreferredSize(new Dimension(760, 140));
-        scrollTabla.setBorder(EstiloUI.crearTitledBorder("Resultados por semana"));
+        scrollTabla.setBorder(EstiloUI.crearTitledBorder("📋 Estadisticas"));
 
-        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, scrollTabla, grafico);
-        split.setResizeWeight(0.4);
-        add(split, BorderLayout.CENTER);
+        JPanel panelCentro = new JPanel(new GridLayout(1, 2, EstiloUI.GAP, EstiloUI.GAP));
+        panelCentro.setBackground(EstiloUI.BACKGROUND);
+        panelCentro.add(scrollTabla);
+        panelCentro.add(grafico);
+
+        add(panelCentro, BorderLayout.CENTER);
 
         btnGenerar.addActionListener(e -> generar());
 
@@ -81,7 +79,7 @@ public class EstadisticasPanel extends JPanel {
     private JPanel construirPanelFiltro() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
         panel.setBackground(EstiloUI.BACKGROUND);
-        panel.setBorder(EstiloUI.crearTitledBorder("Periodo de consulta"));
+        panel.setBorder(EstiloUI.crearTitledBorder("Fechas Desde y Hasta"));
 
         JLabel lblDesde = new JLabel("Desde (dd/MM/aaaa):");
         JLabel lblHasta = new JLabel("Hasta (dd/MM/aaaa):");
@@ -91,7 +89,7 @@ public class EstadisticasPanel extends JPanel {
         EstiloUI.estilizarCampo(campoHasta);
         EstiloUI.estilizarBoton(btnGenerar);
 
-        JButton btnPdf = new JButton("Generar PDF");
+        JButton btnPdf = new JButton("📄 Generar PDF");
         btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
                 "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
         EstiloUI.estilizarBoton(btnPdf);

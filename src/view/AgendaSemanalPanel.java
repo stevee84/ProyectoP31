@@ -63,9 +63,9 @@ public class AgendaSemanalPanel extends JPanel {
         panel.setBackground(EstiloUI.BACKGROUND);
         panel.setBorder(EstiloUI.crearTitledBorder("Navegacion"));
 
-        JButton btnAnterior = new JButton("<< Semana anterior");
-        JButton btnHoy = new JButton("Semana actual");
-        JButton btnSiguiente = new JButton("Semana siguiente >>");
+        JButton btnAnterior = new JButton("⬅️ Semana anterior");
+        JButton btnHoy = new JButton("📅 Semana actual");
+        JButton btnSiguiente = new JButton("Semana siguiente ➡️");
 
         EstiloUI.estilizarBoton(btnAnterior);
         EstiloUI.estilizarBoton(btnHoy);
@@ -85,7 +85,7 @@ public class AgendaSemanalPanel extends JPanel {
             cargarSemana();
         });
 
-        JButton btnPdf = new JButton("Generar PDF");
+        JButton btnPdf = new JButton("📄 Generar PDF");
         btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
                 "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
         EstiloUI.estilizarBoton(btnPdf);

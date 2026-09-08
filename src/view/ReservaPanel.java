@@ -45,7 +45,7 @@ public class ReservaPanel extends JPanel {
         // --- Frase en lenguaje natural + boton para llenar con IA ---
         txtFrase = new JTextField();
         EstiloUI.estilizarCampo(txtFrase);
-        btnLlenarConIA = new JButton("Extraer con IA");
+        btnLlenarConIA = new JButton("🤖 Extraer con IA");
         EstiloUI.estilizarBotonPrimario(btnLlenarConIA);
         btnLlenarConIA.addActionListener(e -> llenarConIA());
 
@@ -123,10 +123,10 @@ public class ReservaPanel extends JPanel {
             }
         });
 
-        JButton btnAplicar = new JButton("Aplicar");
-        JButton btnCancelarSeleccionada = new JButton("Cancelar reserva seleccionada");
-        JButton btnLimpiar = new JButton("Limpiar");
-        JButton btnGenerarPdf = new JButton("Generar PDF");
+        JButton btnAplicar = new JButton("✅ Aplicar");
+        JButton btnCancelarSeleccionada = new JButton("❌ Cancelar reserva");
+        JButton btnLimpiar = new JButton("🧹 Limpiar");
+        JButton btnGenerarPdf = new JButton("📄 Generar PDF");
         btnGenerarPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
                 "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
 
@@ -265,7 +265,7 @@ public class ReservaPanel extends JPanel {
         }
 
         btnLlenarConIA.setEnabled(false);
-        btnLlenarConIA.setText("Extrayendo...");
+        btnLlenarConIA.setText("⏳ Extrayendo...");
 
         new SwingWorker<ResultadoExtraccionIA, Void>() {
             @Override
@@ -276,7 +276,7 @@ public class ReservaPanel extends JPanel {
             @Override
             protected void done() {
                 btnLlenarConIA.setEnabled(true);
-                btnLlenarConIA.setText("Extraer con IA");
+                btnLlenarConIA.setText("🤖 Extraer con IA");
                 try {
                     ResultadoExtraccionIA resultado = get();
 

@@ -35,7 +35,7 @@ public class RecursosPanel extends JPanel {
 
         comboFiltro = new JComboBox<>();
         comboFiltro.setFont(EstiloUI.NORMAL);
-        btnFiltrar = new JButton("Filtrar");
+        btnFiltrar = new JButton("🔍 Filtrar");
 
         JPanel panelFiltro = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
         panelFiltro.setBackground(EstiloUI.BACKGROUND);
@@ -75,14 +75,14 @@ public class RecursosPanel extends JPanel {
             panelCampos.add(campos[i], gbc);
         }
 
-        btnNuevo = new JButton("Nuevo");
-        btnGuardar = new JButton("Guardar");
-        btnBorrar = new JButton("Borrar");
-        btnLimpiar = new JButton("Limpiar");
+        btnNuevo = new JButton("➕ Nuevo");
+        btnGuardar = new JButton("💾 Guardar");
+        btnBorrar = new JButton("🗑️ Borrar");
+        btnLimpiar = new JButton("🧹 Limpiar");
         btnGuardar.setEnabled(false);
         btnBorrar.setEnabled(false);
 
-        JButton btnPdf = new JButton("Generar PDF");
+        JButton btnPdf = new JButton("📄 Generar PDF");
         btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
                 "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
 

@@ -38,11 +38,11 @@ public class EstadisticasRecursosPanel extends JPanel {
         EstiloUI.estilizarCampo(txtDesde);
         EstiloUI.estilizarCampo(txtHasta);
 
-        btnCalcular = new JButton("Calcular");
+        btnCalcular = new JButton("✅ Cargar");
 
         JPanel panelFechas = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
         panelFechas.setBackground(EstiloUI.BACKGROUND);
-        panelFechas.setBorder(EstiloUI.crearTitledBorder("Periodo de consulta"));
+        panelFechas.setBorder(EstiloUI.crearTitledBorder("Fechas Desde y Hasta"));
 
         JLabel lblDesde = new JLabel("Desde:");
         JLabel lblHasta = new JLabel("Hasta:");
@@ -50,7 +50,7 @@ public class EstadisticasRecursosPanel extends JPanel {
         EstiloUI.estilizarEtiqueta(lblHasta);
         EstiloUI.estilizarBoton(btnCalcular);
 
-        JButton btnPdf = new JButton("Generar PDF");
+        JButton btnPdf = new JButton("📄 Generar PDF");
         btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
                 "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
         EstiloUI.estilizarBoton(btnPdf);
@@ -70,7 +70,7 @@ public class EstadisticasRecursosPanel extends JPanel {
         EstiloUI.estilizarTabla(tablaEstadisticas);
 
         JScrollPane scrollTabla = new JScrollPane(tablaEstadisticas);
-        scrollTabla.setBorder(EstiloUI.crearTitledBorder("Resultados"));
+        scrollTabla.setBorder(EstiloUI.crearTitledBorder("📋 Estadisticas"));
 
         panelGrafica = new GraficaRecursosPanel();
         panelGrafica.configurar("Recursos Usados", "Recurso", new java.awt.Color(41, 128, 185));
