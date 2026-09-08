@@ -56,6 +56,13 @@ public final class GeneradorPdf {
      * @param nombreArchivo nombre sugerido (ej. "estadisticas_recursos.pdf")
      */
     public static void exportar(JComponent padre, JTable tabla, String titulo, String nombreArchivo) {
+        if (tabla == null) {
+            throw new IllegalArgumentException("La tabla no puede ser nula.");
+        }
+        if (titulo == null) {
+            throw new IllegalArgumentException("El titulo no puede ser nulo.");
+        }
+
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Guardar reporte PDF");
         fileChooser.setSelectedFile(new File(nombreArchivo));
@@ -72,6 +79,10 @@ public final class GeneradorPdf {
         }
 
         try {
+            TableModel modelo = tabla.getModel();
+            if (modelo.getRowCount() == 0) {
+                throw new IllegalStateException("La tabla no tiene datos para exportar.");
+            }
             generarPdf(archivo, tabla, titulo);
             JOptionPane.showMessageDialog(padre,
                     "PDF generado correctamente:\n" + archivo.getAbsolutePath(),
@@ -88,11 +99,29 @@ public final class GeneradorPdf {
         }
     }
 
-    private static void generarPdf(File archivo, JTable tabla, String titulo) throws Exception {
-        Document documento = new Document(PageSize.A4, 40, 40, 50, 50);
-        PdfWriter.getInstance(documento, new FileOutputStream(archivo));
-        documento.open();
+    static void generarPdf(File archivo, JTable tabla, String titulo) throws Exception {
+        TableModel modeloInicial = tabla.getModel();
+        if (modeloInicial.getColumnCount() == 0) {
+            throw new IllegalStateException("La tabla no tiene columnas.");
+        }
 
+        Document documento = new Document(PageSize.A4, 40, 40, 50, 50);
+        FileOutputStream salida = new FileOutputStream(archivo);
+        try {
+            PdfWriter.getInstance(documento, salida);
+            documento.open();
+
+            try {
+                escribirContenido(documento, tabla, titulo);
+            } finally {
+                documento.close();
+            }
+        } finally {
+            salida.close();
+        }
+    }
+
+    private static void escribirContenido(Document documento, JTable tabla, String titulo) throws Exception {
         // Titulo
         Paragraph parTitulo = new Paragraph(titulo, FONT_TITULO);
         parTitulo.setAlignment(Element.ALIGN_CENTER);
@@ -151,7 +180,6 @@ public final class GeneradorPdf {
         parPie.setAlignment(Element.ALIGN_CENTER);
         parPie.setSpacingBefore(30);
         documento.add(parPie);
-
-        documento.close();
     }
+}
 }
