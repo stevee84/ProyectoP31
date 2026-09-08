@@ -76,8 +76,8 @@ public class CategoriasPanel extends JPanel {
         btnBorrar.setEnabled(false);
 
         JButton btnPdf = new JButton("Generar PDF");
-        btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+        btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tablaCategorias,
+                "Listado de Categorias", "categorias.pdf"));
 
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, EstiloUI.GAP, EstiloUI.GAP));
         panelBotones.setBackground(EstiloUI.BACKGROUND);

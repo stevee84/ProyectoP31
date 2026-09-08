@@ -127,8 +127,8 @@ public class ReservaPanel extends JPanel {
         JButton btnCancelarSeleccionada = new JButton("Cancelar reserva");
         JButton btnLimpiar = new JButton("Limpiar");
         JButton btnGenerarPdf = new JButton("Generar PDF");
-        btnGenerarPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+        btnGenerarPdf.addActionListener(e -> GeneradorPdf.exportar(this, tablaReservas,
+                "Mis Reservas", "reservas.pdf"));
 
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, EstiloUI.GAP, EstiloUI.GAP));
         panelBotones.setBackground(EstiloUI.BACKGROUND);

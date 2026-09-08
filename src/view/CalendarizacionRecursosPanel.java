@@ -66,8 +66,8 @@ public class CalendarizacionRecursosPanel extends JPanel {
         scrollTabla.setBorder(EstiloUI.crearTitledBorder("Calendarizacion de recursos"));
 
         JButton btnPdf = new JButton("Generar PDF");
-        btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+        btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tablaCalendarizacion,
+                "Calendarizacion de Recursos", "calendarizacion.pdf"));
         EstiloUI.estilizarBoton(btnPdf);
         panelSeleccion.add(btnPdf);
 

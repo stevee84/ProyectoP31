@@ -86,8 +86,8 @@ public class AgendaSemanalPanel extends JPanel {
         });
 
         JButton btnPdf = new JButton("Generar PDF");
-        btnPdf.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Funcionalidad de PDF pendiente de implementacion.", "PDF", JOptionPane.INFORMATION_MESSAGE));
+        btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tabla,
+                "Agenda Semanal", "agenda_semanal.pdf"));
         EstiloUI.estilizarBoton(btnPdf);
 
         panel.add(btnAnterior);
