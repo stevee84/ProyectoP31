@@ -1,8 +1,5 @@
 package view;
 
-import controller.UsuariosActividadesController;
-import controller.UsuariosActividadesController.EstadisticaSemana;
-
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -17,20 +14,11 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Panel de estadisticas de actividades: cuenta reservaciones por semana
- * en un rango de fechas y las muestra en tabla y en un grafico de barras.
- */
 public class EstadisticasPanel extends JPanel {
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final DateTimeFormatter FORMATO_CORTO = DateTimeFormatter.ofPattern("dd/MM");
-
-    private final UsuariosActividadesController controller;
 
     private final JTextField campoDesde = new JTextField(10);
     private final JTextField campoHasta = new JTextField(10);
@@ -46,8 +34,10 @@ public class EstadisticasPanel extends JPanel {
     private final JTable tabla = new JTable(modeloTabla);
     private final GraficaRecursosPanel grafico;
 
-    public EstadisticasPanel(UsuariosActividadesController controller) {
-        this.controller = controller;
+    // Callbacks
+    private Runnable onGenerar;
+
+    public EstadisticasPanel() {
         grafico = new GraficaRecursosPanel();
         grafico.configurar("Actividades Realizadas", "Semana", new Color(192, 57, 43));
 
@@ -68,12 +58,11 @@ public class EstadisticasPanel extends JPanel {
 
         add(panelCentro, BorderLayout.CENTER);
 
-        btnGenerar.addActionListener(e -> generar());
+        btnGenerar.addActionListener(e -> { if (onGenerar != null) onGenerar.run(); });
 
         LocalDate hoy = LocalDate.now();
         campoDesde.setText(FORMATO_FECHA.format(hoy.minusWeeks(2)));
         campoHasta.setText(FORMATO_FECHA.format(hoy.plusWeeks(2)));
-        generar();
     }
 
     private JPanel construirPanelFiltro() {
@@ -103,43 +92,26 @@ public class EstadisticasPanel extends JPanel {
         return panel;
     }
 
-    private void generar() {
-        LocalDate desde;
-        LocalDate hasta;
-        try {
-            desde = LocalDate.parse(campoDesde.getText().trim(), FORMATO_FECHA);
-            hasta = LocalDate.parse(campoHasta.getText().trim(), FORMATO_FECHA);
-        } catch (DateTimeParseException ex) {
-            mostrarError("Las fechas deben tener el formato dd/MM/aaaa.");
-            return;
-        }
+    // --- Callback setters ---
+    public void setOnGenerar(Runnable cb) { this.onGenerar = cb; }
 
-        try {
-            List<EstadisticaSemana> estadisticas = controller.contarPorSemana(desde, hasta);
-            cargarTabla(estadisticas);
+    // --- Getters ---
+    public String getDesde() { return campoDesde.getText().trim(); }
+    public String getHasta() { return campoHasta.getText().trim(); }
 
-            List<String> etiquetas = new ArrayList<>();
-            List<Integer> cantidades = new ArrayList<>();
-            for (EstadisticaSemana e : estadisticas) {
-                String semana = FORMATO_CORTO.format(e.inicioSemana()) + " - " + FORMATO_CORTO.format(e.finSemana());
-                etiquetas.add(semana);
-                cantidades.add(e.cantidad());
-            }
-            grafico.actualizarDatos(etiquetas, cantidades);
-        } catch (RuntimeException ex) {
-            mostrarError(ex.getMessage());
-        }
-    }
-
-    private void cargarTabla(List<EstadisticaSemana> estadisticas) {
+    // --- Public methods for controller ---
+    public void cargarTabla(List<Object[]> filas) {
         modeloTabla.setRowCount(0);
-        for (EstadisticaSemana e : estadisticas) {
-            String semana = FORMATO_CORTO.format(e.inicioSemana()) + " - " + FORMATO_CORTO.format(e.finSemana());
-            modeloTabla.addRow(new Object[]{semana, e.cantidad()});
+        for (Object[] fila : filas) {
+            modeloTabla.addRow(fila);
         }
     }
 
-    private void mostrarError(String mensaje) {
+    public void actualizarGrafico(List<String> etiquetas, List<Integer> cantidades) {
+        grafico.actualizarDatos(etiquetas, cantidades);
+    }
+
+    public void mostrarError(String mensaje) {
         JOptionPane.showMessageDialog(this, mensaje, "Error", JOptionPane.ERROR_MESSAGE);
     }
 }

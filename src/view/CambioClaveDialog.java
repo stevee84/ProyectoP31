@@ -1,7 +1,5 @@
 package view;
 
-import controller.UsuariosActividadesController;
-
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -13,28 +11,25 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.SwingConstants;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.function.Consumer;
 
-/**
- * Dialogo modal para cambiar la contrasena (usado tanto en el cambio
- * obligatorio del primer login como desde el menu "Cambiar clave").
- */
 public class CambioClaveDialog extends JDialog {
 
-    private final UsuariosActividadesController controller;
     private final JPasswordField campoNueva = new JPasswordField(18);
     private final JPasswordField campoConfirmar = new JPasswordField(18);
     private boolean cambiada = false;
 
-    private CambioClaveDialog(Frame propietario, UsuariosActividadesController controller) {
+    // Callback
+    private Consumer<String> onGuardar;
+
+    public CambioClaveDialog(Frame propietario) {
         super(propietario, "Cambio de contrasena", true);
-        this.controller = controller;
 
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -113,23 +108,29 @@ public class CambioClaveDialog extends JDialog {
                     "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        try {
-            controller.cambiarContrasena(nueva);
-            cambiada = true;
-            dispose();
-        } catch (RuntimeException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        if (onGuardar != null) {
+            onGuardar.accept(nueva);
         }
     }
 
-    /**
-     * Abre el dialogo de forma modal y bloquea hasta que se cierre.
-     *
-     * @return true si la contrasena se cambio correctamente, false si se cancelo.
-     */
-    public static boolean solicitarCambio(Frame propietario, UsuariosActividadesController controller) {
-        CambioClaveDialog dialogo = new CambioClaveDialog(propietario, controller);
-        dialogo.setVisible(true);
-        return dialogo.cambiada;
+    // --- Callback setter ---
+    public void setOnGuardar(Consumer<String> cb) { this.onGuardar = cb; }
+
+    // --- Getters ---
+    public String getNueva() { return new String(campoNueva.getPassword()); }
+    public String getConfirmar() { return new String(campoConfirmar.getPassword()); }
+
+    // --- Public methods ---
+    public void mostrarError(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public void marcarCambiada() {
+        this.cambiada = true;
+        dispose();
+    }
+
+    public boolean fueCambiada() {
+        return cambiada;
     }
 }

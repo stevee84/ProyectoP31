@@ -1,19 +1,14 @@
 package view;
 
-import controller.CalendarizacionRecursosController;
 import model.CategoriaRecurso;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
-import model.Recurso;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 
 public class CalendarizacionRecursosPanel extends JPanel {
-
-    private CalendarizacionRecursosController controlador;
 
     private JTextField txtFecha;
     private JComboBox<CategoriaRecurso> comboCategoria;
@@ -21,11 +16,11 @@ public class CalendarizacionRecursosPanel extends JPanel {
 
     private JTable tablaCalendarizacion;
 
-    public CalendarizacionRecursosPanel(
-            CalendarizacionRecursosController controlador
-    ) {
-        this.controlador = controlador;
+    // Callbacks
+    private Runnable onMostrar;
+    private Runnable onVisible;
 
+    public CalendarizacionRecursosPanel() {
         setLayout(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
         setBorder(EstiloUI.margenEstandar());
         setBackground(EstiloUI.BACKGROUND);
@@ -74,64 +69,36 @@ public class CalendarizacionRecursosPanel extends JPanel {
         add(panelSeleccion, BorderLayout.NORTH);
         add(scrollTabla, BorderLayout.CENTER);
 
-        cargarCategorias();
-
         addHierarchyListener(e -> {
             if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
-                cargarCategorias();
+                if (onVisible != null) onVisible.run();
             }
         });
 
-        btnMostrar.addActionListener(e -> mostrarCalendarizacion());
+        btnMostrar.addActionListener(e -> { if (onMostrar != null) onMostrar.run(); });
     }
 
-    private void cargarCategorias() {
+    // --- Callback setters ---
+    public void setOnMostrar(Runnable cb) { this.onMostrar = cb; }
+    public void setOnVisible(Runnable cb) { this.onVisible = cb; }
+
+    // --- Getters ---
+    public String getFecha() { return txtFecha.getText().trim(); }
+    public CategoriaRecurso getCategoriaSeleccionada() { return (CategoriaRecurso) comboCategoria.getSelectedItem(); }
+
+    // --- Public methods for controller ---
+    public void cargarCategorias(List<CategoriaRecurso> categorias) {
         comboCategoria.removeAllItems();
-        for (CategoriaRecurso categoria : controlador.listarCategorias()) {
+        for (CategoriaRecurso categoria : categorias) {
             comboCategoria.addItem(categoria);
         }
     }
 
-    private void mostrarCalendarizacion() {
-        CategoriaRecurso categoria = (CategoriaRecurso) comboCategoria.getSelectedItem();
-        if (categoria == null) {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar una categoria.");
-            return;
-        }
-
-        LocalDate fecha;
-        try {
-            fecha = LocalDate.parse(txtFecha.getText().trim());
-        } catch (DateTimeParseException error) {
-            JOptionPane.showMessageDialog(this, "La fecha debe tener el formato AAAA-MM-DD.");
-            return;
-        }
-
-        List<Recurso> recursos = controlador.listarRecursosPorCategoria(categoria.getId());
-        if (recursos.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Esta categoria no tiene recursos.");
-            return;
-        }
-
-        String[] columnas = new String[recursos.size() + 1];
-        columnas[0] = "Hora";
-        for (int i = 0; i < recursos.size(); i++) {
-            Recurso recurso = recursos.get(i);
-            columnas[i + 1] = recurso.getCodigo() + " - " + recurso.getDescripcion();
-        }
-
+    public void mostrarCalendarizacion(String[] columnas, Object[][] datos) {
         DefaultTableModel modeloTabla = new DefaultTableModel(columnas, 0);
-
-        for (int hora = 0; hora < 24; hora++) {
-            Object[] fila = new Object[recursos.size() + 1];
-            fila[0] = String.format("%02d:00", hora);
-            for (int i = 0; i < recursos.size(); i++) {
-                Recurso recurso = recursos.get(i);
-                fila[i + 1] = controlador.obtenerInformacionCelda(recurso, fecha, hora);
-            }
+        for (Object[] fila : datos) {
             modeloTabla.addRow(fila);
         }
-
         tablaCalendarizacion.setModel(modeloTabla);
         tablaCalendarizacion.setDefaultEditor(Object.class, null);
         EstiloUI.estilizarTabla(tablaCalendarizacion);
@@ -141,5 +108,13 @@ public class CalendarizacionRecursosPanel extends JPanel {
             tablaCalendarizacion.getColumnModel().getColumn(i).setPreferredWidth(250);
         }
         tablaCalendarizacion.setRowHeight(EstiloUI.ROW_HEIGHT);
+    }
+
+    public void mostrarMensaje(String msg) {
+        JOptionPane.showMessageDialog(this, msg);
+    }
+
+    public void mostrarError(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
     }
 }

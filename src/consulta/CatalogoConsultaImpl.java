@@ -1,26 +1,26 @@
 package consulta;
 
-import controller.ControladorReservaciones;
 import model.CategoriaRecurso;
+import model.ModeloReservaciones;
 import model.Recurso;
 
 import java.util.List;
 
 public class CatalogoConsultaImpl implements CatalogoConsulta {
 
-    private final ControladorReservaciones controlador;
+    private final ModeloReservaciones modelo;
 
-    public CatalogoConsultaImpl(ControladorReservaciones controlador) {
-        this.controlador = controlador;
+    public CatalogoConsultaImpl(ModeloReservaciones modelo) {
+        this.modelo = modelo;
     }
 
     @Override
     public List<CategoriaRecurso> listarCategorias() {
-        return controlador.listarCategorias();
+        return modelo.listarCategorias();
     }
 
     @Override
     public List<Recurso> listarRecursosPorCategoria(String categoriaId) {
-        return controlador.listarRecursosPorCategoria(categoriaId);
+        return modelo.listarRecursosPorCategoria(categoriaId);
     }
 }

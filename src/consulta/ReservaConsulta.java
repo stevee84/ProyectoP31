@@ -5,11 +5,8 @@ import java.util.List;
 
 /**
  * Contrato de solo lectura para consultar reservaciones en un rango de
- * fechas. Lo implementa {@link ReservaConsultaDatosPrueba} (datos ficticios,
- * mientras se desarrollan las secciones C y D) y, más adelante, un
- * {@code ReservaConsultaAdapter} que envuelva el {@code ControladorReservaciones}
- * real — cambio de una sola línea de ensamblado, sin tocar el controlador ni
- * las vistas de agenda/estadísticas.
+ * fechas. Lo implementa {@link ReservaConsultaAdapter} que trabaja
+ * directamente con el {@code ModeloReservaciones}.
  */
 public interface ReservaConsulta {
 

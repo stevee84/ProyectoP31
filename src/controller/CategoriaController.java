@@ -1,33 +1,104 @@
 package controller;
 
 import model.CategoriaRecurso;
+import service.CategoriaService;
+import view.CategoriasPanel;
+
 import java.util.List;
 
 public class CategoriaController {
 
-    private ControladorReservaciones controlador;
+    private final CategoriasPanel view;
+    private final CategoriaService service;
 
-    public CategoriaController(ControladorReservaciones controlador) {
-        this.controlador = controlador;
+    public CategoriaController(CategoriasPanel view, CategoriaService service) {
+        this.view = view;
+        this.service = service;
+
+        view.setOnGuardar(this::guardar);
+        view.setOnBorrar(this::borrar);
+        view.setOnBuscar(this::buscar);
+        view.setOnLimpiar(this::limpiar);
+        view.setOnNuevo(this::nuevo);
+        view.setOnSeleccionar(this::seleccionar);
+
+        cargarDatos();
     }
 
-    public List<CategoriaRecurso> listarCategorias() {
-        return controlador.listarCategorias();
+    private void nuevo() {
+        // La vista ya limpia los campos y habilita la edicion.
+        // Este hook queda disponible para logica adicional del controlador.
     }
 
-    public List<CategoriaRecurso> buscarCategorias(String descripcion) {
-        return controlador.buscarCategoriasPorDescripcion(descripcion);
+    private void seleccionar() {
+        // La vista ya carga los datos de la fila seleccionada en los campos.
+        // Este hook queda disponible para logica adicional del controlador.
     }
 
-    public CategoriaRecurso registrarCategoria(String descripcion) {
-        return controlador.registrarCategoria(descripcion);
+    private void guardar() {
+        String id = view.getId();
+        String desc = view.getDescripcion();
+        if (desc.isBlank()) {
+            view.mostrarError("Debe escribir una descripcion.");
+            return;
+        }
+        try {
+            if (id.isBlank()) {
+                service.registrar(desc);
+                view.mostrarMensaje("Categoria registrada.");
+            } else {
+                service.actualizar(id, desc);
+                view.mostrarMensaje("Categoria modificada.");
+            }
+            limpiar();
+        } catch (Exception e) {
+            view.mostrarError(e.getMessage());
+        }
     }
 
-    public boolean modificarCategoria(String id, String descripcion) {
-        return controlador.actualizarCategoria(id, descripcion);
+    private void borrar() {
+        String id = view.getId();
+        if (id.isBlank()) {
+            view.mostrarError("Seleccione una categoria para borrar.");
+            return;
+        }
+        if (!view.confirmarAccion("Desea eliminar la categoria " + id + "?")) {
+            return;
+        }
+        try {
+            service.eliminar(id);
+            view.mostrarMensaje("Categoria eliminada.");
+            limpiar();
+        } catch (Exception e) {
+            view.mostrarError(e.getMessage());
+        }
     }
 
-    public boolean eliminarCategoria(String id) {
-        return controlador.eliminarCategoria(id);
+    private void buscar() {
+        String texto = view.getBusqueda();
+        try {
+            List<CategoriaRecurso> resultado;
+            if (texto.isBlank()) {
+                resultado = service.listar();
+            } else {
+                resultado = service.buscarPorDescripcion(texto);
+            }
+            view.cargarDatos(resultado);
+        } catch (Exception e) {
+            view.mostrarError(e.getMessage());
+        }
+    }
+
+    private void limpiar() {
+        view.limpiar();
+        cargarDatos();
+    }
+
+    private void cargarDatos() {
+        try {
+            view.cargarDatos(service.listar());
+        } catch (Exception e) {
+            view.mostrarError(e.getMessage());
+        }
     }
 }

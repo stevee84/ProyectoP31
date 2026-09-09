@@ -1,16 +1,14 @@
 package view;
 
-import controller.RecursoController;
 import model.CategoriaRecurso;
 import model.Recurso;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
 public class RecursosPanel extends JPanel {
-
-    private RecursoController controlador;
 
     private JComboBox<CategoriaRecurso> comboFiltro;
     private JComboBox<CategoriaRecurso> comboCategoria;
@@ -26,9 +24,16 @@ public class RecursosPanel extends JPanel {
 
     private JTable tablaRecursos;
 
-    public RecursosPanel(RecursoController controlador) {
-        this.controlador = controlador;
+    // Callbacks
+    private Runnable onFiltrar;
+    private Runnable onNuevo;
+    private Runnable onGuardar;
+    private Runnable onBorrar;
+    private Runnable onLimpiar;
+    private Runnable onSeleccionar;
+    private Runnable onVisible;
 
+    public RecursosPanel() {
         setLayout(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
         setBorder(EstiloUI.margenEstandar());
         setBackground(EstiloUI.BACKGROUND);
@@ -117,118 +122,96 @@ public class RecursosPanel extends JPanel {
         add(panelFiltro, BorderLayout.NORTH);
         add(panelCentro, BorderLayout.CENTER);
 
-        cargarCategorias();
-        cargarRecursos();
-
-        // Recargar categorías y recursos cada vez que esta pestaña se hace visible
         addHierarchyListener(e -> {
             if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
-                cargarCategorias();
-                cargarRecursos();
+                if (onVisible != null) onVisible.run();
             }
         });
 
-        btnNuevo.addActionListener(e -> nuevoRecurso());
-        btnGuardar.addActionListener(e -> guardarRecurso());
-        btnLimpiar.addActionListener(e -> limpiarCampos());
-        btnFiltrar.addActionListener(e -> filtrarRecursos());
-        btnBorrar.addActionListener(e -> borrarRecurso());
+        btnNuevo.addActionListener(e -> {
+            tablaRecursos.clearSelection();
+            txtCodigo.setText("");
+            txtDescripcion.setText("");
+            comboCategoria.setSelectedIndex(-1);
+            txtCodigo.setEditable(true);
+            comboCategoria.setEnabled(true);
+            txtDescripcion.setEditable(true);
+            btnGuardar.setEnabled(true);
+            btnBorrar.setEnabled(false);
+            txtCodigo.requestFocus();
+            if (onNuevo != null) onNuevo.run();
+        });
+        btnGuardar.addActionListener(e -> { if (onGuardar != null) onGuardar.run(); });
+        btnLimpiar.addActionListener(e -> { if (onLimpiar != null) onLimpiar.run(); });
+        btnFiltrar.addActionListener(e -> { if (onFiltrar != null) onFiltrar.run(); });
+        btnBorrar.addActionListener(e -> { if (onBorrar != null) onBorrar.run(); });
 
         tablaRecursos.getSelectionModel()
                 .addListSelectionListener(e -> {
                     if (!e.getValueIsAdjusting()) {
-                        seleccionarRecurso();
+                        int fila = tablaRecursos.getSelectedRow();
+                        if (fila != -1) {
+                            txtCodigo.setText(tablaRecursos.getValueAt(fila, 0).toString());
+                            CategoriaRecurso categoria = (CategoriaRecurso) tablaRecursos.getValueAt(fila, 1);
+                            comboCategoria.setSelectedItem(categoria);
+                            txtDescripcion.setText(tablaRecursos.getValueAt(fila, 2).toString());
+                            txtCodigo.setEditable(false);
+                            comboCategoria.setEnabled(true);
+                            txtDescripcion.setEditable(true);
+                            btnGuardar.setEnabled(true);
+                            btnBorrar.setEnabled(true);
+                        } else {
+                            txtCodigo.setText("");
+                            txtDescripcion.setText("");
+                            comboCategoria.setSelectedIndex(-1);
+                            txtCodigo.setEditable(false);
+                            comboCategoria.setEnabled(false);
+                            txtDescripcion.setEditable(false);
+                            btnGuardar.setEnabled(false);
+                            btnBorrar.setEnabled(false);
+                        }
+                        if (onSeleccionar != null) onSeleccionar.run();
                     }
                 });
     }
 
-    private void cargarCategorias() {
+    // --- Callback setters ---
+    public void setOnFiltrar(Runnable cb) { this.onFiltrar = cb; }
+    public void setOnNuevo(Runnable cb) { this.onNuevo = cb; }
+    public void setOnGuardar(Runnable cb) { this.onGuardar = cb; }
+    public void setOnBorrar(Runnable cb) { this.onBorrar = cb; }
+    public void setOnLimpiar(Runnable cb) { this.onLimpiar = cb; }
+    public void setOnSeleccionar(Runnable cb) { this.onSeleccionar = cb; }
+    public void setOnVisible(Runnable cb) { this.onVisible = cb; }
+
+    // --- Getters ---
+    public String getCodigo() { return txtCodigo.getText().trim(); }
+    public String getDescripcion() { return txtDescripcion.getText().trim(); }
+    public CategoriaRecurso getCategoriaSeleccionada() { return (CategoriaRecurso) comboCategoria.getSelectedItem(); }
+    public CategoriaRecurso getCategoriaFiltro() { return (CategoriaRecurso) comboFiltro.getSelectedItem(); }
+    public int getFilaSeleccionada() { return tablaRecursos.getSelectedRow(); }
+
+    // --- Public methods for controller ---
+    public void cargarRecursos(List<Recurso> recursos) {
+        DefaultTableModel modeloTabla = (DefaultTableModel) tablaRecursos.getModel();
+        modeloTabla.setRowCount(0);
+        for (Recurso recurso : recursos) {
+            modeloTabla.addRow(new Object[]{
+                    recurso.getCodigo(), recurso.getCategoria(), recurso.getDescripcion()
+            });
+        }
+    }
+
+    public void cargarCategorias(List<CategoriaRecurso> categorias) {
         comboFiltro.removeAllItems();
         comboCategoria.removeAllItems();
-        for (CategoriaRecurso categoria : controlador.listarCategorias()) {
+        for (CategoriaRecurso categoria : categorias) {
             comboFiltro.addItem(categoria);
             comboCategoria.addItem(categoria);
         }
     }
 
-    private void nuevoRecurso() {
-        tablaRecursos.clearSelection();
-        txtCodigo.setText("");
-        txtDescripcion.setText("");
-        comboCategoria.setSelectedIndex(-1);
-        txtCodigo.setEditable(true);
-        comboCategoria.setEnabled(true);
-        txtDescripcion.setEditable(true);
-        btnGuardar.setEnabled(true);
-        btnBorrar.setEnabled(false);
-        txtCodigo.requestFocus();
-    }
-
-    private void filtrarRecursos() {
-        CategoriaRecurso categoria = (CategoriaRecurso) comboFiltro.getSelectedItem();
-        if (categoria == null) {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar una categoria.");
-            return;
-        }
-        DefaultTableModel modeloTabla = (DefaultTableModel) tablaRecursos.getModel();
-        modeloTabla.setRowCount(0);
-        for (Recurso recurso : controlador.listarRecursosPorCategoria(categoria.getId())) {
-            modeloTabla.addRow(new Object[]{
-                    recurso.getCodigo(), recurso.getCategoria(), recurso.getDescripcion()
-            });
-        }
-    }
-
-    private void cargarRecursos() {
-        DefaultTableModel modeloTabla = (DefaultTableModel) tablaRecursos.getModel();
-        modeloTabla.setRowCount(0);
-        for (Recurso recurso : controlador.listarRecursos()) {
-            modeloTabla.addRow(new Object[]{
-                    recurso.getCodigo(), recurso.getCategoria(), recurso.getDescripcion()
-            });
-        }
-    }
-
-    private void guardarRecurso() {
-        String codigo = txtCodigo.getText();
-        CategoriaRecurso categoria = (CategoriaRecurso) comboCategoria.getSelectedItem();
-        String descripcion = txtDescripcion.getText();
-        if (codigo.isBlank()) {
-            JOptionPane.showMessageDialog(this, "Debe escribir el codigo del recurso.");
-            return;
-        }
-        if (categoria == null) {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar una categoria.");
-            return;
-        }
-        if (descripcion.isBlank()) {
-            JOptionPane.showMessageDialog(this, "Debe escribir una descripcion.");
-            return;
-        }
-        try {
-            int fila = tablaRecursos.getSelectedRow();
-            if (fila == -1) {
-                boolean registrado = controlador.registrarRecurso(codigo, categoria.getId(), descripcion);
-                if (!registrado) {
-                    JOptionPane.showMessageDialog(this, "Ya existe un recurso con ese codigo.");
-                    return;
-                }
-                JOptionPane.showMessageDialog(this, "Recurso registrado correctamente.");
-            } else {
-                boolean modificado = controlador.modificarRecurso(codigo, categoria.getId(), descripcion);
-                if (!modificado) {
-                    JOptionPane.showMessageDialog(this, "No se encontro el recurso.");
-                    return;
-                }
-                JOptionPane.showMessageDialog(this, "Recurso modificado correctamente.");
-            }
-            limpiarCampos();
-        } catch (Exception error) {
-            JOptionPane.showMessageDialog(this, error.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void limpiarCampos() {
+    public void limpiar() {
         txtCodigo.setText("");
         txtDescripcion.setText("");
         comboCategoria.setSelectedIndex(-1);
@@ -238,53 +221,18 @@ public class RecursosPanel extends JPanel {
         txtDescripcion.setEditable(false);
         btnGuardar.setEnabled(false);
         btnBorrar.setEnabled(false);
-        cargarRecursos();
     }
 
-    private void seleccionarRecurso() {
-        int fila = tablaRecursos.getSelectedRow();
-        if (fila != -1) {
-            txtCodigo.setText(tablaRecursos.getValueAt(fila, 0).toString());
-            CategoriaRecurso categoria = (CategoriaRecurso) tablaRecursos.getValueAt(fila, 1);
-            comboCategoria.setSelectedItem(categoria);
-            txtDescripcion.setText(tablaRecursos.getValueAt(fila, 2).toString());
-            txtCodigo.setEditable(false);
-            comboCategoria.setEnabled(true);
-            txtDescripcion.setEditable(true);
-            btnGuardar.setEnabled(true);
-            btnBorrar.setEnabled(true);
-        } else {
-            txtCodigo.setText("");
-            txtDescripcion.setText("");
-            comboCategoria.setSelectedIndex(-1);
-            txtCodigo.setEditable(false);
-            comboCategoria.setEnabled(false);
-            txtDescripcion.setEditable(false);
-            btnGuardar.setEnabled(false);
-            btnBorrar.setEnabled(false);
-        }
+    public void mostrarMensaje(String msg) {
+        JOptionPane.showMessageDialog(this, msg);
     }
 
-    private void borrarRecurso() {
-        String codigo = txtCodigo.getText();
-        if (codigo.isBlank()) {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un recurso.");
-            return;
-        }
-        int respuesta = JOptionPane.showConfirmDialog(this,
-                "¿Desea borrar este recurso?", "Confirmar", JOptionPane.YES_NO_OPTION);
-        if (respuesta == JOptionPane.YES_OPTION) {
-            try {
-                boolean eliminado = controlador.eliminarRecurso(codigo);
-                if (eliminado) {
-                    JOptionPane.showMessageDialog(this, "Recurso eliminado correctamente.");
-                    limpiarCampos();
-                } else {
-                    JOptionPane.showMessageDialog(this, "No se encontro el recurso.");
-                }
-            } catch (RuntimeException error) {
-                JOptionPane.showMessageDialog(this, error.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
+    public void mostrarError(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public boolean confirmarAccion(String msg) {
+        return JOptionPane.showConfirmDialog(this, msg, "Confirmar",
+                JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
     }
 }

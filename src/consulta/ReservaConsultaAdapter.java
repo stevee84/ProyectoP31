@@ -1,6 +1,6 @@
 package consulta;
 
-import controller.ControladorReservaciones;
+import model.ModeloReservaciones;
 import model.Recurso;
 import model.Reservacion;
 
@@ -10,20 +10,20 @@ import java.util.stream.Collectors;
 
 /**
  * Implementación de {@link ReservaConsulta} que obtiene datos reales del
- * {@link ControladorReservaciones}, convirtiendo cada {@link Reservacion}
+ * {@link ModeloReservaciones}, convirtiendo cada {@link Reservacion}
  * en un {@link InfoReserva} de solo lectura.
  */
 public class ReservaConsultaAdapter implements ReservaConsulta {
 
-    private final ControladorReservaciones controlador;
+    private final ModeloReservaciones modelo;
 
-    public ReservaConsultaAdapter(ControladorReservaciones controlador) {
-        this.controlador = controlador;
+    public ReservaConsultaAdapter(ModeloReservaciones modelo) {
+        this.modelo = modelo;
     }
 
     @Override
     public List<InfoReserva> listarEnRango(LocalDateTime desde, LocalDateTime hasta) {
-        return controlador.listarReservacionesEnRango(desde, hasta).stream()
+        return modelo.listarReservacionesEnRango(desde, hasta).stream()
                 .filter(Reservacion::esActiva)
                 .map(ReservaConsultaAdapter::toInfoReserva)
                 .sorted((a, b) -> a.inicio().compareTo(b.inicio()))

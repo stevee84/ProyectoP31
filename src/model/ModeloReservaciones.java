@@ -20,7 +20,7 @@ public class ModeloReservaciones {
     private final Map<String, Empleado> empleados = new LinkedHashMap<>();
     private final Map<String, CategoriaRecurso> categorias = new LinkedHashMap<>();
     private final Map<String, Recurso> recursos = new LinkedHashMap<>();
-    private final List<Reservacion> reservaciones = new ArrayList<>();
+    private final Coleccion<Reservacion> reservaciones = new Coleccion<>();
     private int siguienteIdReservacion = 1;
     private int siguienteIdCategoria = 1;
 
@@ -261,7 +261,7 @@ public class ModeloReservaciones {
         // Fase 2 (mutación): recién aquí se agrega la reservación, una sola vez.
         Reservacion reservacion = new Reservacion(siguienteIdReservacion++, empleado, recursosAsignados,
                 descripcionActividad, inicio, fin);
-        reservaciones.add(reservacion);
+        reservaciones.agregar(reservacion);
         return ResultadoReserva.exito(reservacion);
     }
 
@@ -277,16 +277,16 @@ public class ModeloReservaciones {
         if (reservacion == null) {
             throw new ValidacionException("La reservación no puede ser nula.");
         }
-        int indice = reservaciones.indexOf(reservacion);
+        int indice = reservaciones.indiceDe(reservacion);
         if (indice < 0) {
             return false;
         }
-        reservaciones.set(indice, reservacion);
+        reservaciones.reemplazarEn(indice, reservacion);
         return true;
     }
 
     public boolean eliminarReservacion(int id) {
-        return reservaciones.removeIf(r -> r.getId() == id);
+        return reservaciones.eliminarSi(r -> r.getId() == id);
     }
 
     public Reservacion buscarReservacion(int id) {
@@ -307,7 +307,7 @@ public class ModeloReservaciones {
     }
 
     public List<Reservacion> listarReservaciones() {
-        List<Reservacion> lista = new ArrayList<>(reservaciones);
+        List<Reservacion> lista = new ArrayList<>(reservaciones.listar());
         Collections.sort(lista);
         return lista;
     }
@@ -396,7 +396,7 @@ public class ModeloReservaciones {
     }
 
     public int contarReservaciones() {
-        return reservaciones.size();
+        return reservaciones.tamanio();
     }
 
     // --- Métodos para persistencia XML ---
@@ -414,7 +414,7 @@ public class ModeloReservaciones {
     }
 
     public List<Reservacion> getReservaciones() {
-        return reservaciones;
+        return reservaciones.listar();
     }
 
     public int getSiguienteIdCategoria() {
@@ -446,7 +446,7 @@ public class ModeloReservaciones {
     }
 
     public void registrarReservacionCargada(Reservacion reservacion) {
-        reservaciones.add(reservacion);
+        reservaciones.agregar(reservacion);
     }
 
     private CategoriaRecurso buscarOCategoriaInvalida(String idCategoria) {

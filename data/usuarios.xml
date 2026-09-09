@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<usuarios>
+  <empleado clave="1234" firstLog="false" id="ADMIN" nombre="Administrador" rol="admin"/>
+  <empleado clave="1234" firstLog="false" id="SMOYA" nombre="Steven" rol="funcionario" telefono="71634690"/>
+</usuarios>

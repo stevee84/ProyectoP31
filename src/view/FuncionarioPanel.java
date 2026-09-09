@@ -1,6 +1,5 @@
 package view;
 
-import controller.UsuariosActividadesController;
 import model.Funcionario;
 
 import javax.swing.JButton;
@@ -10,7 +9,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.BorderFactory;
 import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -20,16 +18,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
 
-/**
- * Panel de mantenimiento de funcionarios (alta, baja, modificacion y
- * busqueda), pensado para vivir como una pestana dentro del
- * {@code JTabbedPane} del frame principal ("SISTEMA DE RESERVAS"). Solo
- * depende de {@link UsuariosActividadesController}; no conoce
- * {@code ControladorReservaciones} ni el modelo directamente.
- */
 public class FuncionarioPanel extends JPanel {
-
-    private final UsuariosActividadesController controller;
 
     private final DefaultTableModel modeloTabla =
             new DefaultTableModel(new Object[]{"Identificacion", "Nombre", "Telefono"}, 0) {
@@ -50,9 +39,16 @@ public class FuncionarioPanel extends JPanel {
     private final JButton btnEliminar = new JButton("Eliminar");
     private final JButton btnLimpiar = new JButton("Limpiar");
 
-    public FuncionarioPanel(UsuariosActividadesController controller) {
-        this.controller = controller;
+    // Callbacks
+    private Runnable onBuscar;
+    private Runnable onMostrarTodos;
+    private Runnable onAgregar;
+    private Runnable onModificar;
+    private Runnable onEliminar;
+    private Runnable onLimpiar;
+    private Runnable onSeleccionar;
 
+    public FuncionarioPanel() {
         setLayout(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
         setBorder(EstiloUI.margenEstandar());
         setBackground(EstiloUI.BACKGROUND);
@@ -69,16 +65,22 @@ public class FuncionarioPanel extends JPanel {
 
         tabla.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
-                cargarSeleccionEnFormulario();
+                int fila = tabla.getSelectedRow();
+                if (fila >= 0) {
+                    campoId.setText(String.valueOf(modeloTabla.getValueAt(fila, 0)));
+                    campoNombre.setText(String.valueOf(modeloTabla.getValueAt(fila, 1)));
+                    campoTelefono.setText(String.valueOf(modeloTabla.getValueAt(fila, 2)));
+                    modoEdicion();
+                }
+                if (onSeleccionar != null) onSeleccionar.run();
             }
         });
 
-        btnAgregar.addActionListener(e -> agregar());
-        btnModificar.addActionListener(e -> modificar());
-        btnEliminar.addActionListener(e -> eliminar());
-        btnLimpiar.addActionListener(e -> limpiarFormulario());
+        btnAgregar.addActionListener(e -> { if (onAgregar != null) onAgregar.run(); });
+        btnModificar.addActionListener(e -> { if (onModificar != null) onModificar.run(); });
+        btnEliminar.addActionListener(e -> { if (onEliminar != null) onEliminar.run(); });
+        btnLimpiar.addActionListener(e -> { if (onLimpiar != null) onLimpiar.run(); });
 
-        cargarFuncionarios(controller.listarFuncionarios());
         modoAlta();
     }
 
@@ -96,13 +98,10 @@ public class FuncionarioPanel extends JPanel {
         EstiloUI.estilizarBoton(btnBuscar);
         EstiloUI.estilizarBoton(btnMostrarTodos);
 
-        btnBuscar.addActionListener(e -> {
-            String texto = campoBusqueda.getText().trim();
-            cargarFuncionarios(controller.buscarFuncionariosPorTexto(texto));
-        });
+        btnBuscar.addActionListener(e -> { if (onBuscar != null) onBuscar.run(); });
         btnMostrarTodos.addActionListener(e -> {
             campoBusqueda.setText("");
-            cargarFuncionarios(controller.listarFuncionarios());
+            if (onMostrarTodos != null) onMostrarTodos.run();
         });
 
         panel.add(lbl);
@@ -151,76 +150,31 @@ public class FuncionarioPanel extends JPanel {
         return panel;
     }
 
-    private void cargarFuncionarios(List<Funcionario> funcionarios) {
+    // --- Callback setters ---
+    public void setOnBuscar(Runnable cb) { this.onBuscar = cb; }
+    public void setOnMostrarTodos(Runnable cb) { this.onMostrarTodos = cb; }
+    public void setOnAgregar(Runnable cb) { this.onAgregar = cb; }
+    public void setOnModificar(Runnable cb) { this.onModificar = cb; }
+    public void setOnEliminar(Runnable cb) { this.onEliminar = cb; }
+    public void setOnLimpiar(Runnable cb) { this.onLimpiar = cb; }
+    public void setOnSeleccionar(Runnable cb) { this.onSeleccionar = cb; }
+
+    // --- Getters ---
+    public String getBusqueda() { return campoBusqueda.getText().trim(); }
+    public String getId() { return campoId.getText().trim(); }
+    public String getNombre() { return campoNombre.getText().trim(); }
+    public String getTelefono() { return campoTelefono.getText().trim(); }
+    public int getFilaSeleccionada() { return tabla.getSelectedRow(); }
+
+    // --- Public methods for controller ---
+    public void cargarDatos(List<Funcionario> funcionarios) {
         modeloTabla.setRowCount(0);
         for (Funcionario f : funcionarios) {
             modeloTabla.addRow(new Object[]{f.getId(), f.getName(), f.getTelefono()});
         }
     }
 
-    private void cargarSeleccionEnFormulario() {
-        int fila = tabla.getSelectedRow();
-        if (fila < 0) {
-            return;
-        }
-        campoId.setText(String.valueOf(modeloTabla.getValueAt(fila, 0)));
-        campoNombre.setText(String.valueOf(modeloTabla.getValueAt(fila, 1)));
-        campoTelefono.setText(String.valueOf(modeloTabla.getValueAt(fila, 2)));
-        modoEdicion();
-    }
-
-    private void agregar() {
-        try {
-            controller.agregarFuncionario(campoNombre.getText().trim(), campoId.getText().trim(),
-                    campoTelefono.getText().trim());
-            cargarFuncionarios(controller.listarFuncionarios());
-            limpiarFormulario();
-        } catch (RuntimeException ex) {
-            mostrarError(ex);
-        }
-    }
-
-    private void modificar() {
-        int fila = tabla.getSelectedRow();
-        if (fila < 0) {
-            JOptionPane.showMessageDialog(this, "Seleccione un funcionario de la tabla.",
-                    "Aviso", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        try {
-            controller.actualizarFuncionario(campoId.getText().trim(), campoNombre.getText().trim(),
-                    campoTelefono.getText().trim());
-            cargarFuncionarios(controller.listarFuncionarios());
-            limpiarFormulario();
-        } catch (RuntimeException ex) {
-            mostrarError(ex);
-        }
-    }
-
-    private void eliminar() {
-        int fila = tabla.getSelectedRow();
-        if (fila < 0) {
-            JOptionPane.showMessageDialog(this, "Seleccione un funcionario de la tabla.",
-                    "Aviso", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        String id = String.valueOf(modeloTabla.getValueAt(fila, 0));
-        int confirmacion = JOptionPane.showConfirmDialog(this,
-                "¿Eliminar al funcionario " + id + "?", "Confirmar eliminacion",
-                JOptionPane.YES_NO_OPTION);
-        if (confirmacion != JOptionPane.YES_OPTION) {
-            return;
-        }
-        try {
-            controller.eliminarFuncionario(id);
-            cargarFuncionarios(controller.listarFuncionarios());
-            limpiarFormulario();
-        } catch (RuntimeException ex) {
-            mostrarError(ex);
-        }
-    }
-
-    private void limpiarFormulario() {
+    public void limpiar() {
         tabla.clearSelection();
         campoId.setText("");
         campoNombre.setText("");
@@ -228,21 +182,30 @@ public class FuncionarioPanel extends JPanel {
         modoAlta();
     }
 
-    private void modoAlta() {
+    public void modoAlta() {
         campoId.setEditable(true);
         btnAgregar.setEnabled(true);
         btnModificar.setEnabled(false);
         btnEliminar.setEnabled(false);
     }
 
-    private void modoEdicion() {
+    public void modoEdicion() {
         campoId.setEditable(false);
         btnAgregar.setEnabled(false);
         btnModificar.setEnabled(true);
         btnEliminar.setEnabled(true);
     }
 
-    private void mostrarError(Exception ex) {
-        JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    public void mostrarMensaje(String msg) {
+        JOptionPane.showMessageDialog(this, msg);
+    }
+
+    public void mostrarError(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public boolean confirmarAccion(String msg) {
+        return JOptionPane.showConfirmDialog(this, msg, "Confirmar",
+                JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
     }
 }

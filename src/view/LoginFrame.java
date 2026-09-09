@@ -1,9 +1,5 @@
 package view;
 
-import controller.ControladorReservaciones;
-import controller.UsuariosActividadesController;
-import model.Empleado;
-
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -22,29 +18,18 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Font;
-import java.util.function.Consumer;
 
-/**
- * Ventana de inicio de sesion. Es el unico punto de entrada que todavia
- * necesita ser un {@code JFrame} propio (el resto de las pantallas del
- * modulo son paneles embebibles) porque se muestra antes de que exista
- * cualquier ventana principal. Al iniciar sesion con exito (y, si aplica,
- * completar el cambio de contrasena obligatorio del primer login), se
- * cierra y delega en {@code alIniciarSesion} que hacer despues.
- */
 public class LoginFrame extends JFrame {
-
-    private final UsuariosActividadesController controller;
-    private final Consumer<Empleado> alIniciarSesion;
 
     private final JTextField campoId = new JTextField(18);
     private final JPasswordField campoClave = new JPasswordField(18);
     private final JButton btnIngresar = new JButton("Ingresar");
 
-    public LoginFrame(UsuariosActividadesController controller, Consumer<Empleado> alIniciarSesion) {
+    // Callbacks
+    private Runnable onLogin;
+
+    public LoginFrame() {
         super("Sistema de Reservas - Iniciar sesion");
-        this.controller = controller;
-        this.alIniciarSesion = alIniciarSesion;
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
@@ -55,7 +40,6 @@ public class LoginFrame extends JFrame {
         mainPanel.setBackground(EstiloUI.BACKGROUND);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
 
-        // Title area
         JLabel lblTitulo = new JLabel("Sistema de Reservas", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblTitulo.setForeground(EstiloUI.PRIMARY);
@@ -71,7 +55,6 @@ public class LoginFrame extends JFrame {
         mainPanel.add(lblSubtitulo);
         mainPanel.add(Box.createVerticalStrut(24));
 
-        // Form
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBackground(EstiloUI.BACKGROUND);
         GridBagConstraints gbc = new GridBagConstraints();
@@ -100,7 +83,6 @@ public class LoginFrame extends JFrame {
         mainPanel.add(formPanel);
         mainPanel.add(Box.createVerticalStrut(16));
 
-        // Button
         EstiloUI.estilizarBotonPrimario(btnIngresar);
         btnIngresar.setPreferredSize(new Dimension(120, EstiloUI.BTN_HEIGHT));
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -110,35 +92,27 @@ public class LoginFrame extends JFrame {
 
         add(mainPanel, BorderLayout.CENTER);
 
-        btnIngresar.addActionListener(e -> ingresar());
-        campoClave.addActionListener(e -> ingresar());
+        btnIngresar.addActionListener(e -> { if (onLogin != null) onLogin.run(); });
+        campoClave.addActionListener(e -> { if (onLogin != null) onLogin.run(); });
 
         pack();
         setLocationRelativeTo(null);
     }
 
-    private void ingresar() {
-        String id = campoId.getText().trim();
-        String pass = new String(campoClave.getPassword());
+    // --- Callback setters ---
+    public void setOnLogin(Runnable cb) { this.onLogin = cb; }
 
-        ControladorReservaciones.ResultadoSesion resultado = controller.iniciarSesion(id, pass);
-        if (resultado.empleado() == null) {
-            JOptionPane.showMessageDialog(this, "Identificacion o contrasena incorrecta.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            campoClave.setText("");
-            return;
-        }
+    // --- Getters ---
+    public String getId() { return campoId.getText().trim(); }
+    public String getPassword() { return new String(campoClave.getPassword()); }
 
-        if (resultado.requiereCambioContraseña()) {
-            boolean cambiada = CambioClaveDialog.solicitarCambio(this, controller);
-            if (!cambiada) {
-                controller.cerrarSesion();
-                campoClave.setText("");
-                return;
-            }
-        }
+    // --- Public methods for controller ---
+    public void mostrarError(String msg) {
+        JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+        campoClave.setText("");
+    }
 
+    public void cerrar() {
         dispose();
-        alIniciarSesion.accept(resultado.empleado());
     }
 }

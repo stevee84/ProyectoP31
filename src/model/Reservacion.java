@@ -4,8 +4,6 @@ import exception.DisponibilidadException;
 import exception.ValidacionException;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -14,7 +12,7 @@ public class Reservacion implements Comparable<Reservacion> {
 
     private final int id;
     private Empleado empleado;
-    private List<Recurso> recursos;
+    private Coleccion<Recurso> recursos;
     private String descripcionActividad;
     private LocalDateTime inicio;
     private LocalDateTime fin;
@@ -48,7 +46,7 @@ public class Reservacion implements Comparable<Reservacion> {
             throw new ValidacionException("La hora de inicio debe ser anterior a la de terminación.");
         }
         this.empleado = empleado;
-        this.recursos = new ArrayList<>(recursos);
+        this.recursos = new Coleccion<>(recursos);
         this.descripcionActividad = descripcionActividad.trim();
         this.inicio = inicio;
         this.fin = fin;
@@ -69,7 +67,7 @@ public class Reservacion implements Comparable<Reservacion> {
     }
 
     public boolean incluyeRecurso(Recurso recurso) {
-        return recursos.contains(recurso);
+        return recursos.contiene(recurso);
     }
 
     public boolean seSolapa(Recurso recurso, LocalDateTime inicio, LocalDateTime fin) {
@@ -88,7 +86,7 @@ public class Reservacion implements Comparable<Reservacion> {
     }
 
     public List<Recurso> getRecursos() {
-        return Collections.unmodifiableList(recursos);
+        return recursos.listar();
     }
 
     public String getDescripcionActividad() {
