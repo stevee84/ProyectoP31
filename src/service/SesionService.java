@@ -13,10 +13,6 @@ public class SesionService {
     private PersistenciaXml persistencia;
     private Empleado sesionActual;
 
-    public SesionService(ModeloReservaciones modelo) {
-        this.modelo = modelo;
-    }
-
     public SesionService(ModeloReservaciones modelo, PersistenciaXml persistencia) {
         this.modelo = modelo;
         this.persistencia = persistencia;

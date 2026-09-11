@@ -13,11 +13,6 @@ public class RecursoService {
     private PersistenciaXml persistencia;
     private final SesionService sesionService;
 
-    public RecursoService(ModeloReservaciones modelo, SesionService sesionService) {
-        this.modelo = modelo;
-        this.sesionService = sesionService;
-    }
-
     public RecursoService(ModeloReservaciones modelo, PersistenciaXml persistencia, SesionService sesionService) {
         this.modelo = modelo;
         this.persistencia = persistencia;

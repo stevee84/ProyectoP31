@@ -29,6 +29,7 @@ import view.VentanaPrincipal;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -152,10 +153,26 @@ public class AplicacionController {
             paneles.add(calendarizacionPanel);
             nombres.add("Calendarizacion");
 
+            AgendaSemanalPanel agendaPanel = new AgendaSemanalPanel();
+            new AgendaController(agendaPanel, estadisticasService);
+            paneles.add(agendaPanel);
+            nombres.add("Actividades");
+
+            // Estadisticas con sub-tabs (Actividades y Recursos)
+            EstadisticasPanel estadisticasActividadesPanel = new EstadisticasPanel();
+            new EstadisticasController(estadisticasActividadesPanel, estadisticasService);
+
             EstadisticasRecursosPanel estadisticasRecursosPanel = new EstadisticasRecursosPanel();
             new EstadisticasRecursosController(estadisticasRecursosPanel, estadisticasService);
-            paneles.add(estadisticasRecursosPanel);
-            nombres.add("Estadisticas Recursos");
+
+            JTabbedPane tabsEstadisticas = new JTabbedPane();
+            tabsEstadisticas.addTab("Actividades", estadisticasActividadesPanel);
+            tabsEstadisticas.addTab("Recursos", estadisticasRecursosPanel);
+
+            JPanel panelEstadisticas = new JPanel(new java.awt.BorderLayout());
+            panelEstadisticas.add(tabsEstadisticas, java.awt.BorderLayout.CENTER);
+            paneles.add(panelEstadisticas);
+            nombres.add("Estadisticas");
         } else {
             ReservaPanel reservaPanel = new ReservaPanel();
             new ReservaController(reservaPanel, reservaService, categoriaService);

@@ -24,21 +24,9 @@ public class RecursoController {
         view.setOnFiltrar(this::filtrar);
         view.setOnLimpiar(this::limpiar);
         view.setOnVisible(this::cargarCategorias);
-        view.setOnNuevo(this::nuevo);
-        view.setOnSeleccionar(this::seleccionar);
 
         cargarCategorias();
         cargarRecursos();
-    }
-
-    private void nuevo() {
-        // La vista ya limpia los campos y habilita la edicion.
-        // Este hook queda disponible para logica adicional del controlador.
-    }
-
-    private void seleccionar() {
-        // La vista ya carga los datos de la fila seleccionada en los campos.
-        // Este hook queda disponible para logica adicional del controlador.
     }
 
     private void guardar() {

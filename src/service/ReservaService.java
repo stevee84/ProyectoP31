@@ -24,12 +24,6 @@ public class ReservaService {
     private final SesionService sesionService;
     private final ExtractorReservaIA extractorIA;
 
-    public ReservaService(ModeloReservaciones modelo, SesionService sesionService, ExtractorReservaIA extractorIA) {
-        this.modelo = modelo;
-        this.sesionService = sesionService;
-        this.extractorIA = extractorIA;
-    }
-
     public ReservaService(ModeloReservaciones modelo, PersistenciaXml persistencia, SesionService sesionService,
                            ExtractorReservaIA extractorIA) {
         this.modelo = modelo;

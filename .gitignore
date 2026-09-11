@@ -32,3 +32,6 @@ bin/
 ### Maven ###
 target/
 *.class
+
+### Runtime data ###
+data/

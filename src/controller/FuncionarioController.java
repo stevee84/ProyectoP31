@@ -21,14 +21,8 @@ public class FuncionarioController {
         view.setOnBuscar(this::buscar);
         view.setOnMostrarTodos(this::cargarDatos);
         view.setOnLimpiar(this::limpiar);
-        view.setOnSeleccionar(this::seleccionar);
 
         cargarDatos();
-    }
-
-    private void seleccionar() {
-        // La vista ya carga los datos de la fila seleccionada en los campos.
-        // Este hook queda disponible para logica adicional del controlador.
     }
 
     private void agregar() {

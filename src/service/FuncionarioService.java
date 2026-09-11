@@ -2,7 +2,6 @@ package service;
 
 import exception.RecursoEnUsoException;
 import exception.ValidacionException;
-import model.Administrador;
 import model.Empleado;
 import model.Funcionario;
 import model.ModeloReservaciones;
@@ -16,11 +15,6 @@ public class FuncionarioService {
     private final ModeloReservaciones modelo;
     private PersistenciaXml persistencia;
     private final SesionService sesionService;
-
-    public FuncionarioService(ModeloReservaciones modelo, SesionService sesionService) {
-        this.modelo = modelo;
-        this.sesionService = sesionService;
-    }
 
     public FuncionarioService(ModeloReservaciones modelo, PersistenciaXml persistencia, SesionService sesionService) {
         this.modelo = modelo;
@@ -36,13 +30,6 @@ public class FuncionarioService {
                 System.err.println("Error al guardar datos: " + e.getMessage());
             }
         }
-    }
-
-    public boolean registrarAdministrador(String nombre, String id) {
-        sesionService.requireAdmin();
-        boolean ok = modelo.registrarEmpleado(new Administrador(nombre, id));
-        if (ok) guardarDatos();
-        return ok;
     }
 
     public boolean registrarFuncionario(String nombre, String id, String telefono) {
