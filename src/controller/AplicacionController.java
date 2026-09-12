@@ -147,48 +147,15 @@ public class AplicacionController {
             new RecursoController(recursosPanel, recursoService, categoriaService);
             paneles.add(recursosPanel);
             nombres.add("Recursos");
-
-            CalendarizacionRecursosPanel calendarizacionPanel = new CalendarizacionRecursosPanel();
-            new CalendarizacionRecursosController(calendarizacionPanel, calendarizacionService);
-            paneles.add(calendarizacionPanel);
-            nombres.add("Calendarizacion");
-
-            AgendaSemanalPanel agendaPanel = new AgendaSemanalPanel();
-            new AgendaController(agendaPanel, estadisticasService);
-            paneles.add(agendaPanel);
-            nombres.add("Actividades");
-
-            // Estadisticas con sub-tabs (Actividades y Recursos)
-            EstadisticasPanel estadisticasActividadesPanel = new EstadisticasPanel();
-            new EstadisticasController(estadisticasActividadesPanel, estadisticasService);
-
-            EstadisticasRecursosPanel estadisticasRecursosPanel = new EstadisticasRecursosPanel();
-            new EstadisticasRecursosController(estadisticasRecursosPanel, estadisticasService);
-
-            JTabbedPane tabsEstadisticas = new JTabbedPane();
-            tabsEstadisticas.addTab("Actividades", estadisticasActividadesPanel);
-            tabsEstadisticas.addTab("Recursos", estadisticasRecursosPanel);
-
-            JPanel panelEstadisticas = new JPanel(new java.awt.BorderLayout());
-            panelEstadisticas.add(tabsEstadisticas, java.awt.BorderLayout.CENTER);
-            paneles.add(panelEstadisticas);
-            nombres.add("Estadisticas");
         } else {
             ReservaPanel reservaPanel = new ReservaPanel();
             new ReservaController(reservaPanel, reservaService, categoriaService);
             paneles.add(reservaPanel);
             nombres.add("Reservas");
-
-            AgendaSemanalPanel agendaPanel = new AgendaSemanalPanel();
-            new AgendaController(agendaPanel, estadisticasService);
-            paneles.add(agendaPanel);
-            nombres.add("Agenda Semanal");
-
-            EstadisticasPanel estadisticasPanel = new EstadisticasPanel();
-            new EstadisticasController(estadisticasPanel, estadisticasService);
-            paneles.add(estadisticasPanel);
-            nombres.add("Estadisticas");
         }
+
+        // Tabs comunes: Calendarizacion, Actividades, Estadisticas
+        agregarTabsComunes(paneles, nombres);
 
         VentanaPrincipal ventana = new VentanaPrincipal(
                 paneles.toArray(new JPanel[0]),
@@ -218,5 +185,32 @@ public class AplicacionController {
         });
 
         ventana.setVisible(true);
+    }
+
+    private void agregarTabsComunes(List<JPanel> paneles, List<String> nombres) {
+        CalendarizacionRecursosPanel calendarizacionPanel = new CalendarizacionRecursosPanel();
+        new CalendarizacionRecursosController(calendarizacionPanel, calendarizacionService);
+        paneles.add(calendarizacionPanel);
+        nombres.add("Calendarizacion");
+
+        AgendaSemanalPanel agendaPanel = new AgendaSemanalPanel();
+        new AgendaController(agendaPanel, estadisticasService);
+        paneles.add(agendaPanel);
+        nombres.add("Actividades");
+
+        EstadisticasPanel estadisticasActPanel = new EstadisticasPanel();
+        new EstadisticasController(estadisticasActPanel, estadisticasService);
+
+        EstadisticasRecursosPanel estadisticasRecPanel = new EstadisticasRecursosPanel();
+        new EstadisticasRecursosController(estadisticasRecPanel, estadisticasService);
+
+        JTabbedPane tabsEstadisticas = new JTabbedPane();
+        tabsEstadisticas.addTab("Actividades", estadisticasActPanel);
+        tabsEstadisticas.addTab("Recursos", estadisticasRecPanel);
+
+        JPanel panelEstadisticas = new JPanel(new java.awt.BorderLayout());
+        panelEstadisticas.add(tabsEstadisticas, java.awt.BorderLayout.CENTER);
+        paneles.add(panelEstadisticas);
+        nombres.add("Estadisticas");
     }
 }
