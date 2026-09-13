@@ -27,6 +27,8 @@ public class ReservaPanel extends JPanel {
         setBorder(EstiloUI.margenEstandar());
         setBackground(EstiloUI.BACKGROUND);
 
+        add(new BarraBusquedaTabla(tablaReservas, 6), BorderLayout.NORTH);
+
         EstiloUI.estilizarTabla(tablaReservas);
         configurarBotonCancelar();
 
@@ -45,20 +47,20 @@ public class ReservaPanel extends JPanel {
 
     private void configurarBotonCancelar() {
         BotonTablaRenderer btnCancelar = new BotonTablaRenderer(
-                "Cancelar", EstiloUI.DANGER, fila -> {
+                "Cancelar", EstiloUI.DANGER, Iconos.cancelar(), fila -> {
             if (onCancelar != null) onCancelar.accept(fila);
         });
 
         TableColumn col = tablaReservas.getColumnModel().getColumn(6);
         col.setCellRenderer(btnCancelar);
         col.setCellEditor(btnCancelar);
-        col.setPreferredWidth(80);
-        col.setMaxWidth(90);
+        col.setPreferredWidth(40);
+        col.setMaxWidth(50);
     }
 
     private JPanel construirPanelInferior() {
-        JButton btnNueva = new JButton("Nueva Reserva");
-        JButton btnPdf = new JButton("Generar PDF");
+        JButton btnNueva = new JButton("Nueva Reserva", Iconos.agregar());
+        JButton btnPdf = new JButton("Generar PDF", Iconos.pdf());
         btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tablaReservas,
                 "Mis Reservas", "reservas.pdf"));
 

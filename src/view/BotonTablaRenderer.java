@@ -19,9 +19,15 @@ public final class BotonTablaRenderer extends AbstractCellEditor
      * @param color  color de fondo del boton
      * @param accion callback que recibe el indice de fila del modelo
      */
-    public BotonTablaRenderer(String texto, Color color, java.util.function.IntConsumer accion) {
+    public BotonTablaRenderer(String texto, Color color, Icon icono,
+                             java.util.function.IntConsumer accion) {
         this.accion = accion;
-        boton.setText(texto);
+        if (icono != null) {
+            boton.setIcon(icono);
+            boton.setToolTipText(texto);
+        } else {
+            boton.setText(texto);
+        }
         boton.setFont(EstiloUI.SMALL);
         boton.setForeground(Color.WHITE);
         boton.setBackground(color);

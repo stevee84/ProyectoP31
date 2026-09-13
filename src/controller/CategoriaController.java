@@ -1,13 +1,11 @@
 package controller;
 
-import model.CategoriaRecurso;
 import service.CategoriaService;
 import view.CategoriaDialog;
 import view.CategoriasPanel;
 
 import javax.swing.SwingUtilities;
 import java.awt.Frame;
-import java.util.List;
 
 public class CategoriaController {
 
@@ -23,7 +21,6 @@ public class CategoriaController {
             if (args.length > 0) abrirDialogoModificar(args[0]);
         });
         view.setOnEliminar(this::eliminar);
-        view.setOnBuscar(this::buscar);
 
         cargarDatos();
     }
@@ -73,21 +70,6 @@ public class CategoriaController {
             service.eliminar(id);
             view.mostrarMensaje("Categoria eliminada.");
             cargarDatos();
-        } catch (Exception e) {
-            view.mostrarError(e.getMessage());
-        }
-    }
-
-    private void buscar() {
-        String texto = view.getBusqueda();
-        try {
-            List<CategoriaRecurso> resultado;
-            if (texto.isBlank()) {
-                resultado = service.listar();
-            } else {
-                resultado = service.buscarPorDescripcion(texto);
-            }
-            view.cargarDatos(resultado);
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
         }

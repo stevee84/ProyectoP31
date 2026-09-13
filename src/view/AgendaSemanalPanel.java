@@ -32,7 +32,11 @@ public class AgendaSemanalPanel extends JPanel {
         setBorder(EstiloUI.margenEstandar());
         setBackground(EstiloUI.BACKGROUND);
 
-        add(construirPanelNavegacion(), BorderLayout.NORTH);
+        JPanel panelNorte = new JPanel(new BorderLayout(EstiloUI.GAP, 0));
+        panelNorte.setBackground(EstiloUI.BACKGROUND);
+        panelNorte.add(new BarraBusquedaTabla(tabla), BorderLayout.NORTH);
+        panelNorte.add(construirPanelNavegacion(), BorderLayout.SOUTH);
+        add(panelNorte, BorderLayout.NORTH);
 
         EstiloUI.estilizarTabla(tabla);
         JScrollPane scroll = new JScrollPane(tabla);
@@ -59,7 +63,7 @@ public class AgendaSemanalPanel extends JPanel {
         btnHoy.addActionListener(e -> { if (onSemanaActual != null) onSemanaActual.run(); });
         btnSiguiente.addActionListener(e -> { if (onSemanaSiguiente != null) onSemanaSiguiente.run(); });
 
-        JButton btnPdf = new JButton("Generar PDF");
+        JButton btnPdf = new JButton("Generar PDF", Iconos.pdf());
         btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tabla,
                 "Agenda Semanal", "agenda_semanal.pdf"));
         EstiloUI.estilizarBoton(btnPdf);

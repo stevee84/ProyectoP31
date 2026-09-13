@@ -60,13 +60,17 @@ public class CalendarizacionRecursosPanel extends JPanel {
         JScrollPane scrollTabla = new JScrollPane(tablaCalendarizacion);
         scrollTabla.setBorder(EstiloUI.crearTitledBorder("Calendarizacion de recursos"));
 
-        JButton btnPdf = new JButton("Generar PDF");
+        JButton btnPdf = new JButton("Generar PDF", Iconos.pdf());
         btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tablaCalendarizacion,
                 "Calendarizacion de Recursos", "calendarizacion.pdf"));
         EstiloUI.estilizarBoton(btnPdf);
         panelSeleccion.add(btnPdf);
 
-        add(panelSeleccion, BorderLayout.NORTH);
+        JPanel panelNorte = new JPanel(new BorderLayout(EstiloUI.GAP, 0));
+        panelNorte.setBackground(EstiloUI.BACKGROUND);
+        panelNorte.add(new BarraBusquedaTabla(tablaCalendarizacion), BorderLayout.NORTH);
+        panelNorte.add(panelSeleccion, BorderLayout.SOUTH);
+        add(panelNorte, BorderLayout.NORTH);
         add(scrollTabla, BorderLayout.CENTER);
 
         addHierarchyListener(e -> {

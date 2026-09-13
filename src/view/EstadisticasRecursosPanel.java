@@ -44,7 +44,7 @@ public class EstadisticasRecursosPanel extends JPanel {
         EstiloUI.estilizarEtiqueta(lblHasta);
         EstiloUI.estilizarBoton(btnCalcular);
 
-        JButton btnPdf = new JButton("Generar PDF");
+        JButton btnPdf = new JButton("Generar PDF", Iconos.pdf());
         btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tablaEstadisticas,
                 "Estadisticas de Recursos", "estadisticas_recursos.pdf"));
         EstiloUI.estilizarBoton(btnPdf);
@@ -74,7 +74,11 @@ public class EstadisticasRecursosPanel extends JPanel {
         panelCentro.add(scrollTabla);
         panelCentro.add(panelGrafica);
 
-        add(panelFechas, BorderLayout.NORTH);
+        JPanel panelNorte = new JPanel(new BorderLayout(EstiloUI.GAP, 0));
+        panelNorte.setBackground(EstiloUI.BACKGROUND);
+        panelNorte.add(new BarraBusquedaTabla(tablaEstadisticas), BorderLayout.NORTH);
+        panelNorte.add(panelFechas, BorderLayout.SOUTH);
+        add(panelNorte, BorderLayout.NORTH);
         add(panelCentro, BorderLayout.CENTER);
 
         btnCalcular.addActionListener(e -> { if (onCalcular != null) onCalcular.run(); });

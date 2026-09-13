@@ -1,13 +1,11 @@
 package controller;
 
-import model.Funcionario;
 import service.FuncionarioService;
 import view.FuncionarioDialog;
 import view.FuncionarioPanel;
 
 import javax.swing.SwingUtilities;
 import java.awt.Frame;
-import java.util.List;
 
 public class FuncionarioController {
 
@@ -23,8 +21,6 @@ public class FuncionarioController {
             if (args.length > 0) abrirDialogoModificar(args[0]);
         });
         view.setOnEliminar(this::eliminar);
-        view.setOnBuscar(this::buscar);
-        view.setOnMostrarTodos(this::cargarDatos);
 
         cargarDatos();
     }
@@ -74,21 +70,6 @@ public class FuncionarioController {
             service.eliminarFuncionario(id);
             view.mostrarMensaje("Funcionario eliminado.");
             cargarDatos();
-        } catch (Exception e) {
-            view.mostrarError(e.getMessage());
-        }
-    }
-
-    private void buscar() {
-        String texto = view.getBusqueda();
-        try {
-            List<Funcionario> resultado;
-            if (texto.isBlank()) {
-                resultado = service.listarFuncionarios();
-            } else {
-                resultado = service.buscarPorTexto(texto);
-            }
-            view.cargarDatos(resultado);
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
         }

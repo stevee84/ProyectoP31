@@ -36,7 +36,11 @@ public class RecursosPanel extends JPanel {
         setBorder(EstiloUI.margenEstandar());
         setBackground(EstiloUI.BACKGROUND);
 
-        add(construirPanelFiltro(), BorderLayout.NORTH);
+        JPanel panelNorte = new JPanel(new BorderLayout(EstiloUI.GAP, 0));
+        panelNorte.setBackground(EstiloUI.BACKGROUND);
+        panelNorte.add(new BarraBusquedaTabla(tablaRecursos, 3, 4), BorderLayout.NORTH);
+        panelNorte.add(construirPanelFiltro(), BorderLayout.SOUTH);
+        add(panelNorte, BorderLayout.NORTH);
 
         EstiloUI.estilizarTabla(tablaRecursos);
         configurarColumnasBotones();
@@ -56,25 +60,25 @@ public class RecursosPanel extends JPanel {
 
     private void configurarColumnasBotones() {
         BotonTablaRenderer btnMod = new BotonTablaRenderer(
-                "Modificar", EstiloUI.PRIMARY, fila -> {
+                "Modificar", EstiloUI.PRIMARY, Iconos.lapiz(), fila -> {
             if (onAbrirModificar != null) onAbrirModificar.accept(new int[]{fila});
         });
         BotonTablaRenderer btnElim = new BotonTablaRenderer(
-                "Eliminar", EstiloUI.DANGER, fila -> {
+                "Eliminar", EstiloUI.DANGER, Iconos.basurero(), fila -> {
             if (onEliminar != null) onEliminar.accept(fila);
         });
 
         TableColumn colMod = tablaRecursos.getColumnModel().getColumn(3);
         colMod.setCellRenderer(btnMod);
         colMod.setCellEditor(btnMod);
-        colMod.setPreferredWidth(80);
-        colMod.setMaxWidth(90);
+        colMod.setPreferredWidth(40);
+        colMod.setMaxWidth(50);
 
         TableColumn colElim = tablaRecursos.getColumnModel().getColumn(4);
         colElim.setCellRenderer(btnElim);
         colElim.setCellEditor(btnElim);
-        colElim.setPreferredWidth(80);
-        colElim.setMaxWidth(90);
+        colElim.setPreferredWidth(40);
+        colElim.setMaxWidth(50);
     }
 
     private JPanel construirPanelFiltro() {
@@ -98,8 +102,8 @@ public class RecursosPanel extends JPanel {
     }
 
     private JPanel construirPanelInferior() {
-        JButton btnAgregar = new JButton("Agregar");
-        JButton btnPdf = new JButton("Generar PDF");
+        JButton btnAgregar = new JButton("Agregar", Iconos.agregar());
+        JButton btnPdf = new JButton("Generar PDF", Iconos.pdf());
         btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tablaRecursos,
                 "Listado de Recursos", "recursos.pdf"));
 

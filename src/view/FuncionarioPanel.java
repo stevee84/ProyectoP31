@@ -3,12 +3,10 @@ package view;
 import model.Funcionario;
 
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.awt.BorderLayout;
@@ -23,16 +21,12 @@ public class FuncionarioPanel extends JPanel {
             new DefaultTableModel(new Object[]{"Identificacion", "Nombre", "Telefono", "", ""}, 0) {
                 @Override
                 public boolean isCellEditable(int row, int column) {
-                    return column >= 3; // solo columnas de botones
+                    return column >= 3;
                 }
             };
     private final JTable tabla = new JTable(modeloTabla);
 
-    private final JTextField campoBusqueda = new JTextField(18);
-
     // Callbacks
-    private Runnable onBuscar;
-    private Runnable onMostrarTodos;
     private Runnable onAbrirAgregar;
     private Consumer<int[]> onAbrirModificar;
     private IntConsumer onEliminar;
@@ -42,7 +36,7 @@ public class FuncionarioPanel extends JPanel {
         setBorder(EstiloUI.margenEstandar());
         setBackground(EstiloUI.BACKGROUND);
 
-        add(construirPanelBusqueda(), BorderLayout.NORTH);
+        add(new BarraBusquedaTabla(tabla, 3, 4), BorderLayout.NORTH);
 
         EstiloUI.estilizarTabla(tabla);
         configurarColumnasBotones();
@@ -56,57 +50,30 @@ public class FuncionarioPanel extends JPanel {
 
     private void configurarColumnasBotones() {
         BotonTablaRenderer btnModificar = new BotonTablaRenderer(
-                "Modificar", EstiloUI.PRIMARY, fila -> {
+                "Modificar", EstiloUI.PRIMARY, Iconos.lapiz(), fila -> {
             if (onAbrirModificar != null) onAbrirModificar.accept(new int[]{fila});
         });
         BotonTablaRenderer btnEliminar = new BotonTablaRenderer(
-                "Eliminar", EstiloUI.DANGER, fila -> {
+                "Eliminar", EstiloUI.DANGER, Iconos.basurero(), fila -> {
             if (onEliminar != null) onEliminar.accept(fila);
         });
 
         TableColumn colMod = tabla.getColumnModel().getColumn(3);
         colMod.setCellRenderer(btnModificar);
         colMod.setCellEditor(btnModificar);
-        colMod.setPreferredWidth(80);
-        colMod.setMaxWidth(90);
+        colMod.setPreferredWidth(40);
+        colMod.setMaxWidth(50);
 
         TableColumn colElim = tabla.getColumnModel().getColumn(4);
         colElim.setCellRenderer(btnEliminar);
         colElim.setCellEditor(btnEliminar);
-        colElim.setPreferredWidth(80);
-        colElim.setMaxWidth(90);
-    }
-
-    private JPanel construirPanelBusqueda() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
-        panel.setBackground(EstiloUI.BACKGROUND);
-        panel.setBorder(EstiloUI.crearTitledBorder("Busqueda"));
-
-        JButton btnBuscar = new JButton("Buscar");
-        JButton btnMostrarTodos = new JButton("Mostrar todos");
-
-        JLabel lbl = new JLabel("Buscar:");
-        EstiloUI.estilizarEtiqueta(lbl);
-        EstiloUI.estilizarCampo(campoBusqueda);
-        EstiloUI.estilizarBoton(btnBuscar);
-        EstiloUI.estilizarBoton(btnMostrarTodos);
-
-        btnBuscar.addActionListener(e -> { if (onBuscar != null) onBuscar.run(); });
-        btnMostrarTodos.addActionListener(e -> {
-            campoBusqueda.setText("");
-            if (onMostrarTodos != null) onMostrarTodos.run();
-        });
-
-        panel.add(lbl);
-        panel.add(campoBusqueda);
-        panel.add(btnBuscar);
-        panel.add(btnMostrarTodos);
-        return panel;
+        colElim.setPreferredWidth(40);
+        colElim.setMaxWidth(50);
     }
 
     private JPanel construirPanelInferior() {
-        JButton btnAgregar = new JButton("Agregar");
-        JButton btnPdf = new JButton("Generar PDF");
+        JButton btnAgregar = new JButton("Agregar", Iconos.agregar());
+        JButton btnPdf = new JButton("Generar PDF", Iconos.pdf());
         btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tabla,
                 "Listado de Funcionarios", "funcionarios.pdf"));
 
@@ -125,15 +92,11 @@ public class FuncionarioPanel extends JPanel {
     }
 
     // --- Callback setters ---
-    public void setOnBuscar(Runnable cb) { this.onBuscar = cb; }
-    public void setOnMostrarTodos(Runnable cb) { this.onMostrarTodos = cb; }
     public void setOnAbrirAgregar(Runnable cb) { this.onAbrirAgregar = cb; }
     public void setOnAbrirModificar(Consumer<int[]> cb) { this.onAbrirModificar = cb; }
     public void setOnEliminar(IntConsumer cb) { this.onEliminar = cb; }
 
     // --- Getters ---
-    public String getBusqueda() { return campoBusqueda.getText().trim(); }
-
     public String[] getDatosFila(int filaModelo) {
         return new String[]{
                 String.valueOf(modeloTabla.getValueAt(filaModelo, 0)),

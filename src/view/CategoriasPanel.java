@@ -19,10 +19,8 @@ public class CategoriasPanel extends JPanel {
                 }
             };
     private final JTable tablaCategorias = new JTable(modeloTabla);
-    private final JTextField txtBusqueda = new JTextField(20);
 
     // Callbacks
-    private Runnable onBuscar;
     private Runnable onAbrirAgregar;
     private Consumer<int[]> onAbrirModificar;
     private IntConsumer onEliminar;
@@ -32,7 +30,7 @@ public class CategoriasPanel extends JPanel {
         setBorder(EstiloUI.margenEstandar());
         setBackground(EstiloUI.BACKGROUND);
 
-        add(construirPanelBusqueda(), BorderLayout.NORTH);
+        add(new BarraBusquedaTabla(tablaCategorias, 2, 3), BorderLayout.NORTH);
 
         EstiloUI.estilizarTabla(tablaCategorias);
         configurarColumnasBotones();
@@ -46,49 +44,30 @@ public class CategoriasPanel extends JPanel {
 
     private void configurarColumnasBotones() {
         BotonTablaRenderer btnMod = new BotonTablaRenderer(
-                "Modificar", EstiloUI.PRIMARY, fila -> {
+                "Modificar", EstiloUI.PRIMARY, Iconos.lapiz(), fila -> {
             if (onAbrirModificar != null) onAbrirModificar.accept(new int[]{fila});
         });
         BotonTablaRenderer btnElim = new BotonTablaRenderer(
-                "Eliminar", EstiloUI.DANGER, fila -> {
+                "Eliminar", EstiloUI.DANGER, Iconos.basurero(), fila -> {
             if (onEliminar != null) onEliminar.accept(fila);
         });
 
         TableColumn colMod = tablaCategorias.getColumnModel().getColumn(2);
         colMod.setCellRenderer(btnMod);
         colMod.setCellEditor(btnMod);
-        colMod.setPreferredWidth(80);
-        colMod.setMaxWidth(90);
+        colMod.setPreferredWidth(40);
+        colMod.setMaxWidth(50);
 
         TableColumn colElim = tablaCategorias.getColumnModel().getColumn(3);
         colElim.setCellRenderer(btnElim);
         colElim.setCellEditor(btnElim);
-        colElim.setPreferredWidth(80);
-        colElim.setMaxWidth(90);
-    }
-
-    private JPanel construirPanelBusqueda() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
-        panel.setBackground(EstiloUI.BACKGROUND);
-        panel.setBorder(EstiloUI.crearTitledBorder("Busqueda"));
-
-        JButton btnBuscar = new JButton("Buscar");
-        JLabel lbl = new JLabel("Descripcion:");
-        EstiloUI.estilizarEtiqueta(lbl);
-        EstiloUI.estilizarCampo(txtBusqueda);
-        EstiloUI.estilizarBoton(btnBuscar);
-
-        btnBuscar.addActionListener(e -> { if (onBuscar != null) onBuscar.run(); });
-
-        panel.add(lbl);
-        panel.add(txtBusqueda);
-        panel.add(btnBuscar);
-        return panel;
+        colElim.setPreferredWidth(40);
+        colElim.setMaxWidth(50);
     }
 
     private JPanel construirPanelInferior() {
-        JButton btnAgregar = new JButton("Agregar");
-        JButton btnPdf = new JButton("Generar PDF");
+        JButton btnAgregar = new JButton("Agregar", Iconos.agregar());
+        JButton btnPdf = new JButton("Generar PDF", Iconos.pdf());
         btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tablaCategorias,
                 "Listado de Categorias", "categorias.pdf"));
 
@@ -107,14 +86,11 @@ public class CategoriasPanel extends JPanel {
     }
 
     // --- Callback setters ---
-    public void setOnBuscar(Runnable cb) { this.onBuscar = cb; }
     public void setOnAbrirAgregar(Runnable cb) { this.onAbrirAgregar = cb; }
     public void setOnAbrirModificar(Consumer<int[]> cb) { this.onAbrirModificar = cb; }
     public void setOnEliminar(IntConsumer cb) { this.onEliminar = cb; }
 
     // --- Getters ---
-    public String getBusqueda() { return txtBusqueda.getText().trim(); }
-
     public String[] getDatosFila(int filaModelo) {
         return new String[]{
                 String.valueOf(modeloTabla.getValueAt(filaModelo, 0)),

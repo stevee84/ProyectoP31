@@ -3,6 +3,7 @@ package view;
 import model.Administrador;
 import model.Empleado;
 
+import javax.swing.Icon;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -18,7 +19,7 @@ public class VentanaPrincipal extends JFrame {
     private Runnable onCambiarClave;
 
     public VentanaPrincipal(JPanel[] paneles, String[] nombresPestanas,
-                            boolean isAdmin, String userId) {
+                            Icon[] iconos, boolean isAdmin, String userId) {
         super("SISTEMA DE RESERVAS - " + userId
                 + " (" + (isAdmin ? "Administrador" : "Funcionario") + ")");
 
@@ -32,7 +33,8 @@ public class VentanaPrincipal extends JFrame {
         JTabbedPane tabs = new JTabbedPane();
         tabs.setFont(EstiloUI.BOLD);
         for (int i = 0; i < paneles.length; i++) {
-            tabs.addTab(nombresPestanas[i], paneles[i]);
+            Icon icono = (iconos != null && i < iconos.length) ? iconos[i] : null;
+            tabs.addTab(nombresPestanas[i], icono, paneles[i]);
         }
         add(tabs);
     }

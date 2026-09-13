@@ -45,7 +45,11 @@ public class EstadisticasPanel extends JPanel {
         setBorder(EstiloUI.margenEstandar());
         setBackground(EstiloUI.BACKGROUND);
 
-        add(construirPanelFiltro(), BorderLayout.NORTH);
+        JPanel panelNorte = new JPanel(new BorderLayout(EstiloUI.GAP, 0));
+        panelNorte.setBackground(EstiloUI.BACKGROUND);
+        panelNorte.add(new BarraBusquedaTabla(tabla), BorderLayout.NORTH);
+        panelNorte.add(construirPanelFiltro(), BorderLayout.SOUTH);
+        add(panelNorte, BorderLayout.NORTH);
 
         EstiloUI.estilizarTabla(tabla);
         JScrollPane scrollTabla = new JScrollPane(tabla);
@@ -78,7 +82,7 @@ public class EstadisticasPanel extends JPanel {
         EstiloUI.estilizarCampo(campoHasta);
         EstiloUI.estilizarBoton(btnGenerar);
 
-        JButton btnPdf = new JButton("Generar PDF");
+        JButton btnPdf = new JButton("Generar PDF", Iconos.pdf());
         btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tabla,
                 "Estadisticas de Actividades", "estadisticas_actividades.pdf"));
         EstiloUI.estilizarBoton(btnPdf);
