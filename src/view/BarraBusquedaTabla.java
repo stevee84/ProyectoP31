@@ -52,13 +52,8 @@ public final class BarraBusquedaTabla extends JPanel {
                     sorter.setRowFilter(null);
                     return;
                 }
-                // Construir indices de columnas de datos
-                int totalCols = modelo.getColumnCount();
-                java.util.List<Integer> cols = new java.util.ArrayList<>();
-                for (int i = 0; i < totalCols; i++) {
-                    if (!excluidas.contains(i)) cols.add(i);
-                }
-                int[] indices = cols.stream().mapToInt(Integer::intValue).toArray();
+                int[] indices = java.util.stream.IntStream.range(0, modelo.getColumnCount())
+                        .filter(i -> !excluidas.contains(i)).toArray();
                 try {
                     sorter.setRowFilter(RowFilter.regexFilter("(?i)" + java.util.regex.Pattern.quote(texto), indices));
                 } catch (java.util.regex.PatternSyntaxException ex) {

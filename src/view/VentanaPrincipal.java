@@ -1,8 +1,5 @@
 package view;
 
-import model.Administrador;
-import model.Empleado;
-
 import javax.swing.Icon;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
