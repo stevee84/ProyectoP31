@@ -8,9 +8,12 @@ import model.ResultadoExtraccionIA;
 import model.ResultadoReserva;
 import service.CategoriaService;
 import service.ReservaService;
+import view.ReservaDialog;
 import view.ReservaPanel;
 
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import java.awt.Frame;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -30,28 +33,45 @@ public class ReservaController {
         this.service = service;
         this.categoriaService = categoriaService;
 
-        view.setOnAplicar(this::aplicar);
+        view.setOnAbrirNueva(this::abrirDialogoNueva);
         view.setOnCancelar(this::cancelar);
-        view.setOnLimpiar(this::limpiar);
-        view.setOnExtraerIA(this::extraerConIA);
-        view.setOnVisible(this::cargarDatos);
+        view.setOnVisible(this::cargarReservas);
 
-        cargarDatos();
+        cargarReservas();
     }
 
-    private void aplicar() {
-        String actividad = view.getActividad();
-        String fechaStr = view.getFecha();
-        String horaInicioStr = view.getHoraInicio();
-        String horaFinStr = view.getHoraFin();
-        List<CategoriaRecurso> categorias = view.getCategoriasSeleccionadas();
+    private Frame getFrame() {
+        return (Frame) SwingUtilities.getWindowAncestor(view);
+    }
+
+    private void abrirDialogoNueva() {
+        List<CategoriaRecurso> categorias;
+        try {
+            categorias = categoriaService.listar();
+        } catch (Exception e) {
+            view.mostrarError(e.getMessage());
+            return;
+        }
+
+        ReservaDialog dialog = new ReservaDialog(getFrame(), categorias);
+        dialog.setOnAplicar(() -> aplicar(dialog));
+        dialog.setOnExtraerIA(() -> extraerConIA(dialog, categorias));
+        dialog.setVisible(true);
+    }
+
+    private void aplicar(ReservaDialog dialog) {
+        String actividad = dialog.getActividad();
+        String fechaStr = dialog.getFecha();
+        String horaInicioStr = dialog.getHoraInicio();
+        String horaFinStr = dialog.getHoraFin();
+        List<CategoriaRecurso> categorias = dialog.getCategoriasSeleccionadas();
 
         if (actividad.isBlank()) {
-            view.mostrarError("La actividad es obligatoria.");
+            dialog.mostrarError("La actividad es obligatoria.");
             return;
         }
         if (categorias.isEmpty()) {
-            view.mostrarError("Seleccione al menos una categoria.");
+            dialog.mostrarError("Seleccione al menos una categoria.");
             return;
         }
 
@@ -61,19 +81,19 @@ public class ReservaController {
         try {
             fecha = LocalDate.parse(fechaStr);
         } catch (DateTimeParseException e) {
-            view.mostrarError("Formato de fecha invalido. Use aaaa-mm-dd.");
+            dialog.mostrarError("Formato de fecha invalido. Use aaaa-mm-dd.");
             return;
         }
         try {
             horaInicio = LocalTime.parse(horaInicioStr);
         } catch (DateTimeParseException e) {
-            view.mostrarError("Formato de hora inicio invalido. Use HH:mm.");
+            dialog.mostrarError("Formato de hora inicio invalido. Use HH:mm.");
             return;
         }
         try {
             horaFin = LocalTime.parse(horaFinStr);
         } catch (DateTimeParseException e) {
-            view.mostrarError("Formato de hora fin invalido. Use HH:mm.");
+            dialog.mostrarError("Formato de hora fin invalido. Use HH:mm.");
             return;
         }
 
@@ -87,25 +107,63 @@ public class ReservaController {
         try {
             ResultadoReserva resultado = service.crearReservacion(idsCategorias, actividad, inicio, fin);
             if (resultado.esExito()) {
+                dialog.cerrar();
                 view.mostrarMensaje("Reservacion creada exitosamente (ID: " + resultado.getReservacion().getId() + ").");
-                limpiar();
+                cargarReservas();
             } else {
                 String catsFaltantes = resultado.getCategoriasNoDisponibles().stream()
                         .map(CategoriaRecurso::getDescripcion)
                         .collect(Collectors.joining(", "));
-                view.mostrarError("No hay disponibilidad en: " + catsFaltantes);
+                dialog.mostrarError("No hay disponibilidad en: " + catsFaltantes);
             }
         } catch (Exception e) {
-            view.mostrarError(e.getMessage());
+            dialog.mostrarError(e.getMessage());
         }
     }
 
-    private void cancelar() {
-        int id = view.getReservaSeleccionadaId();
-        if (id == -1) {
-            view.mostrarError("Seleccione una reservacion para cancelar.");
+    private void extraerConIA(ReservaDialog dialog, List<CategoriaRecurso> categorias) {
+        String frase = dialog.getFrase();
+        if (frase.isBlank()) {
+            dialog.mostrarError("Escriba una frase para extraer datos.");
             return;
         }
+
+        dialog.setEstadoBotonIA(false, "Procesando...");
+
+        new SwingWorker<ResultadoExtraccionIA, Void>() {
+            @Override
+            protected ResultadoExtraccionIA doInBackground() {
+                return service.extraerDatosDesdeFrase(frase);
+            }
+
+            @Override
+            protected void done() {
+                dialog.setEstadoBotonIA(true, "Extraer con IA");
+                try {
+                    ResultadoExtraccionIA resultado = get();
+                    if (!resultado.esExito()) {
+                        dialog.mostrarError(resultado.getMensajeError());
+                        return;
+                    }
+                    DatosReservaExtraidos datos = resultado.getDatos();
+                    dialog.llenarFormulario(
+                            datos.descripcionActividad(),
+                            datos.fecha() != null ? datos.fecha().toString() : null,
+                            datos.horaInicio() != null ? datos.horaInicio().format(DateTimeFormatter.ofPattern("HH:mm")) : null,
+                            datos.horaFin() != null ? datos.horaFin().format(DateTimeFormatter.ofPattern("HH:mm")) : null
+                    );
+                    if (!datos.idsCategorias().isEmpty()) {
+                        dialog.seleccionarCategoriasPorId(datos.idsCategorias(), categorias);
+                    }
+                } catch (Exception e) {
+                    dialog.mostrarError("Error al extraer datos: " + e.getMessage());
+                }
+            }
+        }.execute();
+    }
+
+    private void cancelar(int filaModelo) {
+        int id = view.getReservaIdEnFila(filaModelo);
         if (!view.confirmarAccion("Desea cancelar la reservacion " + id + "?")) {
             return;
         }
@@ -116,62 +174,6 @@ public class ReservaController {
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
         }
-    }
-
-    private void extraerConIA() {
-        String frase = view.getFrase();
-        if (frase.isBlank()) {
-            view.mostrarError("Escriba una frase para extraer datos.");
-            return;
-        }
-
-        view.setEstadoBotonIA(false, "Procesando...");
-
-        new SwingWorker<ResultadoExtraccionIA, Void>() {
-            @Override
-            protected ResultadoExtraccionIA doInBackground() {
-                return service.extraerDatosDesdeFrase(frase);
-            }
-
-            @Override
-            protected void done() {
-                view.setEstadoBotonIA(true, "Extraer con IA");
-                try {
-                    ResultadoExtraccionIA resultado = get();
-                    if (!resultado.esExito()) {
-                        view.mostrarError(resultado.getMensajeError());
-                        return;
-                    }
-                    DatosReservaExtraidos datos = resultado.getDatos();
-                    view.llenarFormulario(
-                            datos.descripcionActividad(),
-                            datos.fecha() != null ? datos.fecha().toString() : null,
-                            datos.horaInicio() != null ? datos.horaInicio().format(DateTimeFormatter.ofPattern("HH:mm")) : null,
-                            datos.horaFin() != null ? datos.horaFin().format(DateTimeFormatter.ofPattern("HH:mm")) : null
-                    );
-                    if (!datos.idsCategorias().isEmpty()) {
-                        List<CategoriaRecurso> todas = categoriaService.listar();
-                        view.seleccionarCategoriasPorId(datos.idsCategorias(), todas);
-                    }
-                } catch (Exception e) {
-                    view.mostrarError("Error al extraer datos: " + e.getMessage());
-                }
-            }
-        }.execute();
-    }
-
-    private void limpiar() {
-        view.limpiar();
-        cargarReservas();
-    }
-
-    private void cargarDatos() {
-        try {
-            view.cargarCategorias(categoriaService.listar());
-        } catch (Exception e) {
-            view.mostrarError(e.getMessage());
-        }
-        cargarReservas();
     }
 
     private void cargarReservas() {

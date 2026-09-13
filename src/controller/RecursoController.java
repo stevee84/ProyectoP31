@@ -1,11 +1,13 @@
 package controller;
 
 import model.CategoriaRecurso;
-import model.Recurso;
 import service.CategoriaService;
 import service.RecursoService;
+import view.RecursoDialog;
 import view.RecursosPanel;
 
+import javax.swing.SwingUtilities;
+import java.awt.Frame;
 import java.util.List;
 
 public class RecursoController {
@@ -19,61 +21,74 @@ public class RecursoController {
         this.service = service;
         this.categoriaService = categoriaService;
 
-        view.setOnGuardar(this::guardar);
-        view.setOnBorrar(this::borrar);
+        view.setOnAbrirAgregar(this::abrirDialogoAgregar);
+        view.setOnAbrirModificar(args -> {
+            if (args.length > 0) abrirDialogoModificar(args[0]);
+        });
+        view.setOnEliminar(this::eliminar);
         view.setOnFiltrar(this::filtrar);
-        view.setOnLimpiar(this::limpiar);
         view.setOnVisible(this::cargarCategorias);
 
         cargarCategorias();
         cargarRecursos();
     }
 
-    private void guardar() {
-        String codigo = view.getCodigo();
-        CategoriaRecurso cat = view.getCategoriaSeleccionada();
-        String desc = view.getDescripcion();
-
-        if (codigo.isBlank()) {
-            view.mostrarError("El codigo es obligatorio.");
-            return;
-        }
-        if (cat == null) {
-            view.mostrarError("Seleccione una categoria.");
-            return;
-        }
-        if (desc.isBlank()) {
-            view.mostrarError("La descripcion es obligatoria.");
-            return;
-        }
-        try {
-            if (view.getFilaSeleccionada() == -1) {
-                boolean ok = service.registrar(codigo, cat.getId(), desc);
-                if (ok) {
-                    view.mostrarMensaje("Recurso registrado.");
-                } else {
-                    view.mostrarError("No se pudo registrar el recurso (codigo duplicado o categoria inexistente).");
-                }
-            } else {
-                boolean ok = service.actualizar(codigo, cat.getId(), desc);
-                if (ok) {
-                    view.mostrarMensaje("Recurso modificado.");
-                } else {
-                    view.mostrarError("No se pudo modificar el recurso.");
-                }
-            }
-            limpiar();
-        } catch (Exception e) {
-            view.mostrarError(e.getMessage());
-        }
+    private Frame getFrame() {
+        return (Frame) SwingUtilities.getWindowAncestor(view);
     }
 
-    private void borrar() {
-        String codigo = view.getCodigo();
-        if (codigo.isBlank()) {
-            view.mostrarError("Seleccione un recurso para borrar.");
-            return;
-        }
+    private List<CategoriaRecurso> obtenerCategorias() {
+        return categoriaService.listar();
+    }
+
+    private void abrirDialogoAgregar() {
+        RecursoDialog dialog = new RecursoDialog(getFrame(), false,
+                "", null, "", obtenerCategorias());
+        dialog.setOnGuardar(datos -> {
+            try {
+                boolean ok = service.registrar(datos[0], datos[1], datos[2]);
+                if (ok) {
+                    dialog.cerrar();
+                    view.mostrarMensaje("Recurso registrado.");
+                    cargarRecursos();
+                } else {
+                    dialog.mostrarError("No se pudo registrar (codigo duplicado o categoria inexistente).");
+                }
+            } catch (Exception e) {
+                dialog.mostrarError(e.getMessage());
+            }
+        });
+        dialog.setVisible(true);
+    }
+
+    private void abrirDialogoModificar(int filaModelo) {
+        Object[] datos = view.getDatosFila(filaModelo);
+        String codigo = String.valueOf(datos[0]);
+        CategoriaRecurso cat = (CategoriaRecurso) datos[1];
+        String desc = String.valueOf(datos[2]);
+
+        RecursoDialog dialog = new RecursoDialog(getFrame(), true,
+                codigo, cat, desc, obtenerCategorias());
+        dialog.setOnGuardar(nuevos -> {
+            try {
+                boolean ok = service.actualizar(nuevos[0], nuevos[1], nuevos[2]);
+                if (ok) {
+                    dialog.cerrar();
+                    view.mostrarMensaje("Recurso modificado.");
+                    cargarRecursos();
+                } else {
+                    dialog.mostrarError("No se pudo modificar el recurso.");
+                }
+            } catch (Exception e) {
+                dialog.mostrarError(e.getMessage());
+            }
+        });
+        dialog.setVisible(true);
+    }
+
+    private void eliminar(int filaModelo) {
+        Object[] datos = view.getDatosFila(filaModelo);
+        String codigo = String.valueOf(datos[0]);
         if (!view.confirmarAccion("Desea eliminar el recurso " + codigo + "?")) {
             return;
         }
@@ -84,7 +99,7 @@ public class RecursoController {
             } else {
                 view.mostrarError("No se pudo eliminar el recurso.");
             }
-            limpiar();
+            cargarRecursos();
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
         }
@@ -101,11 +116,6 @@ public class RecursoController {
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
         }
-    }
-
-    private void limpiar() {
-        view.limpiar();
-        cargarRecursos();
     }
 
     private void cargarCategorias() {

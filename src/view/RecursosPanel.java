@@ -5,32 +5,30 @@ import model.Recurso;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 public class RecursosPanel extends JPanel {
 
+    private final DefaultTableModel modeloTabla =
+            new DefaultTableModel(new String[]{"Codigo", "Categoria", "Descripcion", "", ""}, 0) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return column >= 3;
+                }
+            };
+    private final JTable tablaRecursos = new JTable(modeloTabla);
+
     private JComboBox<CategoriaRecurso> comboFiltro;
-    private JComboBox<CategoriaRecurso> comboCategoria;
-
-    private JTextField txtCodigo;
-    private JTextField txtDescripcion;
-
-    private JButton btnFiltrar;
-    private JButton btnNuevo;
-    private JButton btnGuardar;
-    private JButton btnBorrar;
-    private JButton btnLimpiar;
-
-    private JTable tablaRecursos;
 
     // Callbacks
     private Runnable onFiltrar;
-    private Runnable onNuevo;
-    private Runnable onGuardar;
-    private Runnable onBorrar;
-    private Runnable onLimpiar;
-    private Runnable onSeleccionar;
+    private Runnable onAbrirAgregar;
+    private Consumer<int[]> onAbrirModificar;
+    private IntConsumer onEliminar;
     private Runnable onVisible;
 
     public RecursosPanel() {
@@ -38,189 +36,120 @@ public class RecursosPanel extends JPanel {
         setBorder(EstiloUI.margenEstandar());
         setBackground(EstiloUI.BACKGROUND);
 
-        comboFiltro = new JComboBox<>();
-        comboFiltro.setFont(EstiloUI.NORMAL);
-        btnFiltrar = new JButton("Filtrar");
+        add(construirPanelFiltro(), BorderLayout.NORTH);
 
-        JPanel panelFiltro = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
-        panelFiltro.setBackground(EstiloUI.BACKGROUND);
-        panelFiltro.setBorder(EstiloUI.crearTitledBorder("Filtrar recursos"));
-        JLabel lblCat = new JLabel("Categoria:");
-        EstiloUI.estilizarEtiqueta(lblCat);
-        EstiloUI.estilizarBoton(btnFiltrar);
-        panelFiltro.add(lblCat);
-        panelFiltro.add(comboFiltro);
-        panelFiltro.add(btnFiltrar);
-
-        txtCodigo = new JTextField(18);
-        txtCodigo.setEditable(false);
-        comboCategoria = new JComboBox<>();
-        comboCategoria.setFont(EstiloUI.NORMAL);
-        comboCategoria.setEnabled(false);
-        txtDescripcion = new JTextField(18);
-        txtDescripcion.setEditable(false);
-
-        EstiloUI.estilizarCampo(txtCodigo);
-        EstiloUI.estilizarCampo(txtDescripcion);
-
-        JPanel panelCampos = new JPanel(new GridBagLayout());
-        panelCampos.setBackground(EstiloUI.BACKGROUND);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        String[] etiquetas = {"Codigo:", "Categoria:", "Descripcion:"};
-        Component[] campos = {txtCodigo, comboCategoria, txtDescripcion};
-        for (int i = 0; i < etiquetas.length; i++) {
-            JLabel lbl = new JLabel(etiquetas[i]);
-            EstiloUI.estilizarEtiqueta(lbl);
-            gbc.gridx = 0; gbc.gridy = i; gbc.anchor = GridBagConstraints.EAST;
-            panelCampos.add(lbl, gbc);
-            gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-            panelCampos.add(campos[i], gbc);
-        }
-
-        btnNuevo = new JButton("Nuevo");
-        btnGuardar = new JButton("Guardar");
-        btnBorrar = new JButton("Borrar");
-        btnLimpiar = new JButton("Limpiar");
-        btnGuardar.setEnabled(false);
-        btnBorrar.setEnabled(false);
-
-        JButton btnPdf = new JButton("Generar PDF");
-        btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tablaRecursos,
-                "Listado de Recursos", "recursos.pdf"));
-
-        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, EstiloUI.GAP, EstiloUI.GAP));
-        panelBotones.setBackground(EstiloUI.BACKGROUND);
-        for (JButton btn : new JButton[]{btnNuevo, btnGuardar, btnBorrar, btnLimpiar, btnPdf}) {
-            EstiloUI.estilizarBoton(btn);
-            panelBotones.add(btn);
-        }
-
-        JPanel panelFormulario = new JPanel(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
-        panelFormulario.setBackground(EstiloUI.BACKGROUND);
-        panelFormulario.setBorder(EstiloUI.crearTitledBorder("Recurso"));
-        panelFormulario.add(panelCampos, BorderLayout.CENTER);
-        panelFormulario.add(panelBotones, BorderLayout.SOUTH);
-
-        DefaultTableModel modeloTabla = new DefaultTableModel(
-                new String[]{"Codigo", "Categoria", "Descripcion"}, 0
-        );
-        tablaRecursos = new JTable(modeloTabla);
-        tablaRecursos.setDefaultEditor(Object.class, null);
         EstiloUI.estilizarTabla(tablaRecursos);
+        configurarColumnasBotones();
 
-        JScrollPane scrollTabla = new JScrollPane(tablaRecursos);
-        scrollTabla.setBorder(EstiloUI.crearTitledBorder("Listado"));
+        JScrollPane scroll = new JScrollPane(tablaRecursos);
+        scroll.setBorder(EstiloUI.crearTitledBorder("Listado de recursos"));
+        add(scroll, BorderLayout.CENTER);
 
-        JPanel panelCentro = new JPanel(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
-        panelCentro.setBackground(EstiloUI.BACKGROUND);
-        panelCentro.add(panelFormulario, BorderLayout.NORTH);
-        panelCentro.add(scrollTabla, BorderLayout.CENTER);
-
-        add(panelFiltro, BorderLayout.NORTH);
-        add(panelCentro, BorderLayout.CENTER);
+        add(construirPanelInferior(), BorderLayout.SOUTH);
 
         addHierarchyListener(e -> {
             if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && isShowing()) {
                 if (onVisible != null) onVisible.run();
             }
         });
+    }
 
-        btnNuevo.addActionListener(e -> {
-            tablaRecursos.clearSelection();
-            txtCodigo.setText("");
-            txtDescripcion.setText("");
-            comboCategoria.setSelectedIndex(-1);
-            txtCodigo.setEditable(true);
-            comboCategoria.setEnabled(true);
-            txtDescripcion.setEditable(true);
-            btnGuardar.setEnabled(true);
-            btnBorrar.setEnabled(false);
-            txtCodigo.requestFocus();
-            if (onNuevo != null) onNuevo.run();
+    private void configurarColumnasBotones() {
+        BotonTablaRenderer btnMod = new BotonTablaRenderer(
+                "Modificar", EstiloUI.PRIMARY, fila -> {
+            if (onAbrirModificar != null) onAbrirModificar.accept(new int[]{fila});
         });
-        btnGuardar.addActionListener(e -> { if (onGuardar != null) onGuardar.run(); });
-        btnLimpiar.addActionListener(e -> { if (onLimpiar != null) onLimpiar.run(); });
-        btnFiltrar.addActionListener(e -> { if (onFiltrar != null) onFiltrar.run(); });
-        btnBorrar.addActionListener(e -> { if (onBorrar != null) onBorrar.run(); });
+        BotonTablaRenderer btnElim = new BotonTablaRenderer(
+                "Eliminar", EstiloUI.DANGER, fila -> {
+            if (onEliminar != null) onEliminar.accept(fila);
+        });
 
-        tablaRecursos.getSelectionModel()
-                .addListSelectionListener(e -> {
-                    if (!e.getValueIsAdjusting()) {
-                        int fila = tablaRecursos.getSelectedRow();
-                        if (fila != -1) {
-                            txtCodigo.setText(tablaRecursos.getValueAt(fila, 0).toString());
-                            CategoriaRecurso categoria = (CategoriaRecurso) tablaRecursos.getValueAt(fila, 1);
-                            comboCategoria.setSelectedItem(categoria);
-                            txtDescripcion.setText(tablaRecursos.getValueAt(fila, 2).toString());
-                            txtCodigo.setEditable(false);
-                            comboCategoria.setEnabled(true);
-                            txtDescripcion.setEditable(true);
-                            btnGuardar.setEnabled(true);
-                            btnBorrar.setEnabled(true);
-                        } else {
-                            txtCodigo.setText("");
-                            txtDescripcion.setText("");
-                            comboCategoria.setSelectedIndex(-1);
-                            txtCodigo.setEditable(false);
-                            comboCategoria.setEnabled(false);
-                            txtDescripcion.setEditable(false);
-                            btnGuardar.setEnabled(false);
-                            btnBorrar.setEnabled(false);
-                        }
-                        if (onSeleccionar != null) onSeleccionar.run();
-                    }
-                });
+        TableColumn colMod = tablaRecursos.getColumnModel().getColumn(3);
+        colMod.setCellRenderer(btnMod);
+        colMod.setCellEditor(btnMod);
+        colMod.setPreferredWidth(80);
+        colMod.setMaxWidth(90);
+
+        TableColumn colElim = tablaRecursos.getColumnModel().getColumn(4);
+        colElim.setCellRenderer(btnElim);
+        colElim.setCellEditor(btnElim);
+        colElim.setPreferredWidth(80);
+        colElim.setMaxWidth(90);
+    }
+
+    private JPanel construirPanelFiltro() {
+        comboFiltro = new JComboBox<>();
+        comboFiltro.setFont(EstiloUI.NORMAL);
+        JButton btnFiltrar = new JButton("Filtrar");
+
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
+        panel.setBackground(EstiloUI.BACKGROUND);
+        panel.setBorder(EstiloUI.crearTitledBorder("Filtrar recursos"));
+        JLabel lblCat = new JLabel("Categoria:");
+        EstiloUI.estilizarEtiqueta(lblCat);
+        EstiloUI.estilizarBoton(btnFiltrar);
+
+        btnFiltrar.addActionListener(e -> { if (onFiltrar != null) onFiltrar.run(); });
+
+        panel.add(lblCat);
+        panel.add(comboFiltro);
+        panel.add(btnFiltrar);
+        return panel;
+    }
+
+    private JPanel construirPanelInferior() {
+        JButton btnAgregar = new JButton("Agregar");
+        JButton btnPdf = new JButton("Generar PDF");
+        btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tablaRecursos,
+                "Listado de Recursos", "recursos.pdf"));
+
+        EstiloUI.estilizarBotonPrimario(btnAgregar);
+        EstiloUI.estilizarBoton(btnPdf);
+
+        btnAgregar.addActionListener(e -> {
+            if (onAbrirAgregar != null) onAbrirAgregar.run();
+        });
+
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, EstiloUI.GAP, EstiloUI.GAP));
+        panel.setBackground(EstiloUI.BACKGROUND);
+        panel.add(btnAgregar);
+        panel.add(btnPdf);
+        return panel;
     }
 
     // --- Callback setters ---
     public void setOnFiltrar(Runnable cb) { this.onFiltrar = cb; }
-    public void setOnNuevo(Runnable cb) { this.onNuevo = cb; }
-    public void setOnGuardar(Runnable cb) { this.onGuardar = cb; }
-    public void setOnBorrar(Runnable cb) { this.onBorrar = cb; }
-    public void setOnLimpiar(Runnable cb) { this.onLimpiar = cb; }
-    public void setOnSeleccionar(Runnable cb) { this.onSeleccionar = cb; }
+    public void setOnAbrirAgregar(Runnable cb) { this.onAbrirAgregar = cb; }
+    public void setOnAbrirModificar(Consumer<int[]> cb) { this.onAbrirModificar = cb; }
+    public void setOnEliminar(IntConsumer cb) { this.onEliminar = cb; }
     public void setOnVisible(Runnable cb) { this.onVisible = cb; }
 
     // --- Getters ---
-    public String getCodigo() { return txtCodigo.getText().trim(); }
-    public String getDescripcion() { return txtDescripcion.getText().trim(); }
-    public CategoriaRecurso getCategoriaSeleccionada() { return (CategoriaRecurso) comboCategoria.getSelectedItem(); }
     public CategoriaRecurso getCategoriaFiltro() { return (CategoriaRecurso) comboFiltro.getSelectedItem(); }
-    public int getFilaSeleccionada() { return tablaRecursos.getSelectedRow(); }
+
+    public Object[] getDatosFila(int filaModelo) {
+        return new Object[]{
+                modeloTabla.getValueAt(filaModelo, 0),  // codigo (String)
+                modeloTabla.getValueAt(filaModelo, 1),  // CategoriaRecurso
+                modeloTabla.getValueAt(filaModelo, 2)   // descripcion (String)
+        };
+    }
 
     // --- Public methods for controller ---
     public void cargarRecursos(List<Recurso> recursos) {
-        DefaultTableModel modeloTabla = (DefaultTableModel) tablaRecursos.getModel();
         modeloTabla.setRowCount(0);
-        for (Recurso recurso : recursos) {
+        for (Recurso r : recursos) {
             modeloTabla.addRow(new Object[]{
-                    recurso.getCodigo(), recurso.getCategoria(), recurso.getDescripcion()
+                    r.getCodigo(), r.getCategoria(), r.getDescripcion(), "", ""
             });
         }
     }
 
     public void cargarCategorias(List<CategoriaRecurso> categorias) {
         comboFiltro.removeAllItems();
-        comboCategoria.removeAllItems();
-        for (CategoriaRecurso categoria : categorias) {
-            comboFiltro.addItem(categoria);
-            comboCategoria.addItem(categoria);
+        for (CategoriaRecurso cat : categorias) {
+            comboFiltro.addItem(cat);
         }
-    }
-
-    public void limpiar() {
-        txtCodigo.setText("");
-        txtDescripcion.setText("");
-        comboCategoria.setSelectedIndex(-1);
-        tablaRecursos.clearSelection();
-        txtCodigo.setEditable(false);
-        comboCategoria.setEnabled(false);
-        txtDescripcion.setEditable(false);
-        btnGuardar.setEnabled(false);
-        btnBorrar.setEnabled(false);
     }
 
     public void mostrarMensaje(String msg) {

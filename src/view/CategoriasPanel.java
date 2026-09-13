@@ -1,193 +1,133 @@
 package view;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import model.CategoriaRecurso;
-import javax.swing.table.DefaultTableModel;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 public class CategoriasPanel extends JPanel {
-    private JTextField txtBusqueda;
-    private JTextField txtId;
-    private JTextField txtDescripcion;
 
-    private JButton btnBuscar;
-    private JButton btnNuevo;
-    private JButton btnGuardar;
-    private JButton btnBorrar;
-    private JButton btnLimpiar;
-
-    private JTable tablaCategorias;
+    private final DefaultTableModel modeloTabla =
+            new DefaultTableModel(new String[]{"ID", "Descripcion", "", ""}, 0) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return column >= 2;
+                }
+            };
+    private final JTable tablaCategorias = new JTable(modeloTabla);
+    private final JTextField txtBusqueda = new JTextField(20);
 
     // Callbacks
     private Runnable onBuscar;
-    private Runnable onNuevo;
-    private Runnable onGuardar;
-    private Runnable onBorrar;
-    private Runnable onLimpiar;
-    private Runnable onSeleccionar;
+    private Runnable onAbrirAgregar;
+    private Consumer<int[]> onAbrirModificar;
+    private IntConsumer onEliminar;
 
     public CategoriasPanel() {
         setLayout(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
         setBorder(EstiloUI.margenEstandar());
         setBackground(EstiloUI.BACKGROUND);
 
-        txtBusqueda = new JTextField(20);
-        btnBuscar = new JButton("Buscar");
+        add(construirPanelBusqueda(), BorderLayout.NORTH);
 
-        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
-        panelBusqueda.setBackground(EstiloUI.BACKGROUND);
-        panelBusqueda.setBorder(EstiloUI.crearTitledBorder("Busqueda"));
-        JLabel lblDesc = new JLabel("Descripcion:");
-        EstiloUI.estilizarEtiqueta(lblDesc);
+        EstiloUI.estilizarTabla(tablaCategorias);
+        configurarColumnasBotones();
+
+        JScrollPane scroll = new JScrollPane(tablaCategorias);
+        scroll.setBorder(EstiloUI.crearTitledBorder("Listado de categorias"));
+        add(scroll, BorderLayout.CENTER);
+
+        add(construirPanelInferior(), BorderLayout.SOUTH);
+    }
+
+    private void configurarColumnasBotones() {
+        BotonTablaRenderer btnMod = new BotonTablaRenderer(
+                "Modificar", EstiloUI.PRIMARY, fila -> {
+            if (onAbrirModificar != null) onAbrirModificar.accept(new int[]{fila});
+        });
+        BotonTablaRenderer btnElim = new BotonTablaRenderer(
+                "Eliminar", EstiloUI.DANGER, fila -> {
+            if (onEliminar != null) onEliminar.accept(fila);
+        });
+
+        TableColumn colMod = tablaCategorias.getColumnModel().getColumn(2);
+        colMod.setCellRenderer(btnMod);
+        colMod.setCellEditor(btnMod);
+        colMod.setPreferredWidth(80);
+        colMod.setMaxWidth(90);
+
+        TableColumn colElim = tablaCategorias.getColumnModel().getColumn(3);
+        colElim.setCellRenderer(btnElim);
+        colElim.setCellEditor(btnElim);
+        colElim.setPreferredWidth(80);
+        colElim.setMaxWidth(90);
+    }
+
+    private JPanel construirPanelBusqueda() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
+        panel.setBackground(EstiloUI.BACKGROUND);
+        panel.setBorder(EstiloUI.crearTitledBorder("Busqueda"));
+
+        JButton btnBuscar = new JButton("Buscar");
+        JLabel lbl = new JLabel("Descripcion:");
+        EstiloUI.estilizarEtiqueta(lbl);
         EstiloUI.estilizarCampo(txtBusqueda);
         EstiloUI.estilizarBoton(btnBuscar);
-        panelBusqueda.add(lblDesc);
-        panelBusqueda.add(txtBusqueda);
-        panelBusqueda.add(btnBuscar);
 
-        txtId = new JTextField(18);
-        txtId.setEditable(false);
-        txtDescripcion = new JTextField(18);
-        txtDescripcion.setEditable(false);
-        EstiloUI.estilizarCampo(txtId);
-        EstiloUI.estilizarCampo(txtDescripcion);
+        btnBuscar.addActionListener(e -> { if (onBuscar != null) onBuscar.run(); });
 
-        JPanel panelCampos = new JPanel(new GridBagLayout());
-        panelCampos.setBackground(EstiloUI.BACKGROUND);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(lbl);
+        panel.add(txtBusqueda);
+        panel.add(btnBuscar);
+        return panel;
+    }
 
-        JLabel lblId = new JLabel("ID:");
-        JLabel lblDescCampo = new JLabel("Descripcion:");
-        EstiloUI.estilizarEtiqueta(lblId);
-        EstiloUI.estilizarEtiqueta(lblDescCampo);
-
-        gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.EAST;
-        panelCampos.add(lblId, gbc);
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        panelCampos.add(txtId, gbc);
-        gbc.gridx = 0; gbc.gridy = 1; gbc.anchor = GridBagConstraints.EAST;
-        panelCampos.add(lblDescCampo, gbc);
-        gbc.gridx = 1; gbc.anchor = GridBagConstraints.WEST;
-        panelCampos.add(txtDescripcion, gbc);
-
-        btnNuevo = new JButton("Nuevo");
-        btnGuardar = new JButton("Guardar");
-        btnBorrar = new JButton("Borrar");
-        btnLimpiar = new JButton("Limpiar");
-
-        btnGuardar.setEnabled(false);
-        btnBorrar.setEnabled(false);
-
+    private JPanel construirPanelInferior() {
+        JButton btnAgregar = new JButton("Agregar");
         JButton btnPdf = new JButton("Generar PDF");
         btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tablaCategorias,
                 "Listado de Categorias", "categorias.pdf"));
 
-        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, EstiloUI.GAP, EstiloUI.GAP));
-        panelBotones.setBackground(EstiloUI.BACKGROUND);
-        for (JButton btn : new JButton[]{btnNuevo, btnGuardar, btnBorrar, btnLimpiar, btnPdf}) {
-            EstiloUI.estilizarBoton(btn);
-            panelBotones.add(btn);
-        }
+        EstiloUI.estilizarBotonPrimario(btnAgregar);
+        EstiloUI.estilizarBoton(btnPdf);
 
-        JPanel panelFormulario = new JPanel(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
-        panelFormulario.setBackground(EstiloUI.BACKGROUND);
-        panelFormulario.setBorder(EstiloUI.crearTitledBorder("Categoria"));
-        panelFormulario.add(panelCampos, BorderLayout.CENTER);
-        panelFormulario.add(panelBotones, BorderLayout.SOUTH);
-
-        DefaultTableModel modeloTabla = new DefaultTableModel(
-                new String[]{"ID", "Descripcion"}, 0
-        );
-
-        tablaCategorias = new JTable(modeloTabla);
-        tablaCategorias.setDefaultEditor(Object.class, null);
-        EstiloUI.estilizarTabla(tablaCategorias);
-
-        JScrollPane scrollTabla = new JScrollPane(tablaCategorias);
-        scrollTabla.setBorder(EstiloUI.crearTitledBorder("Listado"));
-
-        JPanel panelCentro = new JPanel(new BorderLayout(EstiloUI.GAP, EstiloUI.GAP));
-        panelCentro.setBackground(EstiloUI.BACKGROUND);
-        panelCentro.add(panelFormulario, BorderLayout.NORTH);
-        panelCentro.add(scrollTabla, BorderLayout.CENTER);
-
-        add(panelBusqueda, BorderLayout.NORTH);
-        add(panelCentro, BorderLayout.CENTER);
-
-        btnBuscar.addActionListener(e -> { if (onBuscar != null) onBuscar.run(); });
-        btnNuevo.addActionListener(e -> {
-            tablaCategorias.clearSelection();
-            txtId.setText("");
-            txtDescripcion.setText("");
-            txtDescripcion.setEditable(true);
-            btnGuardar.setEnabled(true);
-            btnBorrar.setEnabled(false);
-            txtDescripcion.requestFocus();
-            if (onNuevo != null) onNuevo.run();
+        btnAgregar.addActionListener(e -> {
+            if (onAbrirAgregar != null) onAbrirAgregar.run();
         });
-        btnLimpiar.addActionListener(e -> { if (onLimpiar != null) onLimpiar.run(); });
-        btnGuardar.addActionListener(e -> { if (onGuardar != null) onGuardar.run(); });
-        btnBorrar.addActionListener(e -> { if (onBorrar != null) onBorrar.run(); });
 
-        tablaCategorias.getSelectionModel()
-                .addListSelectionListener(e -> {
-                    if (!e.getValueIsAdjusting()) {
-                        int fila = tablaCategorias.getSelectedRow();
-                        if (fila != -1) {
-                            txtId.setText(tablaCategorias.getValueAt(fila, 0).toString());
-                            txtDescripcion.setText(tablaCategorias.getValueAt(fila, 1).toString());
-                            txtDescripcion.setEditable(true);
-                            btnGuardar.setEnabled(true);
-                            btnBorrar.setEnabled(true);
-                        } else {
-                            txtId.setText("");
-                            txtDescripcion.setText("");
-                            txtDescripcion.setEditable(false);
-                            btnGuardar.setEnabled(false);
-                            btnBorrar.setEnabled(false);
-                        }
-                        if (onSeleccionar != null) onSeleccionar.run();
-                    }
-                });
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, EstiloUI.GAP, EstiloUI.GAP));
+        panel.setBackground(EstiloUI.BACKGROUND);
+        panel.add(btnAgregar);
+        panel.add(btnPdf);
+        return panel;
     }
 
     // --- Callback setters ---
     public void setOnBuscar(Runnable cb) { this.onBuscar = cb; }
-    public void setOnNuevo(Runnable cb) { this.onNuevo = cb; }
-    public void setOnGuardar(Runnable cb) { this.onGuardar = cb; }
-    public void setOnBorrar(Runnable cb) { this.onBorrar = cb; }
-    public void setOnLimpiar(Runnable cb) { this.onLimpiar = cb; }
-    public void setOnSeleccionar(Runnable cb) { this.onSeleccionar = cb; }
+    public void setOnAbrirAgregar(Runnable cb) { this.onAbrirAgregar = cb; }
+    public void setOnAbrirModificar(Consumer<int[]> cb) { this.onAbrirModificar = cb; }
+    public void setOnEliminar(IntConsumer cb) { this.onEliminar = cb; }
 
     // --- Getters ---
     public String getBusqueda() { return txtBusqueda.getText().trim(); }
-    public String getId() { return txtId.getText().trim(); }
-    public String getDescripcion() { return txtDescripcion.getText().trim(); }
-    public int getFilaSeleccionada() { return tablaCategorias.getSelectedRow(); }
+
+    public String[] getDatosFila(int filaModelo) {
+        return new String[]{
+                String.valueOf(modeloTabla.getValueAt(filaModelo, 0)),
+                String.valueOf(modeloTabla.getValueAt(filaModelo, 1))
+        };
+    }
 
     // --- Public methods for controller ---
     public void cargarDatos(List<CategoriaRecurso> categorias) {
-        DefaultTableModel modeloTabla = (DefaultTableModel) tablaCategorias.getModel();
         modeloTabla.setRowCount(0);
-        for (CategoriaRecurso categoria : categorias) {
-            modeloTabla.addRow(new Object[]{
-                    categoria.getId(),
-                    categoria.getDescripcion()
-            });
+        for (CategoriaRecurso c : categorias) {
+            modeloTabla.addRow(new Object[]{c.getId(), c.getDescripcion(), "", ""});
         }
-    }
-
-    public void limpiar() {
-        txtBusqueda.setText("");
-        txtId.setText("");
-        txtDescripcion.setText("");
-        tablaCategorias.clearSelection();
-        txtDescripcion.setEditable(false);
-        btnGuardar.setEnabled(false);
-        btnBorrar.setEnabled(false);
     }
 
     public void mostrarMensaje(String msg) {

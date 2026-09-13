@@ -2,8 +2,11 @@ package controller;
 
 import model.CategoriaRecurso;
 import service.CategoriaService;
+import view.CategoriaDialog;
 import view.CategoriasPanel;
 
+import javax.swing.SwingUtilities;
+import java.awt.Frame;
 import java.util.List;
 
 public class CategoriaController {
@@ -15,48 +18,61 @@ public class CategoriaController {
         this.view = view;
         this.service = service;
 
-        view.setOnGuardar(this::guardar);
-        view.setOnBorrar(this::borrar);
+        view.setOnAbrirAgregar(this::abrirDialogoAgregar);
+        view.setOnAbrirModificar(args -> {
+            if (args.length > 0) abrirDialogoModificar(args[0]);
+        });
+        view.setOnEliminar(this::eliminar);
         view.setOnBuscar(this::buscar);
-        view.setOnLimpiar(this::limpiar);
 
         cargarDatos();
     }
 
-    private void guardar() {
-        String id = view.getId();
-        String desc = view.getDescripcion();
-        if (desc.isBlank()) {
-            view.mostrarError("Debe escribir una descripcion.");
-            return;
-        }
-        try {
-            if (id.isBlank()) {
-                service.registrar(desc);
-                view.mostrarMensaje("Categoria registrada.");
-            } else {
-                service.actualizar(id, desc);
-                view.mostrarMensaje("Categoria modificada.");
-            }
-            limpiar();
-        } catch (Exception e) {
-            view.mostrarError(e.getMessage());
-        }
+    private Frame getFrame() {
+        return (Frame) SwingUtilities.getWindowAncestor(view);
     }
 
-    private void borrar() {
-        String id = view.getId();
-        if (id.isBlank()) {
-            view.mostrarError("Seleccione una categoria para borrar.");
-            return;
-        }
+    private void abrirDialogoAgregar() {
+        CategoriaDialog dialog = new CategoriaDialog(getFrame(), false, null, "");
+        dialog.setOnGuardar(datos -> {
+            try {
+                service.registrar(datos[1]);
+                dialog.cerrar();
+                view.mostrarMensaje("Categoria registrada.");
+                cargarDatos();
+            } catch (Exception e) {
+                dialog.mostrarError(e.getMessage());
+            }
+        });
+        dialog.setVisible(true);
+    }
+
+    private void abrirDialogoModificar(int filaModelo) {
+        String[] datos = view.getDatosFila(filaModelo);
+        CategoriaDialog dialog = new CategoriaDialog(getFrame(), true, datos[0], datos[1]);
+        dialog.setOnGuardar(nuevos -> {
+            try {
+                service.actualizar(nuevos[0], nuevos[1]);
+                dialog.cerrar();
+                view.mostrarMensaje("Categoria modificada.");
+                cargarDatos();
+            } catch (Exception e) {
+                dialog.mostrarError(e.getMessage());
+            }
+        });
+        dialog.setVisible(true);
+    }
+
+    private void eliminar(int filaModelo) {
+        String[] datos = view.getDatosFila(filaModelo);
+        String id = datos[0];
         if (!view.confirmarAccion("Desea eliminar la categoria " + id + "?")) {
             return;
         }
         try {
             service.eliminar(id);
             view.mostrarMensaje("Categoria eliminada.");
-            limpiar();
+            cargarDatos();
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
         }
@@ -75,11 +91,6 @@ public class CategoriaController {
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
         }
-    }
-
-    private void limpiar() {
-        view.limpiar();
-        cargarDatos();
     }
 
     private void cargarDatos() {
