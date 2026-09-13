@@ -3,6 +3,8 @@ BITÁCORA DE PROMPTS - Sistema de Reserva de Recursos (ProyectoP31)
 EIF206 Programación 3 - UNA
 ================================================================================
 
+Repositorio: https://github.com/stevee84/ProyectoP31
+
 Cada entrada representa un prompt o conversación que produjo cambios en el
 proyecto. Donde hubo varios mensajes de ida y vuelta, se resume en un solo
 prompt equivalente.
