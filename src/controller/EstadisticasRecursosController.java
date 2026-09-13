@@ -1,7 +1,7 @@
 package controller;
 
 import model.CategoriaRecurso;
-import service.EstadisticasService;
+import model.EstadisticasModel;
 import view.EstadisticasRecursosPanel;
 
 import java.time.LocalDate;
@@ -12,11 +12,11 @@ import java.util.List;
 public class EstadisticasRecursosController {
 
     private final EstadisticasRecursosPanel view;
-    private final EstadisticasService service;
+    private final EstadisticasModel modelo;
 
-    public EstadisticasRecursosController(EstadisticasRecursosPanel view, EstadisticasService service) {
+    public EstadisticasRecursosController(EstadisticasRecursosPanel view, EstadisticasModel modelo) {
         this.view = view;
-        this.service = service;
+        this.modelo = modelo;
 
         view.setOnCalcular(this::calcular);
     }
@@ -41,12 +41,12 @@ public class EstadisticasRecursosController {
         }
 
         try {
-            List<CategoriaRecurso> categorias = service.listarCategorias();
+            List<CategoriaRecurso> categorias = modelo.listarCategorias();
             List<String> nombres = new ArrayList<>();
             List<Integer> cantidades = new ArrayList<>();
 
             for (CategoriaRecurso cat : categorias) {
-                int cantidad = service.contarReservasCategoria(cat, desde, hasta);
+                int cantidad = modelo.contarReservasCategoria(cat, desde, hasta);
                 nombres.add(cat.getDescripcion());
                 cantidades.add(cantidad);
             }

@@ -1,8 +1,8 @@
 package controller;
 
+import model.CategoriaModel;
 import model.CategoriaRecurso;
-import service.CategoriaService;
-import service.RecursoService;
+import model.RecursoModel;
 import view.RecursoDialog;
 import view.RecursosPanel;
 
@@ -13,13 +13,13 @@ import java.util.List;
 public class RecursoController {
 
     private final RecursosPanel view;
-    private final RecursoService service;
-    private final CategoriaService categoriaService;
+    private final RecursoModel modelo;
+    private final CategoriaModel categoriaModelo;
 
-    public RecursoController(RecursosPanel view, RecursoService service, CategoriaService categoriaService) {
+    public RecursoController(RecursosPanel view, RecursoModel modelo, CategoriaModel categoriaModelo) {
         this.view = view;
-        this.service = service;
-        this.categoriaService = categoriaService;
+        this.modelo = modelo;
+        this.categoriaModelo = categoriaModelo;
 
         view.setOnAbrirAgregar(this::abrirDialogoAgregar);
         view.setOnAbrirModificar(args -> {
@@ -38,7 +38,7 @@ public class RecursoController {
     }
 
     private List<CategoriaRecurso> obtenerCategorias() {
-        return categoriaService.listar();
+        return categoriaModelo.listar();
     }
 
     private void abrirDialogoAgregar() {
@@ -46,7 +46,7 @@ public class RecursoController {
                 "", null, "", obtenerCategorias());
         dialog.setOnGuardar(datos -> {
             try {
-                boolean ok = service.registrar(datos[0], datos[1], datos[2]);
+                boolean ok = modelo.registrar(datos[0], datos[1], datos[2]);
                 if (ok) {
                     dialog.cerrar();
                     view.mostrarMensaje("Recurso registrado.");
@@ -71,7 +71,7 @@ public class RecursoController {
                 codigo, cat, desc, obtenerCategorias());
         dialog.setOnGuardar(nuevos -> {
             try {
-                boolean ok = service.actualizar(nuevos[0], nuevos[1], nuevos[2]);
+                boolean ok = modelo.actualizar(nuevos[0], nuevos[1], nuevos[2]);
                 if (ok) {
                     dialog.cerrar();
                     view.mostrarMensaje("Recurso modificado.");
@@ -93,7 +93,7 @@ public class RecursoController {
             return;
         }
         try {
-            boolean ok = service.eliminar(codigo);
+            boolean ok = modelo.eliminar(codigo);
             if (ok) {
                 view.mostrarMensaje("Recurso eliminado.");
             } else {
@@ -111,7 +111,7 @@ public class RecursoController {
             if (cat == null) {
                 cargarRecursos();
             } else {
-                view.cargarRecursos(service.listarPorCategoria(cat.getId()));
+                view.cargarRecursos(modelo.listarPorCategoria(cat.getId()));
             }
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
@@ -120,7 +120,7 @@ public class RecursoController {
 
     private void cargarCategorias() {
         try {
-            view.cargarCategorias(categoriaService.listar());
+            view.cargarCategorias(categoriaModelo.listar());
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
         }
@@ -128,7 +128,7 @@ public class RecursoController {
 
     private void cargarRecursos() {
         try {
-            view.cargarRecursos(service.listar());
+            view.cargarRecursos(modelo.listar());
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
         }

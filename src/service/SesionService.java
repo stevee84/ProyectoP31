@@ -5,6 +5,7 @@ import model.Administrador;
 import model.Empleado;
 import model.Funcionario;
 import model.ModeloReservaciones;
+import model.ResultadoSesion;
 import repository.PersistenciaXml;
 
 public class SesionService {
@@ -70,8 +71,5 @@ public class SesionService {
         if (!(sesionActual instanceof Funcionario)) {
             throw new SesionException("Esta funcionalidad solo puede ejecutarla un funcionario.");
         }
-    }
-
-    public record ResultadoSesion(Empleado empleado, boolean requiereCambioContraseña) {
     }
 }

@@ -13,7 +13,7 @@ public class SesionServiceTest {
         ModeloReservaciones modelo = new ModeloReservaciones();
         SesionService sesion = new SesionService(modelo, null);
 
-        SesionService.ResultadoSesion resultado = sesion.iniciarSesion("ADMIN", "ADMIN");
+        model.ResultadoSesion resultado = sesion.iniciarSesion("ADMIN", "ADMIN");
 
         assertNotNull(resultado.empleado());
         assertEquals("ADMIN", resultado.empleado().getId());
@@ -25,7 +25,7 @@ public class SesionServiceTest {
         ModeloReservaciones modelo = new ModeloReservaciones();
         SesionService sesion = new SesionService(modelo, null);
 
-        SesionService.ResultadoSesion resultado = sesion.iniciarSesion("ADMIN", "claveIncorrecta");
+        model.ResultadoSesion resultado = sesion.iniciarSesion("ADMIN", "claveIncorrecta");
 
         assertNull(resultado.empleado());
         assertNull(sesion.getSesionActual());
@@ -40,7 +40,7 @@ public class SesionServiceTest {
         sesion.cambiarContrasena("NuevaClave123");
 
         sesion.cerrarSesion();
-        SesionService.ResultadoSesion resultado = sesion.iniciarSesion("ADMIN", "NuevaClave123");
+        model.ResultadoSesion resultado = sesion.iniciarSesion("ADMIN", "NuevaClave123");
         assertNotNull(resultado.empleado());
 
         Empleado emp = resultado.empleado();

@@ -1,7 +1,8 @@
 package controller;
 
 import model.Empleado;
-import service.SesionService;
+import model.ResultadoSesion;
+import model.SesionModel;
 import view.CambioClaveDialog;
 import view.LoginFrame;
 
@@ -10,12 +11,12 @@ import java.util.function.Consumer;
 public class LoginController {
 
     private final LoginFrame view;
-    private final SesionService service;
+    private final SesionModel modelo;
     private final Consumer<Empleado> onLoginExitoso;
 
-    public LoginController(LoginFrame view, SesionService service, Consumer<Empleado> onLoginExitoso) {
+    public LoginController(LoginFrame view, SesionModel modelo, Consumer<Empleado> onLoginExitoso) {
         this.view = view;
-        this.service = service;
+        this.modelo = modelo;
         this.onLoginExitoso = onLoginExitoso;
 
         view.setOnLogin(this::login);
@@ -31,7 +32,7 @@ public class LoginController {
         }
 
         try {
-            SesionService.ResultadoSesion resultado = service.iniciarSesion(id, pass);
+            ResultadoSesion resultado = modelo.iniciarSesion(id, pass);
             if (resultado.empleado() == null) {
                 view.mostrarError("Credenciales incorrectas.");
                 return;
@@ -41,7 +42,7 @@ public class LoginController {
                 CambioClaveDialog dialogo = new CambioClaveDialog(view);
                 dialogo.setOnGuardar(nueva -> {
                     try {
-                        service.cambiarContrasena(nueva);
+                        modelo.cambiarContrasena(nueva);
                         dialogo.marcarCambiada();
                     } catch (Exception e) {
                         dialogo.mostrarError(e.getMessage());
@@ -50,7 +51,7 @@ public class LoginController {
                 dialogo.setVisible(true);
 
                 if (!dialogo.fueCambiada()) {
-                    service.cerrarSesion();
+                    modelo.cerrarSesion();
                     return;
                 }
             }

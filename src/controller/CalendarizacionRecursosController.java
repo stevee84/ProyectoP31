@@ -1,8 +1,8 @@
 package controller;
 
+import model.CalendarizacionModel;
 import model.CategoriaRecurso;
 import model.Recurso;
-import service.CalendarizacionService;
 import view.CalendarizacionRecursosPanel;
 
 import java.time.LocalDate;
@@ -15,11 +15,11 @@ public class CalendarizacionRecursosController {
     private static final int HORA_FIN = 18;
 
     private final CalendarizacionRecursosPanel view;
-    private final CalendarizacionService service;
+    private final CalendarizacionModel modelo;
 
-    public CalendarizacionRecursosController(CalendarizacionRecursosPanel view, CalendarizacionService service) {
+    public CalendarizacionRecursosController(CalendarizacionRecursosPanel view, CalendarizacionModel modelo) {
         this.view = view;
-        this.service = service;
+        this.modelo = modelo;
 
         view.setOnMostrar(this::mostrar);
         view.setOnVisible(this::cargarCategorias);
@@ -45,7 +45,7 @@ public class CalendarizacionRecursosController {
         }
 
         try {
-            List<Recurso> recursos = service.listarRecursosPorCategoria(cat.getId());
+            List<Recurso> recursos = modelo.listarRecursosPorCategoria(cat.getId());
             if (recursos.isEmpty()) {
                 view.mostrarError("No hay recursos en esta categoria.");
                 return;
@@ -63,7 +63,7 @@ public class CalendarizacionRecursosController {
                 int hora = HORA_INICIO + h;
                 datos[h][0] = String.format("%02d:00", hora);
                 for (int r = 0; r < recursos.size(); r++) {
-                    datos[h][r + 1] = service.obtenerInformacionCelda(recursos.get(r), fecha, hora);
+                    datos[h][r + 1] = modelo.obtenerInformacionCelda(recursos.get(r), fecha, hora);
                 }
             }
 
@@ -75,7 +75,7 @@ public class CalendarizacionRecursosController {
 
     private void cargarCategorias() {
         try {
-            view.cargarCategorias(service.listarCategorias());
+            view.cargarCategorias(modelo.listarCategorias());
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
         }

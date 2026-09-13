@@ -1,6 +1,6 @@
 package controller;
 
-import service.FuncionarioService;
+import model.FuncionarioModel;
 import view.FuncionarioDialog;
 import view.FuncionarioPanel;
 
@@ -10,11 +10,11 @@ import java.awt.Frame;
 public class FuncionarioController {
 
     private final FuncionarioPanel view;
-    private final FuncionarioService service;
+    private final FuncionarioModel modelo;
 
-    public FuncionarioController(FuncionarioPanel view, FuncionarioService service) {
+    public FuncionarioController(FuncionarioPanel view, FuncionarioModel modelo) {
         this.view = view;
-        this.service = service;
+        this.modelo = modelo;
 
         view.setOnAbrirAgregar(this::abrirDialogoAgregar);
         view.setOnAbrirModificar(args -> {
@@ -33,7 +33,7 @@ public class FuncionarioController {
         FuncionarioDialog dialog = new FuncionarioDialog(getFrame(), false, "", "", "");
         dialog.setOnGuardar(datos -> {
             try {
-                service.registrarFuncionario(datos[1], datos[0], datos[2]);
+                modelo.registrarFuncionario(datos[1], datos[0], datos[2]);
                 dialog.cerrar();
                 view.mostrarMensaje("Funcionario registrado.");
                 cargarDatos();
@@ -49,7 +49,7 @@ public class FuncionarioController {
         FuncionarioDialog dialog = new FuncionarioDialog(getFrame(), true, datos[0], datos[1], datos[2]);
         dialog.setOnGuardar(nuevos -> {
             try {
-                service.actualizarFuncionario(nuevos[0], nuevos[1], nuevos[2]);
+                modelo.actualizarFuncionario(nuevos[0], nuevos[1], nuevos[2]);
                 dialog.cerrar();
                 view.mostrarMensaje("Funcionario modificado.");
                 cargarDatos();
@@ -67,7 +67,7 @@ public class FuncionarioController {
             return;
         }
         try {
-            service.eliminarFuncionario(id);
+            modelo.eliminarFuncionario(id);
             view.mostrarMensaje("Funcionario eliminado.");
             cargarDatos();
         } catch (Exception e) {
@@ -77,7 +77,7 @@ public class FuncionarioController {
 
     private void cargarDatos() {
         try {
-            view.cargarDatos(service.listarFuncionarios());
+            view.cargarDatos(modelo.listarFuncionarios());
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
         }

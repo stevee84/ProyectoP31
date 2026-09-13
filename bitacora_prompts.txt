@@ -1,0 +1,109 @@
+================================================================================
+BITÁCORA DE PROMPTS - Sistema de Reserva de Recursos (ProyectoP31)
+EIF206 Programación 3 - UNA
+================================================================================
+
+Cada entrada representa un prompt o conversación que produjo cambios en el
+proyecto. Donde hubo varios mensajes de ida y vuelta, se resume en un solo
+prompt equivalente.
+
+================================================================================
+
+1. Crear un proyecto Maven con Java 17 para un sistema de reserva de recursos
+   universitarios. Necesito el modelo de dominio completo: Empleado (con
+   herencia Funcionario y Administrador), CategoriaRecurso, Recurso,
+   Reservacion, y una clase ModeloReservaciones que maneje las colecciones.
+   Incluir datos por defecto (un admin ADMIN/ADMIN y categorías de ejemplo).
+
+2. Implementar persistencia en XML usando DOM. Crear repositorios por entidad
+   (UsuarioXmlRepository, CategoriaXmlRepository, RecursoXmlRepository,
+   ReservaXmlRepository), una clase PersistenciaXml que coordine cargar/guardar
+   todo, y un XmlUtil con métodos auxiliares. Los archivos van en data/ y deben
+   estar en .gitignore.
+
+3. Crear la capa de servicios: SesionService (login, logout, cambio de clave,
+   validación de roles), FuncionarioService, CategoriaService, RecursoService,
+   ReservaService (con reserva por categorías y cancelación),
+   EstadisticasService (conteo por semana y por categoría, matriz de agenda
+   semanal), CalendarizacionService (grilla recursos por hora/fecha). Cada
+   service valida sesión y persiste automáticamente tras cada operación.
+
+4. Crear todas las vistas Swing: LoginFrame, VentanaPrincipal con JTabbedPane,
+   FuncionarioPanel, CategoriasPanel, RecursosPanel, ReservaPanel,
+   AgendaSemanalPanel (con navegación semanal), EstadisticasPanel (con gráfico
+   de barras), EstadisticasRecursosPanel, CalendarizacionRecursosPanel. Usar
+   un patrón de callbacks (setOnXxx) para que los controllers conecten la
+   lógica.
+
+5. Crear los controllers: AplicacionController como bootstrap principal que
+   maneja login → ventana principal → logout, y sub-controllers por cada
+   panel (LoginController, FuncionarioController, CategoriaController,
+   RecursoController, ReservaController, AgendaController,
+   EstadisticasController, EstadisticasRecursosController,
+   CalendarizacionRecursosController).
+
+6. Crear una clase EstiloUI centralizada con constantes de colores, fuentes,
+   bordes y métodos utilitarios para estilizar componentes Swing de forma
+   consistente en todo el proyecto.
+
+7. Implementar BotonTablaRenderer usando AbstractCellEditor para tener
+   botones inline de modificar y eliminar dentro de las JTable.
+
+8. Refactorizar los formularios de agregar/modificar que estaban inline en
+   los paneles a JDialog modales: FuncionarioDialog, CategoriaDialog,
+   RecursoDialog, ReservaDialog, y CambioClaveDialog para el cambio
+   obligatorio de contraseña en primer login.
+
+9. Agregar una barra de búsqueda reutilizable (BarraBusquedaTabla) que filtre
+   las JTable en tiempo real usando TableRowSorter con RowFilter. Agregarla
+   a todos los paneles que tienen tabla.
+
+10. Agregar iconos a los botones de tabla y a las pestañas. Los iconos deben
+    ser generados por código con Graphics2D (sin archivos externos): lápiz
+    para modificar, basurero para eliminar, X para cancelar, documento PDF,
+    + para agregar, y un icono por cada pestaña. Crear una clase Iconos como
+    fábrica central con cache estático.
+
+11. Correr una revisión ponytail de todo el proyecto para identificar código
+    muerto, complejidad innecesaria y oportunidades de simplificación.
+    Aplicar los hallazgos: cachear iconos como static final, eliminar import
+    no usado de AffineTransform, simplificar construcción de índices en
+    BarraBusquedaTabla con IntStream, eliminar imports no usados en
+    VentanaPrincipal.
+
+12. Verificar que la arquitectura siga el patrón correcto: Model wrappea
+    Service, Controller solo tiene 2 instancias (view + modelo). Usar como
+    referencia el proyecto SistemaGestionPlanilla. Crear fachadas Model
+    (SesionModel, FuncionarioModel, CategoriaModel, RecursoModel,
+    ReservaModel, EstadisticasModel, CalendarizacionModel) que wrappeen los
+    services, actualizar todos los controllers para que solo importen model
+    y view (nunca service), y mover los records ResultadoSesion y
+    EstadisticaSemana de service a model.
+
+13. Revisar el funcionamiento completo de la aplicación. Corregir el bug de
+    CalendarizacionRecursosPanel donde mostrarCalendarizacion() creaba un
+    nuevo DefaultTableModel y desconectaba el RowSorter de la barra de
+    búsqueda — cambiarlo para reutilizar el modelo con setColumnIdentifiers()
+    + setRowCount(0) + addRow(). Reemplazar el emoji 🔍 de BarraBusquedaTabla
+    por texto "Buscar:" porque Swing no renderiza el emoji.
+
+14. Crear esta bitácora de prompts documentando todas las conversaciones del
+    proyecto.
+
+================================================================================
+RESUMEN DE ARQUITECTURA FINAL
+================================================================================
+
+  model/        → Entidades de dominio + Fachadas XxxModel (wrappean services)
+  repository/   → Persistencia XML con DOM
+  service/      → Lógica de negocio, validación de sesión, auto-persistencia
+  controller/   → Solo 2 campos: view + modelo (XxxModel)
+  view/         → Swing (EstiloUI, BarraBusquedaTabla, BotonTablaRenderer,
+                  Iconos, GeneradorPdf)
+  consulta/     → Interfaces y adaptadores para consultas desacopladas
+  exception/    → Excepciones de dominio
+
+Tecnologías: Java 17, Maven, Swing, DOM/XML, Graphics2D, iTextPDF 5.5.13.4,
+JUnit Jupiter 5.10.2, org.json + Gemini AI.
+
+================================================================================

@@ -2,11 +2,18 @@ package controller;
 
 import consulta.ReservaConsultaAdapter;
 import model.Administrador;
+import model.CalendarizacionModel;
+import model.CategoriaModel;
 import model.Empleado;
+import model.EstadisticasModel;
 import model.ExtractorReservaIA;
 import model.ExtractorReservaIAGemini;
+import model.FuncionarioModel;
 import model.ModeloReservaciones;
+import model.RecursoModel;
+import model.ReservaModel;
 import model.ResultadoExtraccionIA;
+import model.SesionModel;
 import repository.PersistenciaXml;
 import service.CalendarizacionService;
 import service.CategoriaService;
@@ -40,9 +47,11 @@ import java.util.List;
 /**
  * Controlador principal de la aplicacion. Se encarga de:
  * - Cargar/crear el modelo y la persistencia
- * - Crear todos los services
+ * - Crear todos los services y sus fachadas Model
  * - Manejar el flujo login → ventana principal → logout
  * - Crear y conectar views con sus controllers
+ *
+ * Los sub-controllers solo reciben fachadas Model (nunca services).
  */
 public class AplicacionController {
 
@@ -51,24 +60,24 @@ public class AplicacionController {
     private final ModeloReservaciones modelo;
     private final PersistenciaXml persistencia;
 
-    // Services
-    private final SesionService sesionService;
-    private final FuncionarioService funcionarioService;
-    private final CategoriaService categoriaService;
-    private final RecursoService recursoService;
-    private final ReservaService reservaService;
-    private final EstadisticasService estadisticasService;
-    private final CalendarizacionService calendarizacionService;
+    // Fachadas Model (wrappean services, son lo que reciben los controllers)
+    private final SesionModel sesionModel;
+    private final FuncionarioModel funcionarioModel;
+    private final CategoriaModel categoriaModel;
+    private final RecursoModel recursoModel;
+    private final ReservaModel reservaModel;
+    private final EstadisticasModel estadisticasModel;
+    private final CalendarizacionModel calendarizacionModel;
 
     public AplicacionController() {
         this.modelo = cargarModelo();
         this.persistencia = new PersistenciaXml(modelo, DATA_DIR);
 
-        // Crear services
-        this.sesionService = new SesionService(modelo, persistencia);
-        this.funcionarioService = new FuncionarioService(modelo, persistencia, sesionService);
-        this.categoriaService = new CategoriaService(modelo, persistencia, sesionService);
-        this.recursoService = new RecursoService(modelo, persistencia, sesionService);
+        // Crear services (capa interna, no expuesta a controllers)
+        SesionService sesionService = new SesionService(modelo, persistencia);
+        FuncionarioService funcionarioService = new FuncionarioService(modelo, persistencia, sesionService);
+        CategoriaService categoriaService = new CategoriaService(modelo, persistencia, sesionService);
+        RecursoService recursoService = new RecursoService(modelo, persistencia, sesionService);
 
         ExtractorReservaIA extractorIA;
         String apiKey = System.getenv("GEMINI_API_KEY");
@@ -79,10 +88,19 @@ public class AplicacionController {
                     "No se configuro GEMINI_API_KEY. La extraccion con IA no esta disponible.");
         }
 
-        this.reservaService = new ReservaService(modelo, persistencia, sesionService, extractorIA);
+        ReservaService reservaService = new ReservaService(modelo, persistencia, sesionService, extractorIA);
         ReservaConsultaAdapter reservaConsulta = new ReservaConsultaAdapter(modelo);
-        this.estadisticasService = new EstadisticasService(modelo, reservaConsulta);
-        this.calendarizacionService = new CalendarizacionService(modelo);
+        EstadisticasService estadisticasService = new EstadisticasService(modelo, reservaConsulta);
+        CalendarizacionService calendarizacionService = new CalendarizacionService(modelo);
+
+        // Crear fachadas Model (lo que ven los controllers)
+        this.sesionModel = new SesionModel(sesionService);
+        this.funcionarioModel = new FuncionarioModel(funcionarioService);
+        this.categoriaModel = new CategoriaModel(categoriaService);
+        this.recursoModel = new RecursoModel(recursoService);
+        this.reservaModel = new ReservaModel(reservaService);
+        this.estadisticasModel = new EstadisticasModel(estadisticasService);
+        this.calendarizacionModel = new CalendarizacionModel(calendarizacionService);
 
         // Guardar al cerrar la aplicacion
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -97,7 +115,7 @@ public class AplicacionController {
     /** Punto de entrada: muestra el login. */
     public void iniciar() {
         LoginFrame loginFrame = new LoginFrame();
-        new LoginController(loginFrame, sesionService, this::abrirVentanaPrincipal);
+        new LoginController(loginFrame, sesionModel, this::abrirVentanaPrincipal);
         loginFrame.setVisible(true);
     }
 
@@ -138,25 +156,25 @@ public class AplicacionController {
 
         if (isAdmin) {
             FuncionarioPanel funcionarioPanel = new FuncionarioPanel();
-            new FuncionarioController(funcionarioPanel, funcionarioService);
+            new FuncionarioController(funcionarioPanel, funcionarioModel);
             paneles.add(funcionarioPanel);
             nombres.add("Funcionarios");
             iconos.add(Iconos.personas());
 
             CategoriasPanel categoriasPanel = new CategoriasPanel();
-            new CategoriaController(categoriasPanel, categoriaService);
+            new CategoriaController(categoriasPanel, categoriaModel);
             paneles.add(categoriasPanel);
             nombres.add("Categorias");
             iconos.add(Iconos.etiqueta());
 
             RecursosPanel recursosPanel = new RecursosPanel();
-            new RecursoController(recursosPanel, recursoService, categoriaService);
+            new RecursoController(recursosPanel, recursoModel, categoriaModel);
             paneles.add(recursosPanel);
             nombres.add("Recursos");
             iconos.add(Iconos.recurso());
         } else {
             ReservaPanel reservaPanel = new ReservaPanel();
-            new ReservaController(reservaPanel, reservaService, categoriaService);
+            new ReservaController(reservaPanel, reservaModel, categoriaModel);
             paneles.add(reservaPanel);
             nombres.add("Reservas");
             iconos.add(Iconos.calendario());
@@ -174,7 +192,7 @@ public class AplicacionController {
         );
 
         ventana.setOnCerrarSesion(() -> {
-            sesionService.cerrarSesion();
+            sesionModel.cerrarSesion();
             ventana.dispose();
             iniciar();
         });
@@ -183,7 +201,7 @@ public class AplicacionController {
             CambioClaveDialog dialogo = new CambioClaveDialog(ventana);
             dialogo.setOnGuardar(nueva -> {
                 try {
-                    sesionService.cambiarContrasena(nueva);
+                    sesionModel.cambiarContrasena(nueva);
                     dialogo.marcarCambiada();
                     JOptionPane.showMessageDialog(ventana, "Contrasena cambiada exitosamente.");
                 } catch (Exception e) {
@@ -199,22 +217,22 @@ public class AplicacionController {
     private void agregarTabsComunes(List<JPanel> paneles, List<String> nombres,
                                     List<Icon> iconos) {
         CalendarizacionRecursosPanel calendarizacionPanel = new CalendarizacionRecursosPanel();
-        new CalendarizacionRecursosController(calendarizacionPanel, calendarizacionService);
+        new CalendarizacionRecursosController(calendarizacionPanel, calendarizacionModel);
         paneles.add(calendarizacionPanel);
         nombres.add("Calendarizacion");
         iconos.add(Iconos.grilla());
 
         AgendaSemanalPanel agendaPanel = new AgendaSemanalPanel();
-        new AgendaController(agendaPanel, estadisticasService);
+        new AgendaController(agendaPanel, estadisticasModel);
         paneles.add(agendaPanel);
         nombres.add("Actividades");
         iconos.add(Iconos.agenda());
 
         EstadisticasPanel estadisticasActPanel = new EstadisticasPanel();
-        new EstadisticasController(estadisticasActPanel, estadisticasService);
+        new EstadisticasController(estadisticasActPanel, estadisticasModel);
 
         EstadisticasRecursosPanel estadisticasRecPanel = new EstadisticasRecursosPanel();
-        new EstadisticasRecursosController(estadisticasRecPanel, estadisticasService);
+        new EstadisticasRecursosController(estadisticasRecPanel, estadisticasModel);
 
         JTabbedPane tabsEstadisticas = new JTabbedPane();
         tabsEstadisticas.addTab("Actividades", Iconos.agenda(), estadisticasActPanel);

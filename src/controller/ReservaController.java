@@ -1,13 +1,13 @@
 package controller;
 
+import model.CategoriaModel;
 import model.CategoriaRecurso;
 import model.DatosReservaExtraidos;
 import model.Recurso;
 import model.Reservacion;
+import model.ReservaModel;
 import model.ResultadoExtraccionIA;
 import model.ResultadoReserva;
-import service.CategoriaService;
-import service.ReservaService;
 import view.ReservaDialog;
 import view.ReservaPanel;
 
@@ -25,13 +25,13 @@ import java.util.stream.Collectors;
 public class ReservaController {
 
     private final ReservaPanel view;
-    private final ReservaService service;
-    private final CategoriaService categoriaService;
+    private final ReservaModel modelo;
+    private final CategoriaModel categoriaModelo;
 
-    public ReservaController(ReservaPanel view, ReservaService service, CategoriaService categoriaService) {
+    public ReservaController(ReservaPanel view, ReservaModel modelo, CategoriaModel categoriaModelo) {
         this.view = view;
-        this.service = service;
-        this.categoriaService = categoriaService;
+        this.modelo = modelo;
+        this.categoriaModelo = categoriaModelo;
 
         view.setOnAbrirNueva(this::abrirDialogoNueva);
         view.setOnCancelar(this::cancelar);
@@ -47,7 +47,7 @@ public class ReservaController {
     private void abrirDialogoNueva() {
         List<CategoriaRecurso> categorias;
         try {
-            categorias = categoriaService.listar();
+            categorias = categoriaModelo.listar();
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
             return;
@@ -105,7 +105,7 @@ public class ReservaController {
                 .collect(Collectors.toList());
 
         try {
-            ResultadoReserva resultado = service.crearReservacion(idsCategorias, actividad, inicio, fin);
+            ResultadoReserva resultado = modelo.crearReservacion(idsCategorias, actividad, inicio, fin);
             if (resultado.esExito()) {
                 dialog.cerrar();
                 view.mostrarMensaje("Reservacion creada exitosamente (ID: " + resultado.getReservacion().getId() + ").");
@@ -133,7 +133,7 @@ public class ReservaController {
         new SwingWorker<ResultadoExtraccionIA, Void>() {
             @Override
             protected ResultadoExtraccionIA doInBackground() {
-                return service.extraerDatosDesdeFrase(frase);
+                return modelo.extraerDatosDesdeFrase(frase);
             }
 
             @Override
@@ -168,7 +168,7 @@ public class ReservaController {
             return;
         }
         try {
-            service.cancelarReservacion(id);
+            modelo.cancelarReservacion(id);
             view.mostrarMensaje("Reservacion cancelada.");
             cargarReservas();
         } catch (Exception e) {
@@ -178,7 +178,7 @@ public class ReservaController {
 
     private void cargarReservas() {
         try {
-            List<Reservacion> reservas = service.listarReservacionesSesionActual();
+            List<Reservacion> reservas = modelo.listarReservacionesSesionActual();
             Object[][] datos = reservas.stream().map(r -> new Object[]{
                     r.getId(),
                     r.getDescripcionActividad(),

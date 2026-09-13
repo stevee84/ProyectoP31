@@ -1,7 +1,7 @@
 package controller;
 
 import consulta.InfoReserva;
-import service.EstadisticasService;
+import model.EstadisticasModel;
 import view.AgendaSemanalPanel;
 
 import java.time.DayOfWeek;
@@ -17,12 +17,12 @@ public class AgendaController {
     private static final String[] DIAS = {"Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"};
 
     private final AgendaSemanalPanel view;
-    private final EstadisticasService service;
+    private final EstadisticasModel modelo;
     private LocalDate semanaActual;
 
-    public AgendaController(AgendaSemanalPanel view, EstadisticasService service) {
+    public AgendaController(AgendaSemanalPanel view, EstadisticasModel modelo) {
         this.view = view;
-        this.service = service;
+        this.modelo = modelo;
         this.semanaActual = LocalDate.now();
 
         view.setOnSemanaAnterior(() -> {
@@ -47,14 +47,14 @@ public class AgendaController {
             LocalDate domingo = lunes.plusDays(6);
             String etiqueta = FMT.format(lunes) + " - " + FMT.format(domingo);
 
-            Map<DayOfWeek, Map<Integer, List<InfoReserva>>> matriz = service.obtenerMatrizSemana(semanaActual);
+            Map<DayOfWeek, Map<Integer, List<InfoReserva>>> matriz = modelo.obtenerMatrizSemana(semanaActual);
 
             Object[] columnas = new Object[DIAS.length + 1];
             columnas[0] = "Hora";
             System.arraycopy(DIAS, 0, columnas, 1, DIAS.length);
 
-            int horaInicio = EstadisticasService.HORA_INICIO;
-            int horaFin = EstadisticasService.HORA_FIN;
+            int horaInicio = modelo.getHoraInicio();
+            int horaFin = modelo.getHoraFin();
             int totalFilas = horaFin - horaInicio;
             Object[][] filas = new Object[totalFilas][DIAS.length + 1];
 

@@ -14,6 +14,7 @@ public class CalendarizacionRecursosPanel extends JPanel {
     private JComboBox<CategoriaRecurso> comboCategoria;
     private JButton btnMostrar;
 
+    private final DefaultTableModel modeloTabla = new DefaultTableModel(new String[]{"Hora"}, 0);
     private JTable tablaCalendarizacion;
 
     // Callbacks
@@ -49,8 +50,6 @@ public class CalendarizacionRecursosPanel extends JPanel {
         panelSeleccion.add(lblCat);
         panelSeleccion.add(comboCategoria);
         panelSeleccion.add(btnMostrar);
-
-        DefaultTableModel modeloTabla = new DefaultTableModel(new String[]{"Hora"}, 0);
 
         tablaCalendarizacion = new JTable(modeloTabla);
         tablaCalendarizacion.setDefaultEditor(Object.class, null);
@@ -99,13 +98,11 @@ public class CalendarizacionRecursosPanel extends JPanel {
     }
 
     public void mostrarCalendarizacion(String[] columnas, Object[][] datos) {
-        DefaultTableModel modeloTabla = new DefaultTableModel(columnas, 0);
+        modeloTabla.setColumnIdentifiers(columnas);
+        modeloTabla.setRowCount(0);
         for (Object[] fila : datos) {
             modeloTabla.addRow(fila);
         }
-        tablaCalendarizacion.setModel(modeloTabla);
-        tablaCalendarizacion.setDefaultEditor(Object.class, null);
-        EstiloUI.estilizarTabla(tablaCalendarizacion);
         tablaCalendarizacion.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         tablaCalendarizacion.getColumnModel().getColumn(0).setPreferredWidth(70);
         for (int i = 1; i < tablaCalendarizacion.getColumnCount(); i++) {

@@ -4,6 +4,7 @@ import consulta.InfoReserva;
 import consulta.ReservaConsulta;
 import exception.ValidacionException;
 import model.CategoriaRecurso;
+import model.EstadisticaSemana;
 import model.ModeloReservaciones;
 import model.Recurso;
 import model.Reservacion;
@@ -144,8 +145,5 @@ public class EstadisticasService {
             }
         }
         return cantidad;
-    }
-
-    public record EstadisticaSemana(LocalDate inicioSemana, LocalDate finSemana, int cantidad) {
     }
 }

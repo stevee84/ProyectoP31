@@ -24,7 +24,7 @@ public final class BarraBusquedaTabla extends JPanel {
         setLayout(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, 4));
         setBackground(EstiloUI.BACKGROUND);
 
-        JLabel lbl = new JLabel("🔍");
+        JLabel lbl = new JLabel("Buscar:");
         lbl.setFont(EstiloUI.NORMAL);
         EstiloUI.estilizarCampo(campoFiltro);
         campoFiltro.setToolTipText("Escriba para filtrar...");

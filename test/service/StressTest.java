@@ -230,11 +230,11 @@ public class StressTest {
         sesion.cambiarContrasena("ClaveNueva99");
         sesion.cerrarSesion();
 
-        SesionService.ResultadoSesion resultado = sesion.iniciarSesion("FSTRESS7", "ClaveNueva99");
+        model.ResultadoSesion resultado = sesion.iniciarSesion("FSTRESS7", "ClaveNueva99");
         assertNotNull(resultado.empleado());
         assertFalse(resultado.requiereCambioContraseña());
 
-        SesionService.ResultadoSesion fallido = sesion.iniciarSesion("FSTRESS7", "FSTRESS7");
+        model.ResultadoSesion fallido = sesion.iniciarSesion("FSTRESS7", "FSTRESS7");
         assertNull(fallido.empleado());
     }
 
@@ -243,7 +243,7 @@ public class StressTest {
         ModeloReservaciones modelo = modelo();
         SesionService sesion = new SesionService(modelo, null);
 
-        SesionService.ResultadoSesion resultado = sesion.iniciarSesion("", "");
+        model.ResultadoSesion resultado = sesion.iniciarSesion("", "");
         assertNull(resultado.empleado());
         assertFalse(resultado.requiereCambioContraseña());
         assertNull(sesion.getSesionActual());

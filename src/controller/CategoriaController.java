@@ -1,6 +1,6 @@
 package controller;
 
-import service.CategoriaService;
+import model.CategoriaModel;
 import view.CategoriaDialog;
 import view.CategoriasPanel;
 
@@ -10,11 +10,11 @@ import java.awt.Frame;
 public class CategoriaController {
 
     private final CategoriasPanel view;
-    private final CategoriaService service;
+    private final CategoriaModel modelo;
 
-    public CategoriaController(CategoriasPanel view, CategoriaService service) {
+    public CategoriaController(CategoriasPanel view, CategoriaModel modelo) {
         this.view = view;
-        this.service = service;
+        this.modelo = modelo;
 
         view.setOnAbrirAgregar(this::abrirDialogoAgregar);
         view.setOnAbrirModificar(args -> {
@@ -33,7 +33,7 @@ public class CategoriaController {
         CategoriaDialog dialog = new CategoriaDialog(getFrame(), false, null, "");
         dialog.setOnGuardar(datos -> {
             try {
-                service.registrar(datos[1]);
+                modelo.registrar(datos[1]);
                 dialog.cerrar();
                 view.mostrarMensaje("Categoria registrada.");
                 cargarDatos();
@@ -49,7 +49,7 @@ public class CategoriaController {
         CategoriaDialog dialog = new CategoriaDialog(getFrame(), true, datos[0], datos[1]);
         dialog.setOnGuardar(nuevos -> {
             try {
-                service.actualizar(nuevos[0], nuevos[1]);
+                modelo.actualizar(nuevos[0], nuevos[1]);
                 dialog.cerrar();
                 view.mostrarMensaje("Categoria modificada.");
                 cargarDatos();
@@ -67,7 +67,7 @@ public class CategoriaController {
             return;
         }
         try {
-            service.eliminar(id);
+            modelo.eliminar(id);
             view.mostrarMensaje("Categoria eliminada.");
             cargarDatos();
         } catch (Exception e) {
@@ -77,7 +77,7 @@ public class CategoriaController {
 
     private void cargarDatos() {
         try {
-            view.cargarDatos(service.listar());
+            view.cargarDatos(modelo.listar());
         } catch (Exception e) {
             view.mostrarError(e.getMessage());
         }

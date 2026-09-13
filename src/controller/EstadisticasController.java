@@ -1,6 +1,7 @@
 package controller;
 
-import service.EstadisticasService;
+import model.EstadisticaSemana;
+import model.EstadisticasModel;
 import view.EstadisticasPanel;
 
 import java.time.LocalDate;
@@ -14,11 +15,11 @@ public class EstadisticasController {
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final EstadisticasPanel view;
-    private final EstadisticasService service;
+    private final EstadisticasModel modelo;
 
-    public EstadisticasController(EstadisticasPanel view, EstadisticasService service) {
+    public EstadisticasController(EstadisticasPanel view, EstadisticasModel modelo) {
         this.view = view;
-        this.service = service;
+        this.modelo = modelo;
 
         view.setOnGenerar(this::generar);
     }
@@ -43,14 +44,14 @@ public class EstadisticasController {
         }
 
         try {
-            List<EstadisticasService.EstadisticaSemana> semanas = service.contarPorSemana(desde, hasta);
+            List<EstadisticaSemana> semanas = modelo.contarPorSemana(desde, hasta);
 
             List<Object[]> filas = new ArrayList<>();
             List<String> etiquetas = new ArrayList<>();
             List<Integer> cantidades = new ArrayList<>();
 
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM");
-            for (EstadisticasService.EstadisticaSemana s : semanas) {
+            for (EstadisticaSemana s : semanas) {
                 String etiqueta = fmt.format(s.inicioSemana()) + " - " + fmt.format(s.finSemana());
                 filas.add(new Object[]{etiqueta, s.cantidad()});
                 etiquetas.add(etiqueta);
