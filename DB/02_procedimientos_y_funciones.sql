@@ -111,3 +111,25 @@ END eliminarCategoria;
 
 SHOW ERRORS PROCEDURE eliminarCategoria
 
+-- Registrar un recurso dentro de una categoría existente.
+CREATE OR REPLACE PROCEDURE insertarRecurso (
+    p_codigo IN TRECURSOS.CODIGO%TYPE,
+    p_id_categoria IN TRECURSOS.ID_CATEGORIA%TYPE,
+    p_descripcion IN TRECURSOS.DESCRIPCION%TYPE
+)
+AS
+BEGIN
+    INSERT INTO TRECURSOS (
+        CODIGO,
+        ID_CATEGORIA,
+        DESCRIPCION
+    )
+    VALUES (
+        TRIM(p_codigo),
+        TRIM(p_id_categoria),
+        TRIM(p_descripcion)
+    );
+END insertarRecurso;
+/
+
+SHOW ERRORS PROCEDURE insertarRecurso
