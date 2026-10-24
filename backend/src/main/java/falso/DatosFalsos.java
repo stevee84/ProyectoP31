@@ -8,9 +8,11 @@ import dto.Rol;
 import dto.UsuarioDTO;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Datos en memoria compartidos por todas las conexiones del servidor de prueba.
@@ -20,6 +22,8 @@ class DatosFalsos {
 
     final Map<String, UsuarioDTO> usuarios = new LinkedHashMap<>();
     final Map<String, String> claves = new LinkedHashMap<>();
+    /** Usuarios que todavía deben cambiar la clave inicial. */
+    final Set<String> primerIngreso = new HashSet<>();
     final Map<String, FuncionarioDTO> funcionarios = new LinkedHashMap<>();
     final Map<String, CategoriaDTO> categorias = new LinkedHashMap<>();
     final Map<String, RecursoDTO> recursos = new LinkedHashMap<>();

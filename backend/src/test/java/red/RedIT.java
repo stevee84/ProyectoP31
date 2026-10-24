@@ -1,6 +1,8 @@
-package proxy;
+package red;
 
+import dto.EstadisticaCategoriaDTO;
 import dto.FuncionarioDTO;
+import dto.ReservaDTO;
 import dto.ResultadoReservaDTO;
 import falso.FabricaServiciosFalsa;
 import org.junit.jupiter.api.AfterEach;
@@ -11,7 +13,7 @@ import protocolo.EventoReservaCreada;
 import protocolo.Operacion;
 import protocolo.Peticion;
 import protocolo.ServicioException;
-import red.Servidor;
+import proxy.ProxyServicio;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -19,6 +21,7 @@ import java.net.Socket;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -102,8 +105,19 @@ class RedIT {
         ResultadoReservaDTO resultado = ana.crearReservacion(List.of(SALAS), "Clase", MANANA, MANANA.plusHours(2));
 
         assertTrue(resultado.exito());
-        assertEquals(resultado.reserva(), alertasLuis.poll(2, TimeUnit.SECONDS).reserva());
         assertEquals(resultado.reserva(), alertasAdmin.poll(2, TimeUnit.SECONDS).reserva());
+        EventoReservaCreada evento = alertasLuis.poll(2, TimeUnit.SECONDS);
+        assertNotNull(evento);
+        assertEquals(resultado.reserva(), evento.reserva());
+        assertNotNull(evento.emitido());
+        ReservaDTO reserva = evento.reserva();
+        assertNotNull(reserva.autor().nombre());
+        assertFalse(reserva.recursos().isEmpty());
+        reserva.recursos().forEach(r -> assertNotNull(r.categoria()));
+        assertNotNull(reserva.descripcionActividad());
+        assertNotNull(reserva.inicio());
+        assertNotNull(reserva.fin());
+
         assertNull(alertasAna.poll(300, TimeUnit.MILLISECONDS), "El autor no recibe su propia alerta");
         assertTrue(alertasLuis.isEmpty() && alertasAdmin.isEmpty(), "Una sola alerta por reserva");
     }
@@ -204,11 +218,25 @@ class RedIT {
     }
 
     @Test
-    void categoriasNulasSeRechazanSinViajarAlServidor() throws Exception {
+    void servidorRechazaReservaSinCategorias() throws Exception {
         ProxyServicio ana = conSesion("F001");
-        ServicioException e = assertThrows(ServicioException.class,
-                () -> ana.crearReservacion(null, "Clase", MANANA, MANANA.plusHours(1)));
-        assertEquals(CodigoError.VALIDACION, e.getCodigo());
+        for (List<String> categorias : Arrays.asList(null, List.<String>of())) {
+            ServicioException e = assertThrows(ServicioException.class,
+                    () -> ana.crearReservacion(categorias, "Clase", MANANA, MANANA.plusHours(1)));
+            assertEquals(CodigoError.VALIDACION, e.getCodigo());
+        }
+    }
+
+    @Test
+    void contarPorCategoriaViajaPorLaRed() throws Exception {
+        ProxyServicio ana = conSesion("F001");
+        ana.crearReservacion(List.of(SALAS), "Clase", MANANA, MANANA.plusHours(1));
+
+        List<EstadisticaCategoriaDTO> conteo = ana.contarPorCategoria(MANANA.toLocalDate(), MANANA.toLocalDate());
+
+        assertEquals(2, conteo.size());
+        assertEquals(1, conteo.get(0).cantidad());
+        assertEquals(0, conteo.get(1).cantidad());
     }
 
     @Test

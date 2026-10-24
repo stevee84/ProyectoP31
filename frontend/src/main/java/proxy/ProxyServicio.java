@@ -4,6 +4,7 @@ import contrato.IReceptorEventos;
 import contrato.IServicioAplicacion;
 import dto.AgendaSemanaDTO;
 import dto.CategoriaDTO;
+import dto.EstadisticaCategoriaDTO;
 import dto.EstadisticaSemanaDTO;
 import dto.FuncionarioDTO;
 import dto.MatrizCalendarioDTO;
@@ -26,9 +27,9 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -38,9 +39,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Proxy del lado del cliente: implementa el mismo contrato que el servicio real,
- * pero cada llamada viaja por el socket. Un único hilo lector separa las
- * respuestas (por idPeticion) de las alertas que llegan en cualquier momento.
+ * Proxy remoto: representa localmente al servicio del Backend. Implementa el mismo
+ * contrato que el servicio real, pero cada llamada viaja por el socket. Un único
+ * hilo lector separa las respuestas (por idPeticion) de las alertas que llegan en
+ * cualquier momento.
  * No conoce Swing; las llamadas son bloqueantes y deben hacerse fuera del EDT.
  */
 public class ProxyServicio implements IServicioAplicacion {
@@ -285,10 +287,9 @@ public class ProxyServicio implements IServicioAplicacion {
     @Override
     public ResultadoReservaDTO crearReservacion(List<String> idsCategorias, String descripcionActividad,
                                                 LocalDateTime inicio, LocalDateTime fin) {
-        if (idsCategorias == null || idsCategorias.isEmpty() || idsCategorias.stream().anyMatch(Objects::isNull)) {
-            throw new ServicioException(CodigoError.VALIDACION, "Debe seleccionar al menos una categoría.");
-        }
-        return enviar(Operacion.CREAR_RESERVACION, List.copyOf(idsCategorias), descripcionActividad, inicio, fin);
+        // Copia serializable; las reglas de negocio las valida el servidor.
+        List<String> categorias = idsCategorias == null ? List.of() : new ArrayList<>(idsCategorias);
+        return enviar(Operacion.CREAR_RESERVACION, categorias, descripcionActividad, inicio, fin);
     }
 
     @Override
@@ -326,5 +327,10 @@ public class ProxyServicio implements IServicioAplicacion {
     @Override
     public int contarReservasCategoria(String idCategoria, LocalDate desde, LocalDate hasta) {
         return this.<Integer>enviar(Operacion.CONTAR_RESERVAS_CATEGORIA, idCategoria, desde, hasta);
+    }
+
+    @Override
+    public List<EstadisticaCategoriaDTO> contarPorCategoria(LocalDate desde, LocalDate hasta) {
+        return enviar(Operacion.CONTAR_POR_CATEGORIA, desde, hasta);
     }
 }

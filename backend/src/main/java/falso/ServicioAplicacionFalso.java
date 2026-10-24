@@ -3,6 +3,7 @@ package falso;
 import contrato.IServicioAplicacion;
 import dto.AgendaSemanaDTO;
 import dto.CategoriaDTO;
+import dto.EstadisticaCategoriaDTO;
 import dto.EstadisticaSemanaDTO;
 import dto.EstadoReserva;
 import dto.FuncionarioDTO;
@@ -22,17 +23,19 @@ import servicio.ContextoSesion;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 /**
  * Implementación en memoria del contrato, solo para pruebas de red y demostraciones.
- * Aplica las reglas mínimas (roles, disponibilidad, cancelar solo lo propio) para
- * que los escenarios del enunciado se puedan probar sin Oracle.
+ * Aplica las reglas documentadas en IServicioAplicacion para que los escenarios
+ * del enunciado se puedan probar sin Oracle; es la referencia del servicio real.
  */
 public class ServicioAplicacionFalso implements IServicioAplicacion {
 
@@ -53,7 +56,7 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
             if (usuario == null || !datos.claves.get(id).equals(clave)) {
                 throw new ServicioException(CodigoError.SESION, "Usuario o contraseña incorrectos.");
             }
-            return new ResultadoSesionDTO(usuario, false);
+            return new ResultadoSesionDTO(usuario, datos.primerIngreso.contains(id));
         }
     }
 
@@ -63,8 +66,16 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public void cambiarClave(String nuevaClave) {
+        if (!contexto.estaAutenticado()) {
+            throw new ServicioException(CodigoError.SESION, "Debe iniciar sesión.");
+        }
+        if (nuevaClave == null || nuevaClave.isBlank()) {
+            throw new ServicioException(CodigoError.VALIDACION, "La nueva contraseña es obligatoria.");
+        }
         synchronized (datos) {
-            datos.claves.put(contexto.getUsuario().id(), nuevaClave);
+            String id = contexto.getUsuario().id();
+            datos.claves.put(id, nuevaClave);
+            datos.primerIngreso.remove(id);
         }
     }
 
@@ -79,6 +90,7 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
             }
             datos.usuarios.put(funcionario.id(), new UsuarioDTO(funcionario.id(), funcionario.nombre(), Rol.FUNCIONARIO));
             datos.claves.put(funcionario.id(), funcionario.id());
+            datos.primerIngreso.add(funcionario.id());
             datos.funcionarios.put(funcionario.id(), funcionario);
         }
     }
@@ -223,6 +235,7 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
     public ResultadoReservaDTO crearReservacion(List<String> idsCategorias, String descripcionActividad,
                                                 LocalDateTime inicio, LocalDateTime fin) {
         exigirFuncionario();
+        validarReservacion(idsCategorias, descripcionActividad, inicio, fin);
         // Consultar, asignar y guardar bajo el mismo bloqueo: dos clientes no pueden
         // quedarse con el último recurso del mismo horario.
         synchronized (datos) {
@@ -258,6 +271,13 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
                 if (r.id() == id) {
                     if (!r.autor().id().equals(contexto.getUsuario().id())) {
                         throw new ServicioException(CodigoError.PERMISO, "Solo puede cancelar sus propias reservas.");
+                    }
+                    if (r.estado() != EstadoReserva.ACTIVA) {
+                        throw new ServicioException(CodigoError.VALIDACION, "La reservación ya está cancelada.");
+                    }
+                    if (!r.inicio().isAfter(LocalDateTime.now())) {
+                        throw new ServicioException(CodigoError.VALIDACION,
+                                "Solo se pueden cancelar reservaciones que aún no han iniciado.");
                     }
                     datos.reservas.set(i, new ReservaDTO(r.id(), r.autor(), r.recursos(),
                             r.descripcionActividad(), r.inicio(), r.fin(), EstadoReserva.CANCELADA));
@@ -324,12 +344,14 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public List<EstadisticaSemanaDTO> contarPorSemana(LocalDate desde, LocalDate hasta) {
+        validarRango(desde, hasta);
         List<EstadisticaSemanaDTO> semanas = new ArrayList<>();
         synchronized (datos) {
             for (LocalDate lunes = desde.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
                  !lunes.isAfter(hasta); lunes = lunes.plusWeeks(1)) {
                 LocalDate inicio = lunes;
                 int cantidad = (int) datos.reservas.stream()
+                        .filter(r -> r.estado() == EstadoReserva.ACTIVA)
                         .map(r -> r.inicio().toLocalDate())
                         .filter(f -> !f.isBefore(inicio) && f.isBefore(inicio.plusDays(7)))
                         .count();
@@ -341,12 +363,28 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public int contarReservasCategoria(String idCategoria, LocalDate desde, LocalDate hasta) {
+        validarRango(desde, hasta);
         synchronized (datos) {
-            return (int) datos.reservas.stream()
-                    .filter(r -> !r.inicio().toLocalDate().isBefore(desde) && !r.inicio().toLocalDate().isAfter(hasta))
-                    .filter(r -> r.recursos().stream().anyMatch(rec -> rec.categoria().id().equals(idCategoria)))
-                    .count();
+            return contar(idCategoria, desde, hasta);
         }
+    }
+
+    @Override
+    public List<EstadisticaCategoriaDTO> contarPorCategoria(LocalDate desde, LocalDate hasta) {
+        validarRango(desde, hasta);
+        synchronized (datos) {
+            return datos.categorias.values().stream()
+                    .map(c -> new EstadisticaCategoriaDTO(c, contar(c.id(), desde, hasta)))
+                    .toList();
+        }
+    }
+
+    private int contar(String idCategoria, LocalDate desde, LocalDate hasta) {
+        return (int) datos.reservas.stream()
+                .filter(r -> r.estado() == EstadoReserva.ACTIVA)
+                .filter(r -> !r.inicio().toLocalDate().isBefore(desde) && !r.inicio().toLocalDate().isAfter(hasta))
+                .filter(r -> r.recursos().stream().anyMatch(rec -> rec.categoria().id().equals(idCategoria)))
+                .count();
     }
 
     // ── Apoyo ────────────────────────────────────────────────────────
@@ -360,6 +398,40 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
     private void exigirFuncionario() {
         if (contexto.esAdministrador()) {
             throw new ServicioException(CodigoError.PERMISO, "Solo los funcionarios pueden gestionar reservas.");
+        }
+    }
+
+    private static void validarReservacion(List<String> idsCategorias, String descripcion,
+                                           LocalDateTime inicio, LocalDateTime fin) {
+        if (idsCategorias == null || idsCategorias.isEmpty() || idsCategorias.stream().anyMatch(Objects::isNull)) {
+            throw new ServicioException(CodigoError.VALIDACION, "Debe seleccionar al menos una categoría.");
+        }
+        if (descripcion == null || descripcion.isBlank()) {
+            throw new ServicioException(CodigoError.VALIDACION, "La descripción de la actividad es obligatoria.");
+        }
+        if (inicio == null || fin == null) {
+            throw new ServicioException(CodigoError.VALIDACION, "Las fechas de inicio y fin son obligatorias.");
+        }
+        if (!inicio.isBefore(fin)) {
+            throw new ServicioException(CodigoError.VALIDACION, "La hora de inicio debe ser anterior a la de fin.");
+        }
+        if (inicio.isBefore(LocalDateTime.now())) {
+            throw new ServicioException(CodigoError.VALIDACION, "No se pueden crear reservaciones en el pasado.");
+        }
+        if (!inicio.toLocalDate().equals(fin.toLocalDate())
+                || inicio.toLocalTime().isBefore(LocalTime.of(HORA_INICIO, 0))
+                || fin.toLocalTime().isAfter(LocalTime.of(HORA_FIN, 0))) {
+            throw new ServicioException(CodigoError.VALIDACION, "La reservación debe estar entre las "
+                    + HORA_INICIO + ":00 y las " + HORA_FIN + ":00 de un mismo día.");
+        }
+    }
+
+    private static void validarRango(LocalDate desde, LocalDate hasta) {
+        if (desde == null || hasta == null) {
+            throw new ServicioException(CodigoError.VALIDACION, "Debe indicar las fechas del rango.");
+        }
+        if (desde.isAfter(hasta)) {
+            throw new ServicioException(CodigoError.VALIDACION, "La fecha inicial no puede ser posterior a la final.");
         }
     }
 

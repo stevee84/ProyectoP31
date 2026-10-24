@@ -18,9 +18,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Traduce cada petición a una llamada del servicio de su conexión y el resultado
- * a una respuesta. No resuelve reglas de negocio: solo exige sesión iniciada,
- * mantiene la identidad de la conexión y publica las reservas confirmadas.
+ * Contraparte del Proxy en el servidor (skeleton): traduce cada petición a una
+ * llamada del servicio de su conexión y el resultado a una respuesta. No resuelve
+ * reglas de negocio: solo exige sesión iniciada, mantiene la identidad de la
+ * conexión y publica las reservas confirmadas.
  */
 public class Despachador {
 
@@ -127,6 +128,7 @@ public class Despachador {
             case CONTAR_POR_SEMANA -> servicio.contarPorSemana((LocalDate) d[0], (LocalDate) d[1]);
             case CONTAR_RESERVAS_CATEGORIA -> servicio.contarReservasCategoria((String) d[0],
                     (LocalDate) d[1], (LocalDate) d[2]);
+            case CONTAR_POR_CATEGORIA -> servicio.contarPorCategoria((LocalDate) d[0], (LocalDate) d[1]);
         };
     }
 

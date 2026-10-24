@@ -38,6 +38,11 @@
                 <artifactId>backend</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>una.eif206</groupId>
+                <artifactId>frontend</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

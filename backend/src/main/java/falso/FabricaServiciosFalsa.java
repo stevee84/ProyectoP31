@@ -10,7 +10,7 @@ import servicio.IFabricaServicios;
  */
 public class FabricaServiciosFalsa implements IFabricaServicios {
 
-    private final DatosFalsos datos = new DatosFalsos();
+    final DatosFalsos datos = new DatosFalsos();
 
     @Override
     public IServicioAplicacion crear(ContextoSesion contexto) {

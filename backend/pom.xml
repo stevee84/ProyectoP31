@@ -18,5 +18,12 @@
             <groupId>una.eif206</groupId>
             <artifactId>comun</artifactId>
         </dependency>
+
+        <!-- Solo para pruebas de integración: clientes Proxy reales contra el servidor. -->
+        <dependency>
+            <groupId>una.eif206</groupId>
+            <artifactId>frontend</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
