@@ -26,9 +26,7 @@ public final class EstiloUI {
     public static final Color BORDER        = new Color(189, 195, 199);
     public static final Color ACCENT        = new Color(39, 174, 96);
     public static final Color DANGER        = new Color(192, 57, 43);
-    public static final Color ROW_ALT       = new Color(235, 245, 255);
-    public static final Color HEADER_BG     = new Color(41, 128, 185);
-    public static final Color HEADER_FG     = Color.WHITE;
+    public static final Color ROW_ALT       = new Color(246, 248, 250);
 
     // ── Fuentes ──────────────────────────────────────────────────────
     public static final Font TITULO  = new Font("Segoe UI", Font.BOLD, 14);
@@ -73,19 +71,16 @@ public final class EstiloUI {
         tabla.setFont(NORMAL);
         tabla.setRowHeight(ROW_HEIGHT);
         tabla.setGridColor(BORDER);
-        tabla.setSelectionBackground(PRIMARY);
-        tabla.setSelectionForeground(Color.WHITE);
         tabla.setShowHorizontalLines(true);
         tabla.setShowVerticalLines(false);
         tabla.setIntercellSpacing(new Dimension(0, 1));
 
-        // Header
+        // Encabezado y selección con los colores del sistema: el tema de Windows
+        // ignora un fondo propio en el encabezado y el texto blanco quedaría invisible.
         JTableHeader header = tabla.getTableHeader();
         header.setFont(BOLD);
-        header.setBackground(HEADER_BG);
-        header.setForeground(HEADER_FG);
         header.setReorderingAllowed(false);
-        header.setPreferredSize(new Dimension(header.getPreferredSize().width, 32));
+        header.setPreferredSize(new Dimension(header.getPreferredSize().width, 28));
 
         // Alternating rows
         tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
@@ -97,7 +92,7 @@ public final class EstiloUI {
                 if (!isSelected) {
                     c.setBackground(row % 2 == 0 ? SURFACE : ROW_ALT);
                 }
-                c.setForeground(isSelected ? Color.WHITE : TEXT);
+                c.setForeground(isSelected ? table.getSelectionForeground() : TEXT);
                 setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 6));
                 return c;
             }
