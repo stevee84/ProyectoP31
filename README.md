@@ -178,6 +178,13 @@ falla se informa con `ServicioException` y un `CodigoError`:
 
 Las operaciones sin retorno terminan normalmente si tuvieron éxito.
 
+## Bitácora de prompts
+
+Registro del uso de asistentes de IA durante el desarrollo:
+
+- Proyecto 2: [`prompts_proyecto2/PROMPTS_LLM.md`](prompts_proyecto2/PROMPTS_LLM.md). Cada prompt indica la herramienta, qué se obtuvo y qué hubo que corregir.
+- Proyecto 1: [`bitacora_prompts.txt`](bitacora_prompts.txt).
+
 ## Repositorio
 
 https://github.com/stevee84/ProyectoP31
