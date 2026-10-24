@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>una.eif206</groupId>
+        <artifactId>sistema-reservas</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <!-- Cliente Swing: MVC, reportes y Proxy hacia el servidor. -->
+    <artifactId>frontend</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>una.eif206</groupId>
+            <artifactId>comun</artifactId>
+        </dependency>
+
+        <!-- Solo para pruebas de integración: levantar un servidor real con el servicio falso. -->
+        <dependency>
+            <groupId>una.eif206</groupId>
+            <artifactId>backend</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
