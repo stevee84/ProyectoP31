@@ -1,11 +1,9 @@
--- Variables para recibir el ID generado y las consultas.
 VARIABLE id_prueba VARCHAR2(20)
 VARIABLE resultado REFCURSOR
 
--- Punto al que volveremos al terminar la prueba.
 SAVEPOINT prueba_categorias;
 
--- 1. INSERTAR una categoría temporal.
+-- Insertar.
 BEGIN
     insertarCategoria(
         'Categoria de prueba',
@@ -16,7 +14,7 @@ END;
 
 PRINT id_prueba
 
--- 2. BUSCAR la categoría insertada.
+-- Buscar.
 BEGIN
     :resultado := buscarCategoria(:id_prueba);
 END;
@@ -24,7 +22,7 @@ END;
 
 PRINT resultado
 
--- 3. LISTAR todas las categorías.
+-- Listar.
 BEGIN
     :resultado := listarCategorias;
 END;
@@ -32,7 +30,7 @@ END;
 
 PRINT resultado
 
--- 4. MODIFICAR la categoría.
+-- Modificar.
 BEGIN
     modificarCategoria(
         :id_prueba,
@@ -41,7 +39,7 @@ BEGIN
 END;
 /
 
--- 5. COMPROBAR la modificación.
+-- Comprobar modificacion.
 BEGIN
     :resultado := buscarCategoria(:id_prueba);
 END;
@@ -49,13 +47,13 @@ END;
 
 PRINT resultado
 
--- 6. ELIMINAR la categoría.
+-- Eliminar.
 BEGIN
     eliminarCategoria(:id_prueba);
 END;
 /
 
--- 7. COMPROBAR la eliminación: debe devolver cero filas.
+-- Debe devolver cero filas.
 BEGIN
     :resultado := buscarCategoria(:id_prueba);
 END;
@@ -63,5 +61,4 @@ END;
 
 PRINT resultado
 
--- Deshacer los cambios realizados desde el inicio de la prueba.
 ROLLBACK TO prueba_categorias;
