@@ -6,7 +6,10 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="ProyectoP31" />
+        <module name="backend" />
+        <module name="comun" />
+        <module name="frontend" />
+        <module name="proyecto1" />
       </profile>
     </annotationProcessing>
   </component>
