@@ -27,6 +27,13 @@
             <version>23.6.0.24.10</version>
         </dependency>
 
+        <!-- JSON de las solicitudes y respuestas de Gemini, como en Proyecto 1. -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20240303</version>
+        </dependency>
+
         <!-- Clientes Proxy utilizados en las pruebas de integración. -->
         <dependency>
             <groupId>una.eif206</groupId>
@@ -34,4 +41,26 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Empaqueta las dependencias de ejecución, incluido ojdbc11 y comun. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.8.1</version>
+                <executions>
+                    <execution>
+                        <id>dependencias-servidor</id>
+                        <phase>package</phase>
+                        <goals><goal>copy-dependencies</goal></goals>
+                        <configuration>
+                            <includeScope>runtime</includeScope>
+                            <outputDirectory>${project.build.directory}/dependencias</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

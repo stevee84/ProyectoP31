@@ -25,7 +25,7 @@ public final class ConexionOracle {
 
         if (clave == null || clave.isEmpty()) {
             throw new SQLException(
-                    "Falta DB_PASSWORD en las variables de entorno de IntelliJ."
+                    "Falta DB_PASSWORD en el entorno del proceso que ejecuta Java."
             );
         }
 

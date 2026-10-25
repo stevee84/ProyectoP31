@@ -236,3 +236,89 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
   - Que las validaciones ahora las hace el servidor.
   - Que los controladores deben recibir `IServicioAplicacion` y no el Proxy concreto.
   - La configuración de host y puerto para correr en máquinas distintas.
+
+---
+
+# Joshua — Integrante 2: Servicios, repositorios y Oracle
+
+## Prompt 11 — Backend Oracle del integrante 2 (Joshua)
+
+**Fecha:** 24 de octubre de 2026.
+
+**Herramienta:** OpenCode (GPT-6.1 Sol).
+
+> Completar directamente en la rama `Josua` los repositorios, servicio real,
+> transacciones, reservas concurrentes, consultas y extracción mediante Gemini,
+> reutilizando el contrato y servidor de Steve. Mantener Java 17 y JDBC con
+> procedimientos y cursores Oracle, agregar pruebas y documentación, sin modificar
+> contrato, red, Frontend ni servicio falso; no hacer commit ni push automático.
+
+**Qué se obtuvo.**
+
+- Se examinó la rama, el estado local, los commits, scripts SQL, contrato, DTO,
+  servicio falso y pruebas de red. Los cambios locales iniciales de 63 archivos
+  eran de finales de línea, sin diferencias de contenido; se conservaron.
+- Repositorios e interfaces de funcionarios/autenticación, recursos/disponibilidad,
+  reservas/asignaciones y consultas/estadísticas. Reutilizan las rutinas de `DB/02`
+  sin cambiar sus firmas ni recrear objetos de la base.
+- `ServicioAplicacion` implementa los 28 métodos del contrato, valida sesión y rol,
+  campos y fechas, y utiliza `ServicioException` con traducción contextual de errores.
+  El servicio solo lee el contexto de sesión.
+- Reservas en una conexión y transacción: conserva categorías repetidas, selecciona
+  recursos distintos, ordena las asignaciones y confirma antes de devolver éxito.
+  Si falta disponibilidad no inserta cabecera. El bloqueo de una única fábrica se
+  comparte entre clientes y cubre también las mutaciones administrativas.
+- Agenda y calendario respetan solapamientos de intervalos y excluyen canceladas;
+  estadísticas con categorías en cero, conteo distinto por categoría y semanas de
+  lunes a domingo completadas con cero.
+- Extractor Gemini real en Backend con API key del entorno, modelo configurable,
+  timeout, JSON y errores sanitizados; una interfaz permite simularlo sin consumir
+  la API en pruebas. No mantiene transacción ni bloqueo durante la llamada externa.
+- `arranque.MainServidorOracle` reutiliza `red.Servidor` con la fábrica real. Maven
+  copia las dependencias de ejecución, incluido el driver Oracle, al empaquetar.
+- Se agregaron pruebas unitarias y pruebas Oracle optativas: commit y rollback real,
+  fallo en segunda asignación, falta normal, cancelación, estadísticas, competencia
+  entre dos servicios y sockets con fábrica y servicio reales. Los datos temporales
+  se identifican con UUID y se limpian por sus IDs, sin utilizar el ADMIN del proyecto.
+- README y `backend/IMPLEMENTACION_ORACLE.md` documentan arquitectura, comandos,
+  variables, responsabilidades y límites de la validación.
+
+**Correcciones y límites durante el trabajo.**
+
+- La terminal WSL no tenía Java/Maven en PATH. Se utilizaron herramientas temporales
+  fuera del repositorio y Java 17 con `-Dmaven.compiler.release=17`; no se cambió
+  la configuración de IntelliJ ni el driver JDBC.
+- La primera ejecución de Maven agotó el límite del comando durante la preparación
+  y pruebas; se repitió sin ese límite. Las ejecuciones posteriores de `test` y
+  `verify` terminaron correctamente; se registran los totales finales a continuación.
+- Se agregó protección para no anunciar fracaso si falla el cierre de una conexión
+  después de un commit exitoso; si también falla el rollback, el error es PERSISTENCIA.
+- No se heredaron `DB_PASSWORD`, `ORACLE_IT` ni `GEMINI_API_KEY` de IntelliJ. No se
+  buscaron contraseñas ni se hicieron llamadas reales de pago. Las IT Oracle nuevas
+  requieren ejecución local; un resultado Maven exitoso con ellas omitidas no
+  demuestra persistencia real ni arranque con Oracle conectado.
+- No se modificaron archivos del contrato, red, Frontend, servicio falso ni pruebas
+  de Steve. No se hicieron commit, push, rebase, merge ni limpiezas de trabajo.
+
+**Resultados de verificación.**
+
+- `mvn test -Dmaven.compiler.release=17`: 116 pruebas unitarias aprobadas,
+  cero fallos, errores u omisiones (30 unitarias nuevas).
+- `mvn verify -Dmaven.compiler.release=17`: las 116 unitarias y las 13 IT
+  existentes de red aprobadas. Se omitieron 17 IT Oracle: 3 de categorías,
+  3 de repositorios nuevos, 10 del servicio real y 1 de sockets con Oracle.
+- `mvn -pl backend -am package -DskipTests -Dmaven.compiler.release=17`:
+  empaquetado correcto; se verificaron `comun`, JSON y el driver Oracle en
+  `backend/target/dependencias/`.
+- El main con el classpath documentado detectó la falta de configuración de
+  Oracle antes de aceptar clientes. Una comprobación temporal fuera del repositorio
+  cargó driver/JSON y usó un socket contra `red.Servidor` con la fábrica real:
+  obtuvo PERSISTENCIA sanitizado al faltar la configuración. El primer intento
+  coincidió con una recompilación y no encontró una clase; al terminar la
+  compilación se repitió correctamente. No demuestra acceso real a Oracle.
+- La comparación de huellas de archivos respecto al inicio confirmó que las áreas
+  protegidas y pruebas de Steve no cambiaron. Se revisaron los 28 métodos y no
+  quedaron métodos simulados, TODO ni dependencias de Swing en el código nuevo.
+- Pendiente local: ejecutar las 17 IT con Oracle y comprobar el arranque conectado;
+  probar opcionalmente Gemini con clave/cuota configuradas. No se informa esas
+  comprobaciones como aprobadas.

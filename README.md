@@ -93,8 +93,13 @@ Paquetes del Backend:
 | `repositorio` | Acceso a Oracle mediante procedimientos y funciones |
 | `falso` | Implementación en memoria para pruebas e integración temprana |
 
-Actualmente está implementado el repositorio Oracle de categorías.
-Los demás repositorios y el servicio real están pendientes de integración.
+El Backend real implementa el contrato completo con repositorios Oracle de
+categorías, funcionarios y autenticación, recursos y disponibilidad, reservas
+y estadísticas. `ServicioAplicacion` aplica permisos, validaciones y transacciones;
+`FabricaServiciosOracle` comparte el bloqueo entre los clientes del servidor.
+La extracción Gemini se ejecuta en el Backend, sin mantener conexiones ni bloqueos.
+
+Detalles y archivos de Joshua: [Implementación Oracle](backend/IMPLEMENTACION_ORACLE.md).
 
 ## Configuración de red
 
@@ -136,7 +141,10 @@ Consultas y funciones compartidas:
 Los funcionarios se registran con su identificación como clave inicial.
 En el primer ingreso deben cambiarla.
 
-La integración opcional con Gemini utiliza `GEMINI_API_KEY`.
+La integración opcional con Gemini utiliza `GEMINI_API_KEY` en el Backend.
+No crea reservas: entrega campos para revisar y completar en el Frontend.
+Los reportes PDF y las pantallas corresponden a Scott; no están implementados
+por el nuevo servicio Oracle.
 
 ## Requisitos
 
@@ -215,9 +223,10 @@ El driver se declara únicamente en `backend/pom.xml`.
 
 Se utiliza `ojdbc11:23.6.0.24.10`, tomado del ejemplo del profesor.
 
-La conexión real de ese driver con Oracle XE 11.2.0.2.0 debe comprobarse
-ejecutando las pruebas Oracle en esa instalación. Compilar el proyecto
-no demuestra esa compatibilidad.
+Las tres pruebas JDBC de categorías ya se ejecutaron correctamente en la
+computadora de Joshua con ese driver y Oracle XE 11.2.0.2.0. Eso no certifica
+todas las combinaciones de versiones. Los nuevos escenarios Oracle deben
+validarse por separado: compilar o ejecutar pruebas sin Oracle no los valida.
 
 Referencia:
 [Documentación de compatibilidad JDBC de Oracle](https://www.oracle.com/database/technologies/faq-jdbc.html).
@@ -256,8 +265,23 @@ cursores. No cierran la conexión ni confirman la transacción.
 
 Esto permite que varios repositorios participen en la misma operación.
 
-El servidor continúa utilizando el servicio falso hasta integrar el
-servicio real y su fábrica.
+`red.MainServidor` conserva el modo falso de Steve. El nuevo punto de entrada
+`arranque.MainServidorOracle` reutiliza `red.Servidor` con la fábrica real.
+No es necesario cambiar el protocolo ni las clases de red.
+
+La aplicación abre una conexión por operación, con autocommit desactivado.
+Confirma antes de devolver éxito y revierte ante errores. Al reservar,
+consulta disponibilidad y selecciona recursos antes de insertar; la falta
+normal de recursos no deja cabecera ni asignaciones parciales. Las categorías
+repetidas solicitan recursos distintos. Se asignan en orden de código para
+los bloqueos de fila de Oracle.
+
+Una sola fábrica por servidor serializa las operaciones JDBC, también las
+modificaciones administrativas y cancelaciones. Es una solución sencilla para
+el servidor único del proyecto, no un bloqueo distribuido entre varios
+procesos Backend. Las rutinas Oracle mantienen además sus bloqueos y la
+revalidación de solapamientos. Evitar modificar datos manualmente mientras
+se realizan pruebas concurrentes.
 
 ## Compilación
 
@@ -267,10 +291,79 @@ Desde la raíz:
 mvn clean install
 ```
 
-## Ejecución del servidor
+## Ejecución del servidor Oracle
 
-Mientras se integra la fábrica Oracle, `MainServidor` utiliza el servicio
-en memoria.
+Desde la raíz, con JDK 17 y Maven disponibles:
+
+```bash
+mvn -pl backend -am package -DskipTests
+```
+
+Este comando copia las dependencias de ejecución a
+`backend/target/dependencias/`: incluye `comun`, **el driver Oracle** y JSON.
+No es suficiente ejecutar el servidor Oracle solo con los directorios de clases.
+
+Variables en la **misma terminal que ejecuta Java/Maven**, ejemplo PowerShell:
+
+```powershell
+$env:DB_URL = 'jdbc:oracle:thin:@localhost:1521:XE'
+$env:DB_USER = 'RESERVAS_P2'
+$env:DB_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host 'Clave RESERVAS_P2' -AsSecureString)).Password
+java -Dservidor.puerto=5000 -cp "backend/target/classes;backend/target/dependencias/*" arranque.MainServidorOracle
+```
+
+En Bash (Linux/WSL/macOS):
+
+```bash
+export DB_URL='jdbc:oracle:thin:@localhost:1521:XE'
+export DB_USER='RESERVAS_P2'
+read -rsp 'Clave RESERVAS_P2: ' DB_PASSWORD
+export DB_PASSWORD
+java -Dservidor.puerto=5000 -cp 'backend/target/classes:backend/target/dependencias/*' arranque.MainServidorOracle
+```
+
+Las variables de una configuración de IntelliJ no se heredan automáticamente
+en otra terminal ni en OpenCode. No guardarlas en Git ni imprimirlas. En WSL,
+si Oracle está en Windows, puede ser necesario ajustar el host de `DB_URL`
+y las reglas del firewall; `localhost` depende de la configuración de red WSL.
+
+El punto de entrada comprueba la conexión antes de aceptar clientes. Con Oracle
+disponible muestra `Servidor Oracle de reservas escuchando en el puerto 5000`.
+Si falla, revisar variables, listener de Oracle, SID y dependencias.
+
+Steve puede posteriormente sustituir solamente `new FabricaServiciosFalsa()`
+por `new servicio.FabricaServiciosOracle()` en su `MainServidor`, manteniendo
+una única instancia de fábrica por servidor. No se ha modificado ese archivo.
+
+### Gemini opcional
+
+| Variable del Backend | Uso |
+|----------------------|-----|
+| `GEMINI_API_KEY` | Clave privada de Google AI Studio; no se envía al Frontend |
+| `GEMINI_MODEL` | Modelo disponible para su cuenta; por defecto `gemini-3.5-flash-lite` |
+| `GEMINI_TIMEOUT_SECONDS` | Entre 1 y 120; por defecto 8 segundos |
+
+Sin clave, sin cuota, sin conexión o con respuesta inválida se devuelve un
+`ResultadoExtraccionDTO` fallido y comprensible, sin cuerpos de errores externos.
+El modelo predeterminado figura en la documentación oficial consultada durante
+este trabajo; la disponibilidad y facturación dependen de Google y de su cuenta.
+Se puede cambiar sin recompilar. No se ejecutan llamadas reales de pago en pruebas.
+
+Se usa REST `generateContent`, respuesta JSON y cabecera `x-goog-api-key` (no
+clave en la URL). Solo se aceptan IDs del catálogo real; se admiten campos
+incompletos y se conservan las cantidades de categorías repetidas.
+
+Si se aumenta el tiempo de Gemini, el timeout del Proxy del cliente debe ser
+mayor que la operación completa (por ejemplo, `-Dservidor.timeout=40000` si
+la construcción del Proxy utiliza esa configuración). Un timeout de red tras
+una reserva no implica que Oracle la haya deshecho: consultar antes de reintentar.
+
+Referencias oficiales: [modelos](https://ai.google.dev/gemini-api/docs/models),
+[generateContent](https://ai.google.dev/api/generate-content).
+
+### Servidor falso (alternativa sin Oracle)
+
+`MainServidor` conserva el servicio en memoria para pruebas y demostraciones.
 
 Usuarios disponibles en el servicio falso:
 
@@ -335,10 +428,13 @@ Las pruebas existentes incluyen:
 
 ### Pruebas contra Oracle
 
-Clase:
+Clases:
 
 ```text
 repositorio.RepositorioCategoriasOracleIT
+repositorio.RepositoriosOracleIT
+servicio.ServicioAplicacionOracleIT
+integracion.ServidorOracleIT
 ```
 
 Requiere:
@@ -353,18 +449,42 @@ Comprueba:
 - Inserción, búsqueda, listado, modificación y eliminación de categorías.
 - Listas inmutables.
 - Rollback de una inserción.
+- CRUD de funcionarios, autenticación, primer ingreso y conservación de clave.
+- Recursos, disponibilidad y mapeo de cursores.
+- Reservas confirmadas, falta normal sin residuos, categorías repetidas,
+  solapamientos y horarios contiguos.
+- Rollback real tras la primera asignación, fallo en la segunda.
+- Cancelación propia, ajena, repetida e iniciada; restauración de disponibilidad.
+- Restricciones de borrado sin eliminar historial, estadísticas, agenda y calendario.
+- Dos servicios de la misma fábrica compitiendo por el último recurso.
+- Sockets y Proxy originales con servicio y fábrica Oracle, incluyendo alertas.
 
-Los datos de prueba se deshacen.
+Las pruebas antiguas de categorías usan rollback. Las nuevas pruebas que hacen
+commit crean usuarios temporales `J2IT-...`, categorías y recursos propios;
+limpian exclusivamente sus IDs en `finally`/`@AfterEach`, en orden de claves
+foráneas. No utilizan ni cambian la clave del administrador del proyecto.
+Si se termina abruptamente la JVM o cae Oracle durante la limpieza, revisar los
+IDs de esa ejecución antes de retirar residuos; nunca vaciar tablas.
 
-Desde la raíz:
+Desde la raíz, en PowerShell con las variables JDBC ya configuradas:
 
-```bash
+```powershell
+$env:ORACLE_IT = 'true'
 mvn -pl backend -am verify
 ```
 
-Sin `ORACLE_IT=true`, las tres pruebas Oracle se omiten.
+En Bash: `export ORACLE_IT=true` y ejecutar el mismo comando Maven.
+Para ejecutar todo el reactor, usar `mvn test` y `mvn verify`.
+Sin `ORACLE_IT=true`, las pruebas Oracle se omiten.
 Que Maven termine correctamente con esas pruebas omitidas no valida la
 conexión a Oracle.
+
+Las pruebas unitarias nuevas utilizan dependencias simuladas (conexión,
+repositorios o extractor), sin Oracle ni consumo de Gemini. Comprueban sesión,
+permisos, límites, horarios, transacciones, errores y matrices de consultas.
+
+**Verificación de este trabajo:** los resultados reales y las limitaciones del
+entorno están registrados en [Implementación Oracle](backend/IMPLEMENTACION_ORACLE.md).
 
 ## Protocolo y errores
 
