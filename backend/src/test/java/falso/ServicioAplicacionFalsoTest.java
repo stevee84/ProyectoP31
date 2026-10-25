@@ -171,4 +171,44 @@ class ServicioAplicacionFalsoTest {
         assertEquals(1, conteo.get(0).cantidad());
         assertEquals(0, conteo.get(1).cantidad());
     }
+
+    // ── Alineación con el servicio Oracle ────────────────────────────
+
+    @Test
+    void sinSesionTodoSeRechaza() {
+        IServicioAplicacion anonimo = fabrica.crear(new ContextoSesion());
+        assertError(CodigoError.SESION, anonimo::listarCategorias);
+        assertError(CodigoError.SESION, () -> anonimo.obtenerAgendaSemana(HOY));
+        assertError(CodigoError.SESION, () -> anonimo.contarPorCategoria(HOY, HOY));
+    }
+
+    @Test
+    void buscarInexistenteLanzaValidacionYNoDevuelveNull() {
+        IServicioAplicacion admin = conSesion("ADMIN");
+        assertError(CodigoError.VALIDACION, () -> admin.buscarFuncionario("NADIE"));
+        assertError(CodigoError.VALIDACION, () -> admin.buscarCategoria("CAT-999999"));
+        assertError(CodigoError.VALIDACION, () -> admin.buscarRecurso("NADA"));
+        assertError(CodigoError.VALIDACION, () -> admin.listarRecursosPorCategoria("CAT-999999"));
+        assertError(CodigoError.VALIDACION, () -> admin.obtenerCalendarizacion(HOY, "CAT-999999"));
+    }
+
+    @Test
+    void funcionarioNoConsultaFuncionarios() {
+        assertError(CodigoError.PERMISO, () -> conSesion("F001").listarFuncionarios());
+    }
+
+    @Test
+    void agendaTraeTodaLaSemanaYLaReservaEnCadaHora() {
+        IServicioAplicacion ana = conSesion("F001");
+        ana.crearReservacion(List.of(SALAS), "Taller", MANANA, MANANA.plusHours(2));
+
+        var actividades = ana.obtenerAgendaSemana(MANANA.toLocalDate()).actividades();
+        var dia = actividades.get(MANANA.getDayOfWeek());
+
+        assertEquals(7, actividades.size());
+        assertEquals(IServicioAplicacion.HORA_FIN - IServicioAplicacion.HORA_INICIO, dia.size());
+        assertEquals(1, dia.get(9).size());
+        assertEquals(1, dia.get(10).size());
+        assertTrue(dia.get(11).isEmpty());
+    }
 }

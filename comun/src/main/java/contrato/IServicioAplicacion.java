@@ -38,8 +38,12 @@ import java.util.List;
  * <ul>
  *   <li>iniciarSesion: SESION si el usuario no existe o la clave no coincide.</li>
  *   <li>cambiarClave: VALIDACION si la clave es nula o vacía; luego ya no se exige cambio de clave.</li>
- *   <li>CRUD de funcionarios, categorías y recursos: PERMISO si no es administrador;
- *       VALIDACION por id duplicado o inexistente; RECURSO_EN_USO al borrar con asociados.</li>
+ *   <li>CRUD de funcionarios, categorías y recursos: PERMISO si no es administrador
+ *       (buscar y listar categorías o recursos solo exigen sesión); VALIDACION por id
+ *       duplicado o inexistente, también al buscar: nunca se devuelve null;
+ *       RECURSO_EN_USO al borrar con asociados.</li>
+ *   <li>listarRecursosPorCategoria, obtenerCalendarizacion: VALIDACION si la categoría no existe.</li>
+ *   <li>extraerDatosDesdeFrase: PERMISO si es administrador.</li>
  *   <li>crearReservacion: PERMISO si es administrador; VALIDACION sin categorías, sin descripción,
  *       sin fechas, con fin no posterior al inicio, en el pasado o fuera de
  *       HORA_INICIO..HORA_FIN de un mismo día. Sin recursos libres devuelve

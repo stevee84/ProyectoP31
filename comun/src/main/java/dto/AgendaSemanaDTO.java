@@ -9,6 +9,9 @@ import java.util.stream.Collectors;
 
 /**
  * Actividades de una semana agrupadas por día y hora, listas para la agenda semanal.
+ * Siempre trae los 7 días y cada hora de HORA_INICIO a HORA_FIN - 1 (lista vacía si no hay nada);
+ * una reserva aparece en cada hora que ocupa. Los mapas no conservan orden: recorrer por
+ * DayOfWeek y por hora.
  */
 public record AgendaSemanaDTO(
         LocalDate inicioSemana,

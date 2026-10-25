@@ -7,6 +7,7 @@ import java.util.List;
 /**
  * Calendarización completa de una categoría en una fecha, en una sola respuesta.
  * celdas.get(fila).get(columna): fila = hora - HORA_INICIO, columna = índice en recursos.
+ * Cada celda dice "Disponible" o "actividad - funcionario"; varias actividades se separan con "; ".
  */
 public record MatrizCalendarioDTO(
         LocalDate fecha,

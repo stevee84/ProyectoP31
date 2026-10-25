@@ -62,18 +62,16 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public void cerrarSesion() {
+        sesion();
     }
 
     @Override
     public void cambiarClave(String nuevaClave) {
-        if (!contexto.estaAutenticado()) {
-            throw new ServicioException(CodigoError.SESION, "Debe iniciar sesión.");
-        }
+        String id = sesion().id();
         if (nuevaClave == null || nuevaClave.isBlank()) {
             throw new ServicioException(CodigoError.VALIDACION, "La nueva contraseña es obligatoria.");
         }
         synchronized (datos) {
-            String id = contexto.getUsuario().id();
             datos.claves.put(id, nuevaClave);
             datos.primerIngreso.remove(id);
         }
@@ -116,13 +114,15 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public FuncionarioDTO buscarFuncionario(String id) {
+        exigirAdministrador();
         synchronized (datos) {
-            return datos.funcionarios.get(id);
+            return existente(datos.funcionarios, id, "funcionario");
         }
     }
 
     @Override
     public List<FuncionarioDTO> listarFuncionarios() {
+        exigirAdministrador();
         synchronized (datos) {
             return List.copyOf(datos.funcionarios.values());
         }
@@ -161,13 +161,15 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public CategoriaDTO buscarCategoria(String id) {
+        sesion();
         synchronized (datos) {
-            return datos.categorias.get(id);
+            return existente(datos.categorias, id, "categoría");
         }
     }
 
     @Override
     public List<CategoriaDTO> listarCategorias() {
+        sesion();
         synchronized (datos) {
             return List.copyOf(datos.categorias.values());
         }
@@ -208,13 +210,15 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public RecursoDTO buscarRecurso(String codigo) {
+        sesion();
         synchronized (datos) {
-            return datos.recursos.get(codigo);
+            return existente(datos.recursos, codigo, "recurso");
         }
     }
 
     @Override
     public List<RecursoDTO> listarRecursos() {
+        sesion();
         synchronized (datos) {
             return List.copyOf(datos.recursos.values());
         }
@@ -222,7 +226,9 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public List<RecursoDTO> listarRecursosPorCategoria(String idCategoria) {
+        sesion();
         synchronized (datos) {
+            existente(datos.categorias, idCategoria, "categoría");
             return datos.recursos.values().stream()
                     .filter(r -> r.categoria().id().equals(idCategoria))
                     .toList();
@@ -290,14 +296,15 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public List<ReservaDTO> listarReservacionesSesion() {
+        String idUsuario = sesion().id();
         synchronized (datos) {
-            String idUsuario = contexto.getUsuario().id();
             return datos.reservas.stream().filter(r -> r.autor().id().equals(idUsuario)).toList();
         }
     }
 
     @Override
     public ResultadoExtraccionDTO extraerDatosDesdeFrase(String frase) {
+        exigirFuncionario();
         return ResultadoExtraccionDTO.fallo("La extracción con IA no está disponible en el servidor de prueba.");
     }
 
@@ -305,6 +312,7 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public MatrizCalendarioDTO obtenerCalendarizacion(LocalDate fecha, String idCategoria) {
+        sesion();
         synchronized (datos) {
             List<RecursoDTO> recursos = listarRecursosPorCategoria(idCategoria);
             List<List<String>> celdas = new ArrayList<>();
@@ -315,7 +323,7 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
                     fila.add(datos.reservas.stream()
                             .filter(r -> activaConRecurso(r, recurso, inicioHora, inicioHora.plusHours(1)))
                             .map(r -> r.descripcionActividad() + " - " + r.autor().nombre())
-                            .findFirst()
+                            .reduce((a, b) -> a + "; " + b)
                             .orElse("Disponible"));
                 }
                 celdas.add(fila);
@@ -326,17 +334,22 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public AgendaSemanaDTO obtenerAgendaSemana(LocalDate dia) {
+        sesion();
         LocalDate lunes = dia.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         Map<DayOfWeek, Map<Integer, List<InfoReservaDTO>>> actividades = new EnumMap<>(DayOfWeek.class);
         synchronized (datos) {
-            for (ReservaDTO r : datos.reservas) {
-                LocalDate fecha = r.inicio().toLocalDate();
-                if (r.estado() == EstadoReserva.ACTIVA && !fecha.isBefore(lunes) && fecha.isBefore(lunes.plusDays(7))) {
-                    actividades.computeIfAbsent(fecha.getDayOfWeek(), d -> new TreeMap<>())
-                            .computeIfAbsent(r.inicio().getHour(), h -> new ArrayList<>())
-                            .add(new InfoReservaDTO(r.inicio(), r.fin(), r.descripcionActividad(), r.autor().nombre(),
-                                    r.recursos().stream().map(RecursoDTO::descripcion).toList()));
+            for (LocalDate fecha = lunes; fecha.isBefore(lunes.plusDays(7)); fecha = fecha.plusDays(1)) {
+                Map<Integer, List<InfoReservaDTO>> horas = new TreeMap<>();
+                for (int hora = HORA_INICIO; hora < HORA_FIN; hora++) {
+                    LocalDateTime inicioHora = fecha.atTime(hora, 0);
+                    horas.put(hora, datos.reservas.stream()
+                            .filter(r -> r.estado() == EstadoReserva.ACTIVA
+                                    && r.inicio().isBefore(inicioHora.plusHours(1)) && inicioHora.isBefore(r.fin()))
+                            .map(r -> new InfoReservaDTO(r.inicio(), r.fin(), r.descripcionActividad(),
+                                    r.autor().nombre(), r.recursos().stream().map(RecursoDTO::descripcion).toList()))
+                            .toList());
                 }
+                actividades.put(fecha.getDayOfWeek(), horas);
             }
         }
         return new AgendaSemanaDTO(lunes, actividades);
@@ -344,6 +357,7 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public List<EstadisticaSemanaDTO> contarPorSemana(LocalDate desde, LocalDate hasta) {
+        sesion();
         validarRango(desde, hasta);
         List<EstadisticaSemanaDTO> semanas = new ArrayList<>();
         synchronized (datos) {
@@ -363,6 +377,7 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public int contarReservasCategoria(String idCategoria, LocalDate desde, LocalDate hasta) {
+        sesion();
         validarRango(desde, hasta);
         synchronized (datos) {
             return contar(idCategoria, desde, hasta);
@@ -371,6 +386,7 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     @Override
     public List<EstadisticaCategoriaDTO> contarPorCategoria(LocalDate desde, LocalDate hasta) {
+        sesion();
         validarRango(desde, hasta);
         synchronized (datos) {
             return datos.categorias.values().stream()
@@ -389,14 +405,22 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
 
     // ── Apoyo ────────────────────────────────────────────────────────
 
+    private UsuarioDTO sesion() {
+        UsuarioDTO usuario = contexto.getUsuario();
+        if (usuario == null) {
+            throw new ServicioException(CodigoError.SESION, "Debe iniciar sesión.");
+        }
+        return usuario;
+    }
+
     private void exigirAdministrador() {
-        if (!contexto.esAdministrador()) {
+        if (!sesion().esAdministrador()) {
             throw new ServicioException(CodigoError.PERMISO, "Solo el administrador puede realizar esta acción.");
         }
     }
 
     private void exigirFuncionario() {
-        if (contexto.esAdministrador()) {
+        if (sesion().esAdministrador()) {
             throw new ServicioException(CodigoError.PERMISO, "Solo los funcionarios pueden gestionar reservas.");
         }
     }
