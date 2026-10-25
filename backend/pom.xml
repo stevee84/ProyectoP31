@@ -2,6 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -10,7 +11,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <!-- Servidor sin interfaz gráfica: red, servicios, repositorios y Oracle. -->
+    <!-- Servidor sin interfaz gráfica. -->
     <artifactId>backend</artifactId>
 
     <dependencies>
@@ -19,7 +20,14 @@
             <artifactId>comun</artifactId>
         </dependency>
 
-        <!-- Solo para pruebas de integración: clientes Proxy reales contra el servidor. -->
+        <!-- Driver del ejemplo del profesor. Solo pertenece al Backend. -->
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>23.6.0.24.10</version>
+        </dependency>
+
+        <!-- Clientes Proxy utilizados en las pruebas de integración. -->
         <dependency>
             <groupId>una.eif206</groupId>
             <artifactId>frontend</artifactId>
