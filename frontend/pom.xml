@@ -10,13 +10,72 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <!-- Cliente Swing: MVC, reportes y Proxy hacia el servidor. -->
+    <!-- Cliente Swing: MVC, reportes y Proxy hacia el servidor.
+         No declara driver ni nada relacionado con la base de datos. -->
     <artifactId>frontend</artifactId>
+
+    <properties>
+        <!-- Punto de entrada del cliente: mvn -pl frontend -am exec:java -->
+        <exec.mainClass>cliente.MainCliente</exec.mainClass>
+    </properties>
 
     <dependencies>
         <dependency>
             <groupId>una.eif206</groupId>
             <artifactId>comun</artifactId>
         </dependency>
+
+        <!-- iText: reportes PDF de las tablas, igual que en el Proyecto 1 -->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itextpdf</artifactId>
+            <version>5.5.13.4</version>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Copia comun e iText a target/dependencias para ejecutar el cliente con java -cp -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.8.1</version>
+                <executions>
+                    <execution>
+                        <id>dependencias-cliente</id>
+                        <phase>package</phase>
+                        <goals><goal>copy-dependencies</goal></goals>
+                        <configuration>
+                            <includeScope>runtime</includeScope>
+                            <outputDirectory>${project.build.directory}/dependencias</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.1</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>cliente.MainCliente</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>dependencias/</classpathPrefix>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <!-- Las pruebas de Swing crean componentes sin ventanas -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <java.awt.headless>true</java.awt.headless>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

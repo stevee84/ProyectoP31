@@ -398,8 +398,14 @@ Cada cliente utiliza:
 -Dservidor.puerto=5000
 ```
 
-El punto de entrada `MainCliente` está pendiente de integración por el
-Integrante 3.
+El punto de entrada es `cliente.MainCliente`:
+
+```bash
+mvn -pl frontend exec:java -Dservidor.host=IP_DEL_SERVIDOR -Dservidor.puerto=5000
+```
+
+Para revisar la interfaz sin servidor: `-Dexec.mainClass=cliente.MainClienteDemo`.
+Detalles del cliente, alertas y pruebas del MVC en [frontend/README.md](frontend/README.md).
 
 La aplicación anterior puede ejecutarse desde la raíz:
 
