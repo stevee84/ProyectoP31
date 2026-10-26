@@ -10,7 +10,7 @@ public final class Configuracion {
 
     /** Al leer del socket solo se aceptan clases del protocolo y del JDK, con límites de tamaño. */
     public static final ObjectInputFilter FILTRO_MENSAJES = ObjectInputFilter.Config.createFilter(
-            "maxbytes=1000000;maxarray=10000;maxdepth=20;protocolo.*;dto.*;java.base/*;!*");
+            "maxarray=10000;maxdepth=20;protocolo.*;dto.*;java.base/*;!*");
 
     private static Configuracion instancia;
 

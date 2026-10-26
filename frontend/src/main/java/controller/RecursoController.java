@@ -17,6 +17,8 @@ public class RecursoController {
     private final RecursosPanel view;
     private final RecursoModel modelo;
     private final CategoriaModel categoriaModelo;
+    /** Identifica la última consulta del listado; las respuestas anteriores se descartan. */
+    private int ultimaSolicitudRecursos;
 
     public RecursoController(RecursosPanel view, RecursoModel modelo, CategoriaModel categoriaModelo) {
         this.view = view;
@@ -42,14 +44,17 @@ public class RecursoController {
     private void abrirDialogoAgregar() {
         conCategorias(categorias -> {
             RecursoDialog dialog = new RecursoDialog(getFrame(), false, "", null, "", categorias);
-            dialog.setOnGuardar(datos -> Tarea.ejecutar(
-                    () -> { modelo.registrar(datos[0], datos[1], datos[2]); return null; },
-                    r -> {
-                        dialog.cerrar();
-                        view.mostrarMensaje("Recurso registrado.");
-                        cargarRecursos();
-                    },
-                    e -> dialog.mostrarError(e.getMessage())));
+            dialog.setOnGuardar(datos -> {
+                dialog.setOcupado(true);
+                Tarea.ejecutar(
+                        () -> { modelo.registrar(datos[0], datos[1], datos[2]); return null; },
+                        r -> {
+                            dialog.cerrar();
+                            view.mostrarMensaje("Recurso registrado.");
+                            cargarRecursos();
+                        },
+                        e -> dialog.mostrarError(e.getMessage()));
+            });
             dialog.setVisible(true);
         });
     }
@@ -59,14 +64,17 @@ public class RecursoController {
         conCategorias(categorias -> {
             RecursoDialog dialog = new RecursoDialog(getFrame(), true,
                     recurso.codigo(), recurso.categoria(), recurso.descripcion(), categorias);
-            dialog.setOnGuardar(nuevos -> Tarea.ejecutar(
-                    () -> { modelo.actualizar(nuevos[0], nuevos[1], nuevos[2]); return null; },
-                    r -> {
-                        dialog.cerrar();
-                        view.mostrarMensaje("Recurso modificado.");
-                        cargarRecursos();
-                    },
-                    e -> dialog.mostrarError(e.getMessage())));
+            dialog.setOnGuardar(nuevos -> {
+                dialog.setOcupado(true);
+                Tarea.ejecutar(
+                        () -> { modelo.actualizar(nuevos[0], nuevos[1], nuevos[2]); return null; },
+                        r -> {
+                            dialog.cerrar();
+                            view.mostrarMensaje("Recurso modificado.");
+                            cargarRecursos();
+                        },
+                        e -> dialog.mostrarError(e.getMessage()));
+            });
             dialog.setVisible(true);
         });
     }
@@ -96,7 +104,17 @@ public class RecursoController {
     private void cargarRecursos() {
         CategoriaDTO filtro = view.getCategoriaFiltro();
         String idCategoria = filtro != null ? filtro.id() : null;
-        Tarea.ejecutar(() -> modelo.listar(idCategoria), view::cargarRecursos,
-                e -> view.mostrarError(e.getMessage()));
+        int solicitud = ++ultimaSolicitudRecursos;
+        Tarea.ejecutar(() -> modelo.listar(idCategoria),
+                recursos -> {
+                    if (solicitud == ultimaSolicitudRecursos) {
+                        view.cargarRecursos(recursos);
+                    }
+                },
+                e -> {
+                    if (solicitud == ultimaSolicitudRecursos) {
+                        view.mostrarError(e.getMessage());
+                    }
+                });
     }
 }

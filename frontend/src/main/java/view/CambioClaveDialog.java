@@ -11,6 +11,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.SwingConstants;
 import java.awt.BorderLayout;
+import java.awt.Cursor;
 import java.awt.Frame;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -20,6 +21,8 @@ import java.awt.Insets;
 import java.util.function.Consumer;
 
 public class CambioClaveDialog extends JDialog {
+
+    private JButton btnGuardar;
 
     private final JPasswordField campoNueva = new JPasswordField(18);
     private final JPasswordField campoConfirmar = new JPasswordField(18);
@@ -75,7 +78,7 @@ public class CambioClaveDialog extends JDialog {
         mainPanel.add(campos);
         mainPanel.add(Box.createVerticalStrut(12));
 
-        JButton btnGuardar = new JButton("Guardar");
+        btnGuardar = new JButton("Guardar");
         JButton btnCancelar = new JButton("Cancelar");
         EstiloUI.estilizarBotonPrimario(btnGuardar);
         EstiloUI.estilizarBoton(btnCancelar);
@@ -113,6 +116,13 @@ public class CambioClaveDialog extends JDialog {
         }
     }
 
+    /** Mientras el servidor responde, evita guardar dos veces. */
+    public void setOcupado(boolean ocupado) {
+        btnGuardar.setEnabled(!ocupado);
+        btnGuardar.setText(ocupado ? "Guardando..." : "Guardar");
+        setCursor(ocupado ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR) : Cursor.getDefaultCursor());
+    }
+
     // --- Callback setter ---
     public void setOnGuardar(Consumer<String> cb) { this.onGuardar = cb; }
 
@@ -122,6 +132,7 @@ public class CambioClaveDialog extends JDialog {
 
     // --- Public methods ---
     public void mostrarError(String msg) {
+        setOcupado(false);
         JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
     }
 

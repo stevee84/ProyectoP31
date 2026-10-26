@@ -65,6 +65,9 @@ public class ManejadorCliente implements Runnable, IObservadorEventos {
             }
         } catch (IOException | ClassNotFoundException | RuntimeException e) {
             // Cliente desconectado, mensaje ilegible o rechazado por el filtro: se cierra solo esta conexión.
+            if (!(e instanceof java.io.EOFException) && !socket.isClosed()) {
+                System.err.println("Servidor: se cerró la conexión de un cliente por un error: " + e);
+            }
         } finally {
             publicador.eliminar(this);
             cerrar();

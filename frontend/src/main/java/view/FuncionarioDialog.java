@@ -10,6 +10,8 @@ import java.util.function.Consumer;
  */
 public class FuncionarioDialog extends JDialog {
 
+    private JButton btnGuardar;
+
     private final JTextField campoId = new JTextField(18);
     private final JTextField campoNombre = new JTextField(18);
     private final JTextField campoTelefono = new JTextField(18);
@@ -71,7 +73,7 @@ public class FuncionarioDialog extends JDialog {
         mainPanel.add(campos);
         mainPanel.add(Box.createVerticalStrut(12));
 
-        JButton btnGuardar = new JButton("Guardar");
+        btnGuardar = new JButton("Guardar");
         JButton btnCancelar = new JButton("Cancelar");
         EstiloUI.estilizarBotonPrimario(btnGuardar);
         EstiloUI.estilizarBoton(btnCancelar);
@@ -104,11 +106,19 @@ public class FuncionarioDialog extends JDialog {
         }
     }
 
+    /** Mientras el servidor responde, evita guardar dos veces. */
+    public void setOcupado(boolean ocupado) {
+        btnGuardar.setEnabled(!ocupado);
+        btnGuardar.setText(ocupado ? "Guardando..." : "Guardar");
+        setCursor(ocupado ? Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR) : Cursor.getDefaultCursor());
+    }
+
     public void setOnGuardar(Consumer<String[]> cb) { this.onGuardar = cb; }
 
     public void cerrar() { dispose(); }
 
     public void mostrarError(String msg) {
+        setOcupado(false);
         JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
     }
 }

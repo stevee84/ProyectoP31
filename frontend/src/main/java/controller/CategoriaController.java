@@ -32,28 +32,34 @@ public class CategoriaController {
 
     private void abrirDialogoAgregar() {
         CategoriaDialog dialog = new CategoriaDialog(getFrame(), false, null, "");
-        dialog.setOnGuardar(datos -> Tarea.ejecutar(
-                () -> modelo.registrar(datos[1]),
-                creada -> {
-                    dialog.cerrar();
-                    view.mostrarMensaje("Categoria registrada con id " + creada.id() + ".");
-                    cargarDatos();
-                },
-                e -> dialog.mostrarError(e.getMessage())));
+        dialog.setOnGuardar(datos -> {
+            dialog.setOcupado(true);
+            Tarea.ejecutar(
+                    () -> modelo.registrar(datos[1]),
+                    creada -> {
+                        dialog.cerrar();
+                        view.mostrarMensaje("Categoria registrada con id " + creada.id() + ".");
+                        cargarDatos();
+                    },
+                    e -> dialog.mostrarError(e.getMessage()));
+        });
         dialog.setVisible(true);
     }
 
     private void abrirDialogoModificar(int filaModelo) {
         String[] datos = view.getDatosFila(filaModelo);
         CategoriaDialog dialog = new CategoriaDialog(getFrame(), true, datos[0], datos[1]);
-        dialog.setOnGuardar(nuevos -> Tarea.ejecutar(
-                () -> { modelo.actualizar(nuevos[0], nuevos[1]); return null; },
-                r -> {
-                    dialog.cerrar();
-                    view.mostrarMensaje("Categoria modificada.");
-                    cargarDatos();
-                },
-                e -> dialog.mostrarError(e.getMessage())));
+        dialog.setOnGuardar(nuevos -> {
+            dialog.setOcupado(true);
+            Tarea.ejecutar(
+                    () -> { modelo.actualizar(nuevos[0], nuevos[1]); return null; },
+                    r -> {
+                        dialog.cerrar();
+                        view.mostrarMensaje("Categoria modificada.");
+                        cargarDatos();
+                    },
+                    e -> dialog.mostrarError(e.getMessage()));
+        });
         dialog.setVisible(true);
     }
 

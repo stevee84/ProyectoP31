@@ -15,6 +15,8 @@ import java.util.concurrent.Executors;
  */
 public class Servidor {
 
+    private static final long PAUSA_REINTENTO_MS = 200;
+
     private final int puerto;
     private final IFabricaServicios fabrica;
     private final PublicadorEventos publicador = new PublicadorEventos();
@@ -40,7 +42,16 @@ public class Servidor {
                 clientes.add(cliente);
                 hilos.execute(cliente);
             } catch (IOException e) {
-                // accept se interrumpe al detener el servidor.
+                if (serverSocket.isClosed()) {
+                    return; // accept se interrumpe al detener el servidor.
+                }
+                System.err.println("Servidor: error al aceptar un cliente: " + e);
+                try {
+                    Thread.sleep(PAUSA_REINTENTO_MS);
+                } catch (InterruptedException interrumpido) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
             }
         }
     }

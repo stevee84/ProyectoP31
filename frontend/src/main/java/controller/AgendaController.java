@@ -16,6 +16,8 @@ public class AgendaController {
     private final AgendaSemanalPanel view;
     private final EstadisticasModel modelo;
     private LocalDate semanaActual;
+    /** Identifica la última consulta; las respuestas de consultas anteriores se descartan. */
+    private int ultimaSolicitud;
 
     public AgendaController(AgendaSemanalPanel view, EstadisticasModel modelo) {
         this.view = view;
@@ -43,8 +45,17 @@ public class AgendaController {
         LocalDate lunes = dia.with(DayOfWeek.MONDAY);
         String etiqueta = FMT.format(lunes) + " - " + FMT.format(lunes.plusDays(6));
 
+        int solicitud = ++ultimaSolicitud;
         Tarea.ejecutar(() -> EstadisticasModel.agendaATabla(modelo.obtenerAgenda(dia)),
-                (TablaDatos tabla) -> view.cargarSemana(etiqueta, tabla.columnas(), tabla.filas()),
-                e -> view.mostrarError(e.getMessage()));
+                (TablaDatos tabla) -> {
+                    if (solicitud == ultimaSolicitud) {
+                        view.cargarSemana(etiqueta, tabla.columnas(), tabla.filas());
+                    }
+                },
+                e -> {
+                    if (solicitud == ultimaSolicitud) {
+                        view.mostrarError(e.getMessage());
+                    }
+                });
     }
 }

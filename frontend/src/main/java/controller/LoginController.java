@@ -57,10 +57,13 @@ public class LoginController {
     /** Diálogo modal; devuelve true si el servidor confirmó el cambio. */
     private boolean pedirCambioClave() {
         CambioClaveDialog dialogo = new CambioClaveDialog(view);
-        dialogo.setOnGuardar(nueva -> Tarea.ejecutar(
-                () -> { modelo.cambiarClave(nueva); return null; },
-                r -> dialogo.marcarCambiada(),
-                e -> dialogo.mostrarError(e.getMessage())));
+        dialogo.setOnGuardar(nueva -> {
+            dialogo.setOcupado(true);
+            Tarea.ejecutar(
+                    () -> { modelo.cambiarClave(nueva); return null; },
+                    r -> dialogo.marcarCambiada(),
+                    e -> dialogo.mostrarError(e.getMessage()));
+        });
         dialogo.setVisible(true);
         return dialogo.fueCambiada();
     }

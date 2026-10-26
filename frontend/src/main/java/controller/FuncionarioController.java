@@ -33,28 +33,34 @@ public class FuncionarioController {
     private void abrirDialogoAgregar() {
         FuncionarioDialog dialog = new FuncionarioDialog(getFrame(), false, "", "", "");
         // datos = {id, nombre, telefono}
-        dialog.setOnGuardar(datos -> Tarea.ejecutar(
-                () -> { modelo.registrar(datos[0], datos[1], datos[2]); return null; },
-                r -> {
-                    dialog.cerrar();
-                    view.mostrarMensaje("Funcionario registrado. Su clave inicial es su identificacion.");
-                    cargarDatos();
-                },
-                e -> dialog.mostrarError(e.getMessage())));
+        dialog.setOnGuardar(datos -> {
+            dialog.setOcupado(true);
+            Tarea.ejecutar(
+                    () -> { modelo.registrar(datos[0], datos[1], datos[2]); return null; },
+                    r -> {
+                        dialog.cerrar();
+                        view.mostrarMensaje("Funcionario registrado. Su clave inicial es su identificacion.");
+                        cargarDatos();
+                    },
+                    e -> dialog.mostrarError(e.getMessage()));
+        });
         dialog.setVisible(true);
     }
 
     private void abrirDialogoModificar(int filaModelo) {
         String[] datos = view.getDatosFila(filaModelo);
         FuncionarioDialog dialog = new FuncionarioDialog(getFrame(), true, datos[0], datos[1], datos[2]);
-        dialog.setOnGuardar(nuevos -> Tarea.ejecutar(
-                () -> { modelo.actualizar(nuevos[0], nuevos[1], nuevos[2]); return null; },
-                r -> {
-                    dialog.cerrar();
-                    view.mostrarMensaje("Funcionario modificado.");
-                    cargarDatos();
-                },
-                e -> dialog.mostrarError(e.getMessage())));
+        dialog.setOnGuardar(nuevos -> {
+            dialog.setOcupado(true);
+            Tarea.ejecutar(
+                    () -> { modelo.actualizar(nuevos[0], nuevos[1], nuevos[2]); return null; },
+                    r -> {
+                        dialog.cerrar();
+                        view.mostrarMensaje("Funcionario modificado.");
+                        cargarDatos();
+                    },
+                    e -> dialog.mostrarError(e.getMessage()));
+        });
         dialog.setVisible(true);
     }
 

@@ -41,6 +41,10 @@ public class EstadisticasController {
             view.mostrarError("Formato de fecha 'hasta' invalido. Use dd/MM/aaaa.");
             return;
         }
+        if (desde.isAfter(hasta)) {
+            view.mostrarError("La fecha 'desde' no puede ser posterior a la fecha 'hasta'.");
+            return;
+        }
 
         Tarea.ejecutar(() -> modelo.contarPorSemana(desde, hasta), this::mostrar,
                 e -> view.mostrarError(e.getMessage()));

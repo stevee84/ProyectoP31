@@ -135,13 +135,16 @@ public class AplicacionController {
 
         ventana.setOnCambiarClave(() -> {
             CambioClaveDialog dialogo = new CambioClaveDialog(ventana);
-            dialogo.setOnGuardar(nueva -> Tarea.ejecutar(
-                    () -> { sesionModel.cambiarClave(nueva); return null; },
-                    r -> {
-                        dialogo.marcarCambiada();
-                        ventana.mostrarMensaje("Contrasena cambiada exitosamente.");
-                    },
-                    e -> dialogo.mostrarError(e.getMessage())));
+            dialogo.setOnGuardar(nueva -> {
+                dialogo.setOcupado(true);
+                Tarea.ejecutar(
+                        () -> { sesionModel.cambiarClave(nueva); return null; },
+                        r -> {
+                            dialogo.marcarCambiada();
+                            ventana.mostrarMensaje("Contrasena cambiada exitosamente.");
+                        },
+                        e -> dialogo.mostrarError(e.getMessage()));
+            });
             dialogo.setVisible(true);
         });
 

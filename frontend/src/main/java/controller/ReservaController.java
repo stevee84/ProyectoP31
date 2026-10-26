@@ -117,7 +117,8 @@ public class ReservaController {
                         // Sin reintento automático: la reserva pudo quedar registrada.
                         dialog.mostrarError(error.getMessage()
                                 + "\nRevise la lista de sus reservas antes de intentarlo de nuevo.");
-                        cargarReservas();
+                        // Ya se avisó de la falla de red: la recarga no muestra un segundo error.
+                        cargarReservas(true);
                     } else {
                         dialog.mostrarError(error.getMessage());
                     }
@@ -174,8 +175,16 @@ public class ReservaController {
     }
 
     private void cargarReservas() {
+        cargarReservas(false);
+    }
+
+    private void cargarReservas(boolean silenciarFallaDeRed) {
         Tarea.ejecutar(() -> ReservaModel.aTabla(modelo.listarMias()),
                 (TablaDatos tabla) -> view.cargarReservas(tabla.filas()),
-                e -> view.mostrarError(e.getMessage()));
+                e -> {
+                    if (!(silenciarFallaDeRed && e.getCodigo() == CodigoError.COMUNICACION)) {
+                        view.mostrarError(e.getMessage());
+                    }
+                });
     }
 }

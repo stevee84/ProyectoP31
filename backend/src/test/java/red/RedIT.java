@@ -182,6 +182,16 @@ class RedIT {
     }
 
     @Test
+    void sesionLargaSuperaUnMegaAcumuladoSinDesconectar() throws Exception {
+        // Antes el filtro (maxbytes) contaba los bytes de toda la sesión y cortaba tras ~1 MB.
+        ProxyServicio admin = conSesion("ADMIN");
+        for (int i = 0; i < 5000; i++) {
+            assertFalse(admin.listarFuncionarios().isEmpty(), "Petición " + i);
+        }
+        assertTrue(admin.estaConectado());
+    }
+
+    @Test
     void desconexionNoTumbaElServidor() throws Exception {
         ProxyServicio ana = conSesion("F001");
         BlockingQueue<EventoReservaCreada> alertasCarla = escuchar(conSesion("F003"));

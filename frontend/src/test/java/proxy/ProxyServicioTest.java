@@ -146,4 +146,47 @@ class ProxyServicioTest {
         assertTrue(System.currentTimeMillis() - antes < 4000, "No debe esperar al timeout completo");
         assertFalse(proxy.estaConectado());
     }
+
+    @Test
+    void muchasPeticionesPorLaMismaConexionSuperanUnMegaSinDesconectar() throws Exception {
+        // El filtro de deserialización no debe limitar los bytes acumulados de toda la sesión.
+        String relleno = "x".repeat(2000);
+        int total = 1500; // ~3 MB en cada sentido
+        iniciarServidor((entrada, salida) -> {
+            for (int i = 0; i < total; i++) {
+                Peticion peticion = (Peticion) entrada.readObject();
+                salida.writeObject(Respuesta.exito(peticion.idPeticion(), new CategoriaDTO("C" + i, relleno)));
+                salida.reset();
+                salida.flush();
+            }
+            Thread.sleep(1000);
+        });
+        conectarProxy(3000);
+
+        for (int i = 0; i < total; i++) {
+            assertEquals(relleno, proxy.buscarCategoria(relleno).descripcion(), "Petición " + i);
+        }
+        assertTrue(proxy.estaConectado());
+    }
+
+    @Test
+    void servidorQueAceptaPeroNoEnviaNadaHaceFallarConectarATiempo() throws Exception {
+        servidor = new ServerSocket(0);
+        Thread hilo = new Thread(() -> {
+            try (Socket mudo = servidor.accept()) {
+                Thread.sleep(5000);
+            } catch (Exception ignorada) {
+                // Fin de la prueba.
+            }
+        });
+        hilo.setDaemon(true);
+        hilo.start();
+        proxy = new ProxyServicio(500);
+
+        long antes = System.currentTimeMillis();
+        assertThrows(java.io.IOException.class, () -> proxy.conectar("localhost", servidor.getLocalPort()));
+
+        assertTrue(System.currentTimeMillis() - antes < 3000, "conectar no debe colgarse");
+        assertFalse(proxy.estaConectado());
+    }
 }

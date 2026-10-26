@@ -32,14 +32,23 @@ public final class Tarea {
 
             @Override
             protected void done() {
+                T resultado;
                 try {
-                    alTerminar.accept(get());
+                    resultado = get();
                 } catch (ExecutionException e) {
                     alFallar.accept(e.getCause() instanceof ServicioException s
                             ? s
                             : new ServicioException(CodigoError.INTERNO, "Ocurrió un error inesperado."));
+                    return;
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+                    return;
+                }
+                try {
+                    alTerminar.accept(resultado);
+                } catch (RuntimeException e) {
+                    // Un error al mostrar el resultado no debe quedar sin manejar en el EDT.
+                    alFallar.accept(new ServicioException(CodigoError.INTERNO, "Ocurrió un error inesperado."));
                 }
             }
         }.execute();

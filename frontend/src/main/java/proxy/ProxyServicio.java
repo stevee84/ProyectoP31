@@ -24,6 +24,7 @@ import protocolo.ServicioException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -62,10 +63,21 @@ public class ProxyServicio implements IServicioAplicacion {
 
     public synchronized void conectar(String host, int puerto) throws IOException {
         desconectar();
-        Socket nuevo = new Socket(host, puerto);
-        ObjectOutputStream nuevaSalida = new ObjectOutputStream(nuevo.getOutputStream());
-        nuevaSalida.flush();
-        ObjectInputStream entrada = new ObjectInputStream(nuevo.getInputStream());
+        Socket nuevo = new Socket();
+        ObjectInputStream entrada;
+        ObjectOutputStream nuevaSalida;
+        try {
+            nuevo.connect(new InetSocketAddress(host, puerto), timeoutMs);
+            nuevaSalida = new ObjectOutputStream(nuevo.getOutputStream());
+            nuevaSalida.flush();
+            // Un servidor que acepta pero no envía el encabezado no debe colgar al cliente.
+            nuevo.setSoTimeout(timeoutMs);
+            entrada = new ObjectInputStream(nuevo.getInputStream());
+            nuevo.setSoTimeout(0);
+        } catch (IOException e) {
+            cerrar(nuevo);
+            throw e;
+        }
         entrada.setObjectInputFilter(Configuracion.FILTRO_MENSAJES);
         socket = nuevo;
         salida = nuevaSalida;
@@ -147,6 +159,9 @@ public class ProxyServicio implements IServicioAplicacion {
             }
         } catch (IOException | ClassNotFoundException | RuntimeException e) {
             // Conexión cerrada por el servidor, por desconectar() o mensaje rechazado por el filtro.
+            if (!propio.isClosed()) {
+                System.err.println("Proxy: se cortó la lectura del socket: " + e);
+            }
         } finally {
             cerrar(propio);
             // Un lector viejo no debe invalidar una conexión nueva hecha con conectar().
