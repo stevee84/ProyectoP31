@@ -362,7 +362,7 @@ public final class ServicioAplicacion implements IServicioAplicacion {
         synchronized (bloqueo) {
             boolean confirmada = false;
             T resultado = null;
-            // Cada operación abre y cierra su conexión. Nunca se comparte entre clientes.
+            // La conexión se reutiliza entre operaciones (ConexionCompartida); el bloqueo garantiza una sola a la vez.
             try (Connection c = conexiones.abrir()) {
                 c.setAutoCommit(false);
                 try {

@@ -269,7 +269,10 @@ Esto permite que varios repositorios participen en la misma operación.
 `arranque.MainServidorOracle` reutiliza `red.Servidor` con la fábrica real.
 No es necesario cambiar el protocolo ni las clases de red.
 
-La aplicación abre una conexión por operación, con autocommit desactivado.
+La aplicación reutiliza una conexión por fábrica (`ConexionCompartida`) y cada operación
+trabaja con autocommit desactivado. Abrir una conexión nueva por operación agotaba el
+listener de Oracle XE (ORA-12519) con muchas operaciones seguidas; si la conexión deja de
+ser válida, se abre otra.
 Confirma antes de devolver éxito y revierte ante errores. Al reservar,
 consulta disponibilidad y selecciona recursos antes de insertar; la falta
 normal de recursos no deja cabecera ni asignaciones parciales. Las categorías

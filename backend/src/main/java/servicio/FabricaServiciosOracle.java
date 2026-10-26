@@ -1,5 +1,6 @@
 package servicio;
 
+import accesodatos.ConexionCompartida;
 import accesodatos.ConexionOracle;
 import accesodatos.ProveedorConexion;
 import contrato.IServicioAplicacion;
@@ -17,7 +18,7 @@ public final class FabricaServiciosOracle implements IFabricaServicios {
     private final Clock reloj;
 
     public FabricaServiciosOracle() {
-        this(ConexionOracle::abrir, new FabricaRepositoriosOracle(), new ExtractorReservaIAGemini(), Clock.systemDefaultZone());
+        this(new ConexionCompartida(ConexionOracle::abrir), new FabricaRepositoriosOracle(), new ExtractorReservaIAGemini(), Clock.systemDefaultZone());
     }
 
     // Dependencias sustituibles desde las pruebas del paquete, no desde el cliente de red.
