@@ -17,11 +17,22 @@ public final class MainServidorOracle {
         try (Connection conexion = ConexionOracle.abrir()) {
             if (!conexion.isValid(5)) throw new SQLException("Conexión no válida.");
         } catch (SQLException e) {
-            System.err.println("No se pudo conectar a Oracle. Revise DB_URL, DB_USER, DB_PASSWORD y el driver. Código JDBC: " + e.getErrorCode());
+            // errorCode 0: error propio de ConexionOracle (p. ej. falta DB_PASSWORD); su mensaje no contiene la clave.
+            System.err.println(e.getErrorCode() == 0 && e.getMessage() != null
+                    ? "No se pudo conectar a Oracle: " + e.getMessage()
+                    : "No se pudo conectar a Oracle. Revise DB_URL, DB_USER, DB_PASSWORD y el driver. Código JDBC: " + e.getErrorCode());
+            System.exit(1);
             return;
         }
-        Servidor servidor = new Servidor(Configuracion.getInstancia().getPuerto(), new FabricaServiciosOracle());
-        servidor.iniciar();
+        int puerto = Configuracion.getInstancia().getPuerto();
+        Servidor servidor = new Servidor(puerto, new FabricaServiciosOracle());
+        try {
+            servidor.iniciar();
+        } catch (IOException e) {
+            System.err.println("No se pudo abrir el puerto " + puerto + ": ya está en uso o no está disponible. Cierre el otro proceso o cambie el puerto en la configuración.");
+            System.exit(2);
+            return;
+        }
         Runtime.getRuntime().addShutdownHook(new Thread(servidor::detener));
         System.out.println("Servidor Oracle de reservas escuchando en el puerto " + servidor.getPuerto());
     }

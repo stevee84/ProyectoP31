@@ -150,6 +150,10 @@ class ServicioAplicacionTest {
         error(CodigoError.VALIDACION, () -> s.registrarCategoria("x".repeat(201)));
         error(CodigoError.VALIDACION, () -> s.actualizarCategoria(null));
         error(CodigoError.VALIDACION, () -> s.registrarRecurso("R", " ", "Recurso"));
+        assertEquals("La descripción es obligatoria.",
+                assertThrows(ServicioException.class, () -> s.registrarCategoria(" ")).getMessage());
+        assertEquals("El nombre es obligatorio.", assertThrows(ServicioException.class,
+                () -> s.registrarFuncionario(new FuncionarioDTO("F", " ", "123"))).getMessage());
         error(CodigoError.VALIDACION, () -> s.buscarRecurso("x".repeat(51)));
         assertEquals(0, aperturas);
     }
@@ -230,6 +234,14 @@ class ServicioAplicacionTest {
             assertFalse(e.getMessage().contains("SQL privado"));
         });
         assertEquals(CodigoError.RECURSO_EN_USO, ErroresOracle.traducir(new SQLException("", "", 2292), ErroresOracle.Accion.ELIMINACION).getCodigo());
+        assertEquals("Ya existe un registro con ese identificador.",
+                ErroresOracle.traducir(new SQLException("", "", 1), ErroresOracle.Accion.ESCRITURA).getMessage());
+        assertTrue(ErroresOracle.traducir(new SQLException("", "", 20001), ErroresOracle.Accion.ELIMINACION)
+                .getMessage().contains("administrador no se puede eliminar"));
+        assertFalse(ErroresOracle.traducir(new SQLException("", "", 20002), ErroresOracle.Accion.ESCRITURA)
+                .getMessage().contains("horario"));
+        assertTrue(ErroresOracle.traducir(new SQLException("", "", 20002), ErroresOracle.Accion.RESERVA)
+                .getMessage().contains("horario"));
         assertEquals(CodigoError.PERSISTENCIA, ErroresOracle.traducir(new SQLException("", "", 2292), ErroresOracle.Accion.CONSULTA).getCodigo());
         assertEquals(CodigoError.PERMISO, ErroresOracle.traducir(new SQLException("", "", 20003), ErroresOracle.Accion.CANCELACION).getCodigo());
         assertEquals(CodigoError.VALIDACION, ErroresOracle.traducir(new SQLException("", "", 20003), ErroresOracle.Accion.RESERVA).getCodigo());

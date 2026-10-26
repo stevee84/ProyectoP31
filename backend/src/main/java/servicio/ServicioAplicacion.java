@@ -316,7 +316,7 @@ public final class ServicioAplicacion implements IServicioAplicacion {
     }
 
     private static String texto(String valor, int maximo, String campo) {
-        if (valor == null || valor.isBlank()) throw validacion(campo + " es obligatorio.");
+        if (valor == null || valor.isBlank()) throw validacion(campo + (campo.startsWith("La ") ? " es obligatoria." : " es obligatorio."));
         if (valor.length() > maximo) throw validacion(campo + " admite como máximo " + maximo + " caracteres.");
         return valor.trim();
     }

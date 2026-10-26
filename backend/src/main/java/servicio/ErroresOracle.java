@@ -24,9 +24,15 @@ final class ErroresOracle {
                 return new ServicioException(CodigoError.VALIDACION, "El funcionario de la sesión ya no existe o no admite reservas. Inicie sesión nuevamente.");
             if (codigo == 20004 && accion == Accion.RESERVA)
                 return new ServicioException(CodigoError.DISPONIBILIDAD, "La disponibilidad cambió. Consulte e intente nuevamente.");
-            if (codigo == 1 || codigo == 2291 || codigo == 20001 || codigo == 20002 || codigo == 12899)
+            if (codigo == 1)
+                return new ServicioException(CodigoError.VALIDACION, "Ya existe un registro con ese identificador.");
+            if (codigo == 20001 && accion == Accion.ELIMINACION)
                 return new ServicioException(CodigoError.VALIDACION,
-                        "Datos duplicados, inexistentes o inválidos. Revise los campos y el horario.");
+                        "No existe un registro eliminable con ese identificador (el administrador no se puede eliminar).");
+            if (codigo == 2291 || codigo == 20001 || codigo == 20002 || codigo == 12899)
+                return new ServicioException(CodigoError.VALIDACION, accion == Accion.RESERVA
+                        ? "Datos inexistentes o inválidos. Revise los campos y el horario."
+                        : "Datos inexistentes o inválidos. Revise los campos.");
         }
         return new ServicioException(CodigoError.PERSISTENCIA,
                 "No se pudo completar la operación en Oracle. Verifique el resultado antes de reintentar.");
