@@ -10,13 +10,11 @@
     <packaging>pom</packaging>
 
     <!-- comun: contrato, DTO y protocolo compartidos.
-         backend: servidor sin interfaz gráfica. frontend: Proxy del cliente.
-         proyecto1: aplicación del Proyecto 1, temporal hasta repartirla entre backend y frontend. -->
+         backend: servidor sin interfaz gráfica. frontend: cliente Swing (MVC) y Proxy. -->
     <modules>
         <module>comun</module>
         <module>backend</module>
         <module>frontend</module>
-        <module>proyecto1</module>
     </modules>
 
     <properties>
@@ -58,7 +56,7 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- Versión fija para "mvn exec:java" (cliente, servidor y proyecto1). -->
+                <!-- Versión fija para "mvn exec:java" (cliente y servidor). -->
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>

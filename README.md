@@ -82,7 +82,6 @@ Las llamadas lentas deben ejecutarse fuera del hilo de Swing utilizando
 | `comun` | Contrato, DTO y protocolo compartidos |
 | `backend` | Servidor, servicios, acceso a datos y repositorios Oracle |
 | `frontend` | Proxy, utilitarios y MVC del cliente |
-| `proyecto1` | Módulo temporal que compila la aplicación anterior desde `src/` |
 | `DB` | Scripts SQL de Oracle |
 | `prompts_proyecto2` | Bitácora de uso de asistentes de IA |
 
@@ -451,16 +450,6 @@ mvn -pl frontend exec:java -Dservidor.host=IP_DEL_SERVIDOR -Dservidor.puerto=500
 Para revisar la interfaz sin servidor: `-Dexec.mainClass=cliente.MainClienteDemo`.
 Detalles del cliente, alertas y pruebas del MVC en [frontend/README.md](frontend/README.md).
 
-La aplicación anterior puede ejecutarse desde la raíz:
-
-```bash
-mvn -pl proyecto1 exec:java -Dexec.mainClass=Main
-```
-
-Se ejecuta desde la raíz porque utiliza el directorio relativo `data/`.
-Ese directorio no está versionado: en un clon limpio la aplicación anterior
-arranca sin datos (sin usuarios ni catálogos previos).
-
 ## Pruebas
 
 | Tipo | Nombre | Ejecución |
@@ -476,7 +465,6 @@ Las pruebas existentes incluyen:
 - Reglas del servicio falso.
 - Comunicación real por sockets.
 - Alertas.
-- Pruebas heredadas del Proyecto 1.
 
 ### Pruebas contra Oracle
 
