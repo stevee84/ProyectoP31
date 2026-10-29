@@ -6,6 +6,7 @@ import dto.*;
 import ia.ExtractorReservaIA;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import contrato.Reglas;
 import protocolo.*;
 import repositorio.*;
 import java.lang.reflect.Proxy;
@@ -132,10 +133,51 @@ class ServicioAplicacionTest {
         IServicioAplicacion s = servicio(repos, (f, cats) -> null);
         for (String clave : Arrays.asList(null, "", " \t ", "x".repeat(256))) error(CodigoError.VALIDACION, () -> s.cambiarClave(clave));
         s.cambiarClave(" clave nueva ");
-        assertEquals(List.of("F1", " clave nueva "), recibidos);
+        // Primero se comprueba que no sea la clave actual y luego se guarda.
+        assertEquals(List.of("F1", " clave nueva ", "F1", " clave nueva "), recibidos);
         assertEquals(1, commits);
         assertEquals(1, cierres);
         assertFalse(autocommit);
+    }
+
+    @Test
+    void nuevaClaveNoPuedeSerElIdNiLaClaveActual() {
+        contexto.iniciar(AUTOR);
+        List<String> guardadas = new ArrayList<>();
+        FabricaRepositoriosOracle repos = new FabricaRepositoriosOracle() {
+            @Override public IRepositorioFuncionarios funcionarios(Connection c) {
+                return doble(IRepositorioFuncionarios.class, (m, a) -> switch (m) {
+                    case "autenticar" -> "actual".equals(a[1]) ? new ResultadoSesionDTO(AUTOR, false) : null;
+                    case "cambiarClave" -> { guardadas.add((String) a[1]); yield null; }
+                    default -> throw new AssertionError(m);
+                });
+            }
+        };
+        IServicioAplicacion s = servicio(repos, (f, cats) -> null);
+        ServicioException igualId = assertThrows(ServicioException.class, () -> s.cambiarClave(" f1 "));
+        assertEquals(CodigoError.VALIDACION, igualId.getCodigo());
+        assertEquals(Reglas.MENSAJE_CLAVE_IGUAL_ID, igualId.getMessage());
+        assertEquals(0, aperturas, "Se rechaza sin abrir conexión");
+        ServicioException igualActual = assertThrows(ServicioException.class, () -> s.cambiarClave("actual"));
+        assertEquals(Reglas.MENSAJE_CLAVE_IGUAL_ACTUAL, igualActual.getMessage());
+        assertEquals(1, rollbacks);
+        s.cambiarClave("otra");
+        assertEquals(List.of("otra"), guardadas);
+    }
+
+    @Test
+    void telefonoConFormatoInvalidoSeRechazaSinAbrirConexion() {
+        contexto.iniciar(new UsuarioDTO("A", "Admin", Rol.ADMINISTRADOR));
+        IServicioAplicacion s = servicio();
+        for (String telefono : List.of("abc-1234", "8888_1111", "123", "(506)88881111", "+-- -- --", "1".repeat(21))) {
+            ServicioException e = assertThrows(ServicioException.class,
+                    () -> s.registrarFuncionario(new FuncionarioDTO("F", "Ana", telefono)), telefono);
+            assertEquals(Reglas.MENSAJE_TELEFONO, e.getMessage());
+        }
+        error(CodigoError.VALIDACION, () -> s.actualizarFuncionario(new FuncionarioDTO("F", "Ana", "88a8-1111")));
+        for (String valido : List.of("8888-1111", "+506 8888 1111", "88881111"))
+            assertTrue(Reglas.telefonoValido(valido), valido);
+        assertEquals(0, aperturas);
     }
 
     @Test
@@ -236,8 +278,8 @@ class ServicioAplicacionTest {
         assertEquals(CodigoError.RECURSO_EN_USO, ErroresOracle.traducir(new SQLException("", "", 2292), ErroresOracle.Accion.ELIMINACION).getCodigo());
         assertEquals("Ya existe un registro con ese identificador.",
                 ErroresOracle.traducir(new SQLException("", "", 1), ErroresOracle.Accion.ESCRITURA).getMessage());
-        assertTrue(ErroresOracle.traducir(new SQLException("", "", 20001), ErroresOracle.Accion.ELIMINACION)
-                .getMessage().contains("administrador no se puede eliminar"));
+        assertEquals("No existe un registro con ese identificador.",
+                ErroresOracle.traducir(new SQLException("", "", 20001), ErroresOracle.Accion.ELIMINACION).getMessage());
         assertFalse(ErroresOracle.traducir(new SQLException("", "", 20002), ErroresOracle.Accion.ESCRITURA)
                 .getMessage().contains("horario"));
         assertTrue(ErroresOracle.traducir(new SQLException("", "", 20002), ErroresOracle.Accion.RESERVA)

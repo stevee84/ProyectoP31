@@ -3,6 +3,7 @@ package repositorio;
 import dto.*;
 import oracle.jdbc.OracleTypes;
 import org.junit.jupiter.api.Test;
+import seguridad.ClaveHash;
 import java.lang.reflect.Proxy;
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -72,21 +73,29 @@ class RepositoriosOracleTest {
     }
 
     @Test
-    void autenticacionUsaCuatroColumnasSinClaveYCrudEnviaTresParametros() throws Exception {
-        String sql = "{? = call validarUsuario(?, ?)}";
-        filas.put(sql, List.of(Map.of("ID", "F1", "NOMBRE", "Ana", "ROL", "FUNCIONARIO", "PRIMER_INGRESO", 1)));
+    void autenticacionVerificaElHashEnJavaYNuncaEnviaClavesEnTextoPlano() throws Exception {
+        String sql = "{? = call obtenerCredencialesUsuario(?)}";
+        filas.put(sql, List.of(Map.of("ID", "F1", "NOMBRE", "Ana", "ROL", "FUNCIONARIO", "PRIMER_INGRESO", 1,
+                "CLAVE", ClaveHash.generar("clave"))));
         var repo = new RepositorioFuncionariosOracle(conexion());
         assertEquals(new ResultadoSesionDTO(new UsuarioDTO("F1", "Ana", Rol.FUNCIONARIO), true), repo.autenticar("F1", "clave"));
-        assertEquals(Map.of(2, "F1", 3, "clave"), llamadas.get(0).parametros);
-        filas.put(sql, List.of());
+        assertEquals(Map.of(2, "F1"), llamadas.get(0).parametros, "La clave no viaja a Oracle");
         assertNull(repo.autenticar("F1", "incorrecta"));
+        filas.put(sql, List.of());
+        assertNull(repo.autenticar("F1", "clave"));
         repo.insertar(new FuncionarioDTO("F2", "Luis", "123"));
-        assertEquals("{call insertarFuncionario(?, ?, ?)}", llamadas.get(2).sql);
-        assertEquals(Map.of(1, "F2", 2, "Luis", 3, "123"), llamadas.get(2).parametros);
+        assertEquals("{call insertarFuncionario(?, ?, ?, ?)}", llamadas.get(3).sql);
+        assertEquals("F2", llamadas.get(3).parametros.get(1));
+        assertEquals("123", llamadas.get(3).parametros.get(3));
+        String inicial = (String) llamadas.get(3).parametros.get(4);
+        assertTrue(ClaveHash.verificar("F2", inicial), "Clave inicial = id, con hash");
+        assertNotEquals("F2", inicial);
         repo.modificar(new FuncionarioDTO("F2", "Luis nuevo", "456"));
         repo.cambiarClave("F2", "nueva");
-        assertEquals("{call cambiarClaveUsuario(?, ?)}", llamadas.get(4).sql);
-        assertEquals(Map.of(1, "F2", 2, "nueva"), llamadas.get(4).parametros);
+        assertEquals("{call cambiarClaveUsuario(?, ?)}", llamadas.get(5).sql);
+        assertEquals("F2", llamadas.get(5).parametros.get(1));
+        assertTrue(ClaveHash.verificar("nueva", (String) llamadas.get(5).parametros.get(2)));
+        assertNotEquals("nueva", llamadas.get(5).parametros.get(2));
         repo.eliminar("F2");
         assertNull(repo.buscar("F2"));
         assertTrue(repo.listar().isEmpty());

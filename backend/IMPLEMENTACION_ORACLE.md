@@ -46,13 +46,19 @@ Los demás archivos existentes se conservaron, incluidos sus finales de línea.
 - `src/main/java/repositorio/`: cuatro interfaces e implementaciones nuevas
   (`Funcionarios`, `Recursos`, `Reservas`, `Consultas`), además del repositorio
   de categorías existente. Autenticación y clave pertenecen a funcionarios;
-  disponibilidad a recursos. Usan las firmas y columnas de `DB/02` sin cambiarlas.
+  disponibilidad a recursos. Usan las firmas y columnas de `DB/02`.
+  `RepositorioFuncionariosOracle` aplica el hash de claves (`seguridad.ClaveHash`,
+  PBKDF2WithHmacSHA256 con sal por usuario) y lo verifica en Java con el valor que
+  devuelve `obtenerCredencialesUsuario`; `insertarFuncionario` recibe el hash de la
+  clave inicial (= ID) y `cambiarClaveUsuario` el de la nueva clave.
 - `FabricaRepositoriosOracle`: crea los repositorios con la conexión de la operación.
-  No conserva conexiones. Permite sustituir una dependencia en las pruebas.
+  No conserva conexiones (de eso se encarga `ConexionCompartida`). Permite
+  sustituir una dependencia en las pruebas.
 - `src/main/java/servicio/ServicioAplicacion.java`: implementación completa de
   `IServicioAplicacion`; sesión de solo lectura, administración, reservas y consultas.
 - `FabricaServiciosOracle`: una instancia por servidor; comparte el mismo bloqueo
-  entre servicios de distintos clientes, sin conexión permanente por cliente.
+  y una sola conexión JDBC reutilizada (`accesodatos.ConexionCompartida`) entre
+  los servicios de todos los clientes; no hay conexión por cliente.
 - `ErroresOracle`: traducción contextual; solo registra código y estado JDBC en el
   servidor. No expone SQL, mensajes del driver ni contraseñas al cliente.
 - `ConsultasReservas`: construcción de calendario y agenda de lunes a domingo;
@@ -69,9 +75,14 @@ Los demás archivos existentes se conservaron, incluidos sus finales de línea.
 
 ## Decisiones importantes
 
-Cada operación JDBC tiene una conexión propia, autocommit desactivado y cierre
-con try-with-resources. Todos los repositorios de la operación reciben la misma
-conexión; no hacen commit, rollback ni close de esa conexión. Las listas devueltas
+Cada fábrica reutiliza **una sola conexión física** (`ConexionCompartida`): abrir
+una conexión nueva por operación agotaba el listener de Oracle XE (ORA-12519).
+Es seguro porque el bloqueo de la fábrica deja una sola operación a la vez y cada
+operación termina con commit o rollback. Cada operación pide la conexión con
+autocommit desactivado y la "cierra" con try-with-resources; ese cierre no cierra
+la conexión física, y si deja de ser válida (`isValid`) se abre otra. Todos los
+repositorios de la operación reciben la misma conexión; no hacen commit, rollback
+ni close de esa conexión. Las listas devueltas
 son inmutables. Un fallo durante una sentencia o commit provoca rollback; un
 fallo de cierre posterior a un commit exitoso se registra sin anunciar que falló
 la reserva ya confirmada. Un fallo de comunicación durante commit puede tener
@@ -90,6 +101,14 @@ El servicio no llama a `ContextoSesion.iniciar/cerrar`, ni publica alertas.
 contexto se utiliza para autor y cambio de clave. El CRUD administrativo exige
 administrador; categorías, recursos, calendario, agenda y estadísticas permiten
 sesión de funcionario. Las consultas de funcionarios requieren administrador.
+
+Las claves nunca se guardan en texto plano: `TUSUARIOS.CLAVE` contiene
+`pbkdf2$iteraciones$salBase64$hashBase64` y una restricción `CHECK` rechaza otro
+formato. `DB/06` escribe el hash precalculado de `ADMIN`. La descripción de
+categoría es única mediante el índice `UQ_TCATEGORIAS_DESCRIPCION` sobre
+`UPPER(TRIM(DESCRIPCION))`; `ErroresOracle` reconoce esa restricción en ORA-00001
+y responde "Ya existe una categoría con esa descripción." (al registrar y al
+modificar).
 
 Las longitudes se validan conforme a los tamaños de `DB/01`. Si la instalación
 utiliza semántica BYTE y un texto multibyte supera los bytes permitidos, Oracle

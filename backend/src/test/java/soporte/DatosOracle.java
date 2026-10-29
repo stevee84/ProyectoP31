@@ -4,6 +4,7 @@ import accesodatos.ConexionOracle;
 import contrato.IServicioAplicacion;
 import dto.*;
 import repositorio.*;
+import seguridad.ClaveHash;
 import servicio.ContextoSesion;
 import servicio.IFabricaServicios;
 import java.sql.*;
@@ -26,11 +27,15 @@ public final class DatosOracle implements AutoCloseable {
     public CategoriaDTO categoriaA, categoriaB, categoriaVacia;
     public LocalDateTime inicio;
     private final List<String> categorias = new ArrayList<>();
+    // Si la JVM se detiene a mitad de una prueba (Ctrl+C, fin del proceso), limpiar igual.
+    private final Thread limpiezaAlSalir = new Thread(this::limpiarAlSalir, "limpieza-J2IT");
+    private boolean cerrado;
 
     private DatosOracle() { }
 
     public static DatosOracle crear() throws SQLException {
         DatosOracle d = new DatosOracle();
+        Runtime.getRuntime().addShutdownHook(d.limpiezaAlSalir);
         try {
             d.inicializar();
             return d;
@@ -53,7 +58,7 @@ public final class DatosOracle implements AutoCloseable {
                 try (PreparedStatement s = c.prepareStatement("INSERT INTO TUSUARIOS (ID,NOMBRE,CLAVE,ROL,PRIMER_INGRESO) VALUES (?,?,?,'ADMINISTRADOR',1)")) {
                     s.setString(1, admin);
                     s.setString(2, "Administrador temporal " + marca);
-                    s.setString(3, admin);
+                    s.setString(3, ClaveHash.generar(admin));
                     s.executeUpdate();
                 }
                 IRepositorioFuncionarios funcionarios = new RepositorioFuncionariosOracle(c);
@@ -101,28 +106,60 @@ public final class DatosOracle implements AutoCloseable {
     }
 
     @Override
-    public void close() throws SQLException {
-        // Solo IDs exactos de esta instancia; no LIKE, TRUNCATE ni reinicio de secuencias.
-        try (Connection c = ConexionOracle.abrir()) {
-            c.setAutoCommit(false);
+    public synchronized void close() throws SQLException {
+        if (cerrado) return;
+        // Un @Timeout de JUnit interrumpe el hilo: con la marca puesta el driver puede fallar
+        // y la limpieza no se haría. Se quita durante la limpieza y se restaura después.
+        boolean interrumpido = Thread.interrupted();
+        try {
+            limpiar();
+            cerrado = true;
             try {
-                ejecutar(c, "DELETE FROM TRESERVA_RECURSO WHERE ID_RESERVA IN (SELECT ID FROM TRESERVAS WHERE ID_USUARIO IN (?,?))", autor, otro);
-                ejecutar(c, "DELETE FROM TRESERVAS WHERE ID_USUARIO IN (?,?)", autor, otro);
-                ejecutar(c, "DELETE FROM TRECURSOS WHERE CODIGO IN (?,?,?)", recursoA, recursoB, recursoC);
-                for (String id : categorias) ejecutar(c, "DELETE FROM TCATEGORIAS WHERE ID=?", id);
-                ejecutar(c, "DELETE FROM TUSUARIOS WHERE ID IN (?,?,?)", admin, autor, otro);
-                c.commit();
-            } catch (SQLException e) {
-                c.rollback();
-                throw e;
+                Runtime.getRuntime().removeShutdownHook(limpiezaAlSalir);
+            } catch (IllegalStateException | IllegalArgumentException yaSaliendo) {
+                // La JVM ya se está cerrando o el gancho no estaba registrado.
             }
+        } finally {
+            if (interrumpido) Thread.currentThread().interrupt();
         }
     }
 
-    private static void ejecutar(Connection c, String sql, String... valores) throws SQLException {
+    private void limpiarAlSalir() {
+        synchronized (this) {
+            if (cerrado) return;
+        }
+        try {
+            limpiar();
+        } catch (SQLException e) {
+            System.err.println("No se pudieron limpiar los datos " + marca + ": código " + e.getErrorCode());
+        }
+    }
+
+    private void limpiar() throws SQLException {
+        // Solo IDs exactos de esta instancia; no LIKE, TRUNCATE ni reinicio de secuencias.
+        // Cada DELETE se intenta aunque falle otro: un error no deja el resto como basura.
+        SQLException primero = null;
+        try (Connection c = ConexionOracle.abrir()) {
+            c.setAutoCommit(false);
+            primero = ejecutar(c, primero, "DELETE FROM TRESERVA_RECURSO WHERE ID_RESERVA IN (SELECT ID FROM TRESERVAS WHERE ID_USUARIO IN (?,?))", autor, otro);
+            primero = ejecutar(c, primero, "DELETE FROM TRESERVAS WHERE ID_USUARIO IN (?,?)", autor, otro);
+            primero = ejecutar(c, primero, "DELETE FROM TRECURSOS WHERE CODIGO IN (?,?,?)", recursoA, recursoB, recursoC);
+            for (String id : categorias) primero = ejecutar(c, primero, "DELETE FROM TCATEGORIAS WHERE ID=?", id);
+            primero = ejecutar(c, primero, "DELETE FROM TUSUARIOS WHERE ID IN (?,?,?)", admin, autor, otro);
+            c.commit();
+        }
+        if (primero != null) throw primero;
+    }
+
+    private static SQLException ejecutar(Connection c, SQLException previo, String sql, String... valores) {
         try (PreparedStatement s = c.prepareStatement(sql)) {
             for (int i = 0; i < valores.length; i++) s.setString(i + 1, valores[i]);
             s.executeUpdate();
+            return previo;
+        } catch (SQLException e) {
+            if (previo == null) return e;
+            previo.addSuppressed(e);
+            return previo;
         }
     }
 }

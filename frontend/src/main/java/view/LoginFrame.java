@@ -61,7 +61,7 @@ public class LoginFrame extends JFrame {
         gbc.insets = new Insets(4, 4, 4, 4);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        JLabel lblId = new JLabel("Identificacion:");
+        JLabel lblId = new JLabel("Identificación:");
         EstiloUI.estilizarEtiqueta(lblId);
         gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.EAST;
         formPanel.add(lblId, gbc);
@@ -70,7 +70,7 @@ public class LoginFrame extends JFrame {
         gbc.gridx = 1; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST;
         formPanel.add(campoId, gbc);
 
-        JLabel lblClave = new JLabel("Contrasena:");
+        JLabel lblClave = new JLabel("Contraseña:");
         EstiloUI.estilizarEtiqueta(lblClave);
         gbc.gridx = 0; gbc.gridy = 1; gbc.anchor = GridBagConstraints.EAST;
         formPanel.add(lblClave, gbc);

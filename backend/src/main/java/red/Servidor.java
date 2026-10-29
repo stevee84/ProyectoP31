@@ -1,8 +1,12 @@
 package red;
 
+import protocolo.CodigoError;
+import protocolo.Respuesta;
 import servicio.IFabricaServicios;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
@@ -12,21 +16,41 @@ import java.util.concurrent.Executors;
 
 /**
  * Servidor concurrente: acepta clientes y atiende cada uno en su propio hilo.
+ * Atiende como máximo {@code -Dservidor.maxClientes} conexiones a la vez (100 por
+ * defecto); las demás reciben un mensaje claro y se cierran. Una conexión que no
+ * inicia sesión se cierra tras {@code -Dservidor.timeoutSinSesion} ms (60 s por defecto).
  */
 public class Servidor {
 
     private static final long PAUSA_REINTENTO_MS = 200;
+    private static final int TIMEOUT_RECHAZO_MS = 200;
+    static final String MENSAJE_LLENO =
+            "El servidor alcanzó el máximo de clientes conectados. Intente de nuevo más tarde.";
 
     private final int puerto;
     private final IFabricaServicios fabrica;
     private final PublicadorEventos publicador = new PublicadorEventos();
     private final List<ManejadorCliente> clientes = new CopyOnWriteArrayList<>();
-    private final ExecutorService hilos = Executors.newCachedThreadPool();
+    private final int maxClientes;
+    private final int timeoutSinSesionMs;
+    // Un hilo por cliente más el que acepta conexiones: nunca crece sin límite.
+    private final ExecutorService hilos;
     private ServerSocket serverSocket;
 
     public Servidor(int puerto, IFabricaServicios fabrica) {
+        this(puerto, fabrica, Integer.getInteger("servidor.maxClientes", 100),
+                Integer.getInteger("servidor.timeoutSinSesion", 60_000));
+    }
+
+    public Servidor(int puerto, IFabricaServicios fabrica, int maxClientes, int timeoutSinSesionMs) {
+        if (maxClientes < 1 || timeoutSinSesionMs < 0) {
+            throw new IllegalArgumentException("maxClientes debe ser >= 1 y timeoutSinSesion >= 0.");
+        }
         this.puerto = puerto;
         this.fabrica = fabrica;
+        this.maxClientes = maxClientes;
+        this.timeoutSinSesionMs = timeoutSinSesionMs;
+        this.hilos = Executors.newFixedThreadPool(maxClientes + 1);
     }
 
     public void iniciar() throws IOException {
@@ -38,7 +62,12 @@ public class Servidor {
         while (!serverSocket.isClosed()) {
             try {
                 Socket socket = serverSocket.accept();
-                ManejadorCliente cliente = new ManejadorCliente(socket, fabrica, publicador, clientes::remove);
+                if (clientes.size() >= maxClientes) {
+                    rechazar(socket);
+                    continue;
+                }
+                ManejadorCliente cliente = new ManejadorCliente(socket, fabrica, publicador, clientes::remove,
+                        timeoutSinSesionMs);
                 clientes.add(cliente);
                 hilos.execute(cliente);
             } catch (IOException e) {
@@ -53,6 +82,28 @@ public class Servidor {
                     return;
                 }
             }
+        }
+    }
+
+    /** Avisa al cliente sobrante con una respuesta de error (id 0) y cierra sin crear un hilo. */
+    private static void rechazar(Socket socket) {
+        System.err.println("Servidor: conexión rechazada, se alcanzó el máximo de clientes.");
+        try (socket) {
+            socket.setSoTimeout(TIMEOUT_RECHAZO_MS);
+            ObjectOutputStream salida = new ObjectOutputStream(socket.getOutputStream());
+            salida.writeObject(Respuesta.error(0, CodigoError.COMUNICACION, MENSAJE_LLENO));
+            salida.flush();
+            socket.shutdownOutput();
+            // Esperar a que el cliente cierre: cerrar con datos sin leer descartaría el aviso.
+            InputStream entrada = socket.getInputStream();
+            byte[] descarte = new byte[512];
+            // Plazo total: un cliente que envía bytes de a poco no retiene al hilo aceptador.
+            long limite = System.nanoTime() + TIMEOUT_RECHAZO_MS * 1_000_000L;
+            while (System.nanoTime() < limite && entrada.read(descarte) >= 0) {
+                // Se descarta lo que envíe el cliente.
+            }
+        } catch (IOException ignorada) {
+            // Cliente ya desconectado o sin respuesta: la conexión queda cerrada igual.
         }
     }
 

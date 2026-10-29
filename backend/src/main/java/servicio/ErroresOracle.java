@@ -1,5 +1,7 @@
 package servicio;
 
+import contrato.Reglas;
+
 import protocolo.CodigoError;
 import protocolo.ServicioException;
 import java.sql.SQLException;
@@ -24,11 +26,12 @@ final class ErroresOracle {
                 return new ServicioException(CodigoError.VALIDACION, "El funcionario de la sesión ya no existe o no admite reservas. Inicie sesión nuevamente.");
             if (codigo == 20004 && accion == Accion.RESERVA)
                 return new ServicioException(CodigoError.DISPONIBILIDAD, "La disponibilidad cambió. Consulte e intente nuevamente.");
+            if (codigo == 1 && violaRestriccion(e, "UQ_TCATEGORIAS_DESCRIPCION"))
+                return new ServicioException(CodigoError.VALIDACION, Reglas.MENSAJE_CATEGORIA_DUPLICADA);
             if (codigo == 1)
                 return new ServicioException(CodigoError.VALIDACION, "Ya existe un registro con ese identificador.");
-            if (codigo == 20001 && accion == Accion.ELIMINACION)
-                return new ServicioException(CodigoError.VALIDACION,
-                        "No existe un registro eliminable con ese identificador (el administrador no se puede eliminar).");
+            if (codigo == 20001 && (accion == Accion.ELIMINACION || accion == Accion.ESCRITURA))
+                return new ServicioException(CodigoError.VALIDACION, "No existe un registro con ese identificador.");
             if (codigo == 2291 || codigo == 20001 || codigo == 20002 || codigo == 12899)
                 return new ServicioException(CodigoError.VALIDACION, accion == Accion.RESERVA
                         ? "Datos inexistentes o inválidos. Revise los campos y el horario."
@@ -36,6 +39,12 @@ final class ErroresOracle {
         }
         return new ServicioException(CodigoError.PERSISTENCIA,
                 "No se pudo completar la operación en Oracle. Verifique el resultado antes de reintentar.");
+    }
+
+    /** ORA-00001 nombra la restricción violada; solo se mira el nombre, nunca se reenvía el mensaje. */
+    private static boolean violaRestriccion(SQLException e, String restriccion) {
+        String mensaje = e.getMessage();
+        return mensaje != null && mensaje.toUpperCase().contains("." + restriccion + ")");
     }
 
     static void registrar(SQLException e) {

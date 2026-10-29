@@ -2,6 +2,7 @@ package servicio;
 
 import accesodatos.ProveedorConexion;
 import contrato.IServicioAplicacion;
+import contrato.Reglas;
 import dto.*;
 import ia.ExtractorReservaIA;
 import protocolo.CodigoError;
@@ -50,7 +51,14 @@ public final class ServicioAplicacion implements IServicioAplicacion {
     public void cambiarClave(String nuevaClave) {
         UsuarioDTO usuario = sesion();
         texto(nuevaClave, 255, "La nueva clave");
-        operar(Accion.ESCRITURA, c -> { repositorios.funcionarios(c).cambiarClave(usuario.id(), nuevaClave); return null; });
+        if (Reglas.claveIgualId(nuevaClave, usuario.id())) throw validacion(Reglas.MENSAJE_CLAVE_IGUAL_ID);
+        operar(Accion.ESCRITURA, c -> {
+            IRepositorioFuncionarios funcionarios = repositorios.funcionarios(c);
+            // Coincide con el hash guardado: es la misma clave actual.
+            if (funcionarios.autenticar(usuario.id(), nuevaClave) != null) throw validacion(Reglas.MENSAJE_CLAVE_IGUAL_ACTUAL);
+            funcionarios.cambiarClave(usuario.id(), nuevaClave);
+            return null;
+        });
     }
 
     @Override
@@ -311,8 +319,10 @@ public final class ServicioAplicacion implements IServicioAplicacion {
 
     private static FuncionarioDTO validarFuncionario(FuncionarioDTO f) {
         if (f == null) throw validacion("Debe indicar el funcionario.");
-        return new FuncionarioDTO(texto(f.id(), 50, "La identificación"), texto(f.nombre(), 150, "El nombre"),
+        FuncionarioDTO valido = new FuncionarioDTO(texto(f.id(), 50, "La identificación"), texto(f.nombre(), 150, "El nombre"),
                 texto(f.telefono(), 30, "El teléfono"));
+        if (!Reglas.telefonoValido(valido.telefono())) throw validacion(Reglas.MENSAJE_TELEFONO);
+        return valido;
     }
 
     private static String texto(String valor, int maximo, String campo) {

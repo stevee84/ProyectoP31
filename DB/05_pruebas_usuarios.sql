@@ -13,8 +13,14 @@ DECLARE
     v_categoria TCATEGORIAS.ID%TYPE;
     v_reserva TRESERVAS.ID%TYPE;
 
+    -- Java calcula los hash PBKDF2; aqui basta con valores de ese formato.
+    v_clave_inicial TUSUARIOS.CLAVE%TYPE :=
+        'pbkdf2$1$UFJVRUJB$SU5JQ0lBTA==';
+
     v_clave_nueva TUSUARIOS.CLAVE%TYPE :=
-        'NuevaClave_Prueba!';
+        'pbkdf2$1$UFJVRUJB$TlVFVkE=';
+
+    v_clave_leida TUSUARIOS.CLAVE%TYPE;
 
     v_cursor types.ref_cursor;
     v_id_leido TUSUARIOS.ID%TYPE;
@@ -44,7 +50,8 @@ BEGIN
     insertarFuncionario(
         v_id,
         '  Funcionario de prueba  ',
-        ' 8888-1111 '
+        ' 8888-1111 ',
+        v_clave_inicial
     );
 
     v_cursor := buscarFuncionario(v_id);
@@ -65,49 +72,51 @@ BEGIN
 
     CLOSE v_cursor;
 
-    -- Acceso inicial.
-    v_cursor := validarUsuario(v_id, v_id);
+    -- Acceso inicial: Java verifica el hash devuelto.
+    v_cursor := obtenerCredencialesUsuario(v_id);
 
     FETCH v_cursor INTO
-        v_id_leido, v_nombre, v_rol, v_primer_ingreso;
+        v_id_leido, v_nombre, v_rol, v_primer_ingreso, v_clave_leida;
 
     comprobar(
         v_cursor%FOUND,
-        'La clave inicial igual al ID permite el ingreso.'
+        'Las credenciales del funcionario nuevo se pueden consultar.'
     );
 
     comprobar(
         v_id_leido = v_id
         AND v_rol = 'FUNCIONARIO'
-        AND v_primer_ingreso = 1,
-        'El rol y el primer ingreso son correctos.'
+        AND v_primer_ingreso = 1
+        AND v_clave_leida = v_clave_inicial,
+        'El rol, el primer ingreso y el hash inicial son correctos.'
     );
 
     CLOSE v_cursor;
 
-    -- Credenciales incorrectas.
-    v_cursor := validarUsuario(v_id, 'Clave_incorrecta');
+    -- Usuario inexistente.
+    v_cursor := obtenerCredencialesUsuario('PRUEBA-NO-EXISTE');
 
     FETCH v_cursor INTO
-        v_id_leido, v_nombre, v_rol, v_primer_ingreso;
+        v_id_leido, v_nombre, v_rol, v_primer_ingreso, v_clave_leida;
 
     comprobar(
         v_cursor%NOTFOUND,
-        'Una clave incorrecta no devuelve un usuario.'
+        'Un usuario inexistente no devuelve credenciales.'
     );
 
     CLOSE v_cursor;
 
     -- Cambio de clave.
     cambiarClaveUsuario(v_id, v_clave_nueva);
-    v_cursor := validarUsuario(v_id, v_clave_nueva);
+    v_cursor := obtenerCredencialesUsuario(v_id);
 
     FETCH v_cursor INTO
-        v_id_leido, v_nombre, v_rol, v_primer_ingreso;
+        v_id_leido, v_nombre, v_rol, v_primer_ingreso, v_clave_leida;
 
     comprobar(
-        v_cursor%FOUND,
-        'La nueva clave permite el ingreso.'
+        v_cursor%FOUND
+        AND v_clave_leida = v_clave_nueva,
+        'Se guarda el hash de la nueva clave.'
     );
 
     comprobar(
@@ -117,17 +126,24 @@ BEGIN
 
     CLOSE v_cursor;
 
-    v_cursor := validarUsuario(v_id, v_id);
+    -- Una clave sin formato de hash se rechaza.
+    v_rechazado := FALSE;
 
-    FETCH v_cursor INTO
-        v_id_leido, v_nombre, v_rol, v_primer_ingreso;
+    BEGIN
+        cambiarClaveUsuario(v_id, 'TextoPlano');
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLCODE = -2290 THEN
+                v_rechazado := TRUE;
+            ELSE
+                RAISE;
+            END IF;
+    END;
 
     comprobar(
-        v_cursor%NOTFOUND,
-        'La clave anterior ya no permite el ingreso.'
+        v_rechazado,
+        'La base rechaza una clave en texto plano.'
     );
-
-    CLOSE v_cursor;
 
     -- Rechazar clave vacia.
     v_rechazado := FALSE;
@@ -172,13 +188,14 @@ BEGIN
 
     CLOSE v_cursor;
 
-    v_cursor := validarUsuario(v_id, v_clave_nueva);
+    v_cursor := obtenerCredencialesUsuario(v_id);
 
     FETCH v_cursor INTO
-        v_id_leido, v_nombre, v_rol, v_primer_ingreso;
+        v_id_leido, v_nombre, v_rol, v_primer_ingreso, v_clave_leida;
 
     comprobar(
-        v_cursor%FOUND,
+        v_cursor%FOUND
+        AND v_clave_leida = v_clave_nueva,
         'Modificar datos personales conserva la clave.'
     );
 
@@ -196,7 +213,7 @@ BEGIN
     VALUES (
         v_id_admin,
         'Administrador temporal',
-        v_id_admin,
+        v_clave_inicial,
         'ADMINISTRADOR',
         1
     );
@@ -284,7 +301,8 @@ BEGIN
         insertarFuncionario(
             v_id,
             'Duplicado',
-            '8888-3333'
+            '8888-3333',
+            v_clave_inicial
         );
     EXCEPTION
         WHEN DUP_VAL_ON_INDEX THEN
@@ -371,10 +389,10 @@ BEGIN
 
     CLOSE v_cursor;
 
-    v_cursor := validarUsuario(v_id, v_clave_nueva);
+    v_cursor := obtenerCredencialesUsuario(v_id);
 
     FETCH v_cursor INTO
-        v_id_leido, v_nombre, v_rol, v_primer_ingreso;
+        v_id_leido, v_nombre, v_rol, v_primer_ingreso, v_clave_leida;
 
     comprobar(
         v_cursor%NOTFOUND,
@@ -390,7 +408,8 @@ BEGIN
         insertarFuncionario(
             v_id,
             'Sin telefono',
-            '   '
+            '   ',
+            v_clave_inicial
         );
     EXCEPTION
         WHEN OTHERS THEN

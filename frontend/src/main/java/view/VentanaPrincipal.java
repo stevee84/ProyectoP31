@@ -79,7 +79,7 @@ public class VentanaPrincipal extends JFrame {
         JMenu menuSesion = new JMenu("Sesion");
         menuSesion.setFont(EstiloUI.NORMAL);
 
-        JMenuItem itemCambiarClave = new JMenuItem("Cambiar contrasena");
+        JMenuItem itemCambiarClave = new JMenuItem("Cambiar contraseña");
         itemCambiarClave.setFont(EstiloUI.NORMAL);
         itemCambiarClave.addActionListener(e -> {
             if (onCambiarClave != null) onCambiarClave.run();

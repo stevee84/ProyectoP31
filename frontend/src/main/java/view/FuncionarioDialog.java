@@ -1,5 +1,7 @@
 package view;
 
+import contrato.Reglas;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.function.Consumer;
@@ -51,7 +53,7 @@ public class FuncionarioDialog extends JDialog {
         gbc.insets = new Insets(4, 4, 4, 4);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        String[] etiquetas = {"Identificacion:", "Nombre:", "Telefono:"};
+        String[] etiquetas = {"Identificación:", "Nombre:", "Teléfono:"};
         JTextField[] fieldArray = {campoId, campoNombre, campoTelefono};
         for (int i = 0; i < etiquetas.length; i++) {
             JLabel lbl = new JLabel(etiquetas[i]);
@@ -97,8 +99,12 @@ public class FuncionarioDialog extends JDialog {
         String telefono = campoTelefono.getText().trim();
 
         if (id.isBlank() || nombre.isBlank() || telefono.isBlank()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.",
+            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios (el telefono tambien).",
                     "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (!Reglas.telefonoValido(telefono)) {
+            JOptionPane.showMessageDialog(this, Reglas.MENSAJE_TELEFONO, "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         if (onGuardar != null) {

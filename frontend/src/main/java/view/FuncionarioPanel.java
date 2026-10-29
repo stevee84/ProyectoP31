@@ -18,7 +18,7 @@ import java.util.function.IntConsumer;
 public class FuncionarioPanel extends JPanel {
 
     private final DefaultTableModel modeloTabla =
-            new DefaultTableModel(new Object[]{"Identificacion", "Nombre", "Telefono", "", ""}, 0) {
+            new DefaultTableModel(new Object[]{"Identificación", "Nombre", "Teléfono", "", ""}, 0) {
                 @Override
                 public boolean isCellEditable(int row, int column) {
                     return column >= 3;

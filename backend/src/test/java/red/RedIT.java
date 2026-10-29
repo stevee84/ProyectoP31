@@ -76,6 +76,69 @@ class RedIT {
     }
 
     @Test
+    void servidorLlenoRechazaConexionesExtraConMensajeClaro() throws Exception {
+        Servidor lleno = new Servidor(0, new FabricaServiciosFalsa(), 1, 60_000);
+        lleno.iniciar();
+        ProxyServicio primero = new ProxyServicio(3000);
+        ProxyServicio segundo = new ProxyServicio(3000);
+        try {
+            primero.conectar("localhost", lleno.getPuerto());
+            primero.iniciarSesion("F001", "F001");
+            segundo.conectar("localhost", lleno.getPuerto());
+            ServicioException e = assertThrows(ServicioException.class, () -> segundo.iniciarSesion("F002", "F002"));
+            assertEquals(CodigoError.COMUNICACION, e.getCodigo());
+            assertEquals(Servidor.MENSAJE_LLENO, e.getMessage());
+            assertFalse(primero.listarCategorias().isEmpty(), "El cliente admitido sigue atendido");
+        } finally {
+            primero.desconectar();
+            segundo.desconectar();
+            lleno.detener();
+        }
+    }
+
+    @Test
+    void conexionQueNoIniciaSesionSeCierraPorInactividad() throws Exception {
+        Servidor corto = new Servidor(0, new FabricaServiciosFalsa(), 10, 300);
+        corto.iniciar();
+        ProxyServicio mudo = new ProxyServicio(3000);
+        ProxyServicio activo = new ProxyServicio(3000);
+        try {
+            mudo.conectar("localhost", corto.getPuerto());
+            activo.conectar("localhost", corto.getPuerto());
+            activo.iniciarSesion("F001", "F001");
+            Thread.sleep(1000);
+            assertFalse(mudo.estaConectado(), "El servidor cerró la conexión sin sesión");
+            ServicioException e = assertThrows(ServicioException.class, () -> mudo.iniciarSesion("F002", "F002"));
+            assertEquals(CodigoError.COMUNICACION, e.getCodigo());
+            assertTrue(e.getMessage().contains("inactividad"), e.getMessage());
+            assertFalse(activo.listarCategorias().isEmpty(), "Con sesión no hay límite de inactividad");
+        } finally {
+            mudo.desconectar();
+            activo.desconectar();
+            corto.detener();
+        }
+    }
+
+    @Test
+    void peticionesSinSesionNoExtiendenElPlazo() throws Exception {
+        Servidor corto = new Servidor(0, new FabricaServiciosFalsa(), 10, 500);
+        corto.iniciar();
+        ProxyServicio insistente = new ProxyServicio(3000);
+        try {
+            insistente.conectar("localhost", corto.getPuerto());
+            long inicio = System.currentTimeMillis();
+            while (insistente.estaConectado() && System.currentTimeMillis() - inicio < 3000) {
+                assertThrows(ServicioException.class, insistente::listarCategorias);
+                Thread.sleep(150);
+            }
+            assertFalse(insistente.estaConectado(), "El plazo sin sesión es total, no se reinicia por petición");
+        } finally {
+            insistente.desconectar();
+            corto.detener();
+        }
+    }
+
+    @Test
     void sinSesionNoSeEntreganDatos() throws Exception {
         ServicioException e = assertThrows(ServicioException.class, () -> cliente().listarFuncionarios());
         assertEquals(CodigoError.SESION, e.getCodigo());

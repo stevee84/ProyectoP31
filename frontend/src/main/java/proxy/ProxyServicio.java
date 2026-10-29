@@ -56,6 +56,8 @@ public class ProxyServicio implements IServicioAplicacion {
     private volatile Socket socket;
     private volatile ObjectOutputStream salida;
     private volatile boolean conectado;
+    /** Aviso del servidor (respuesta de error con id 0) antes de cerrar la conexión. */
+    private volatile String motivoCierre;
 
     public ProxyServicio(int timeoutMs) {
         this.timeoutMs = timeoutMs;
@@ -81,6 +83,7 @@ public class ProxyServicio implements IServicioAplicacion {
         entrada.setObjectInputFilter(Configuracion.FILTRO_MENSAJES);
         socket = nuevo;
         salida = nuevaSalida;
+        motivoCierre = null;
         conectado = true;
 
         Thread lector = new Thread(() -> leer(nuevo, entrada), "proxy-lector");
@@ -110,7 +113,7 @@ public class ProxyServicio implements IServicioAplicacion {
     @SuppressWarnings("unchecked")
     private <T> T enviar(Operacion operacion, Object... datos) {
         if (!conectado) {
-            throw new ServicioException(CodigoError.COMUNICACION, "No hay conexión con el servidor.");
+            throw new ServicioException(CodigoError.COMUNICACION, mensajeSinConexion("No hay conexión con el servidor."));
         }
         long id = secuencia.incrementAndGet();
         CompletableFuture<Respuesta> futura = new CompletableFuture<>();
@@ -131,7 +134,7 @@ public class ProxyServicio implements IServicioAplicacion {
             }
             return (T) respuesta.resultado();
         } catch (IOException e) {
-            throw new ServicioException(CodigoError.COMUNICACION, "No se pudo enviar la solicitud al servidor.");
+            throw new ServicioException(CodigoError.COMUNICACION, mensajeSinConexion("No se pudo enviar la solicitud al servidor."));
         } catch (TimeoutException e) {
             throw new ServicioException(CodigoError.COMUNICACION, "El servidor no respondió a tiempo.");
         } catch (InterruptedException e) {
@@ -149,6 +152,9 @@ public class ProxyServicio implements IServicioAplicacion {
             while (!propio.isClosed()) {
                 Object recibido = entrada.readObject();
                 if (recibido instanceof Respuesta respuesta) {
+                    if (respuesta.idPeticion() == 0 && !respuesta.exito()) {
+                        motivoCierre = respuesta.mensaje(); // Ej.: servidor lleno o inactividad.
+                    }
                     CompletableFuture<Respuesta> futura = pendientes.get(respuesta.idPeticion());
                     if (futura != null) {
                         futura.complete(respuesta);
@@ -159,7 +165,7 @@ public class ProxyServicio implements IServicioAplicacion {
             }
         } catch (IOException | ClassNotFoundException | RuntimeException e) {
             // Conexión cerrada por el servidor, por desconectar() o mensaje rechazado por el filtro.
-            if (!propio.isClosed()) {
+            if (!propio.isClosed() && !(e instanceof java.io.EOFException)) {
                 System.err.println("Proxy: se cortó la lectura del socket: " + e);
             }
         } finally {
@@ -168,9 +174,15 @@ public class ProxyServicio implements IServicioAplicacion {
             if (propio == socket) {
                 conectado = false;
                 pendientes.forEach((id, futura) -> futura.complete(
-                        Respuesta.error(id, CodigoError.COMUNICACION, "Se perdió la conexión con el servidor.")));
+                        Respuesta.error(id, CodigoError.COMUNICACION,
+                                mensajeSinConexion("Se perdió la conexión con el servidor."))));
             }
         }
+    }
+
+    private String mensajeSinConexion(String porDefecto) {
+        String motivo = motivoCierre;
+        return motivo == null ? porDefecto : motivo;
     }
 
     private static void cerrar(Socket s) {

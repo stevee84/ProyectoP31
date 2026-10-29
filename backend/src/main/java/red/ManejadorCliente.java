@@ -15,6 +15,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -34,10 +35,13 @@ public class ManejadorCliente implements Runnable, IObservadorEventos {
     private final PublicadorEventos publicador;
     private final Consumer<ManejadorCliente> alTerminar;
     private final ExecutorService eventos = Executors.newSingleThreadExecutor();
+    /** Una conexión sin sesión no puede ocupar un hilo para siempre (0 = sin límite). */
+    private final int timeoutSinSesionMs;
     private ObjectOutputStream salida;
 
     public ManejadorCliente(Socket socket, IFabricaServicios fabrica, PublicadorEventos publicador,
-                            Consumer<ManejadorCliente> alTerminar) {
+                            Consumer<ManejadorCliente> alTerminar, int timeoutSinSesionMs) {
+        this.timeoutSinSesionMs = timeoutSinSesionMs;
         this.socket = socket;
         this.publicador = publicador;
         this.alTerminar = alTerminar;
@@ -53,16 +57,35 @@ public class ManejadorCliente implements Runnable, IObservadorEventos {
             salida.flush();
             socket.setSoTimeout(TIMEOUT_SALUDO_MS);
             ObjectInputStream entrada = new ObjectInputStream(socket.getInputStream());
-            socket.setSoTimeout(0);
             entrada.setObjectInputFilter(Configuracion.FILTRO_MENSAJES);
             publicador.agregar(this);
 
+            // Plazo total sin sesión: no se reinicia con cada petición, para que un cliente
+            // que nunca inicia sesión no ocupe un cupo indefinidamente.
+            long limiteSinSesion = 0;
             while (!socket.isClosed()) {
+                if (contexto.estaAutenticado() || timeoutSinSesionMs == 0) {
+                    limiteSinSesion = 0;
+                    socket.setSoTimeout(0);
+                } else {
+                    long ahora = System.currentTimeMillis();
+                    if (limiteSinSesion == 0) {
+                        limiteSinSesion = ahora + timeoutSinSesionMs;
+                    }
+                    if (ahora >= limiteSinSesion) {
+                        throw new SocketTimeoutException();
+                    }
+                    socket.setSoTimeout((int) (limiteSinSesion - ahora));
+                }
                 if (!(entrada.readObject() instanceof Peticion peticion)) {
                     break;
                 }
                 responder(despachador.atender(peticion));
             }
+        } catch (SocketTimeoutException e) {
+            System.err.println("Servidor: se cerró una conexión que no inició sesión en "
+                    + timeoutSinSesionMs + " ms.");
+            avisarCierre("Se cerró la conexión por inactividad: no se inició sesión a tiempo.");
         } catch (IOException | ClassNotFoundException | RuntimeException e) {
             // Cliente desconectado, mensaje ilegible o rechazado por el filtro: se cierra solo esta conexión.
             if (!(e instanceof java.io.EOFException) && !socket.isClosed()) {
@@ -77,8 +100,9 @@ public class ManejadorCliente implements Runnable, IObservadorEventos {
 
     @Override
     public String getIdUsuario() {
+        // Con el primer ingreso pendiente tampoco recibe alertas.
         UsuarioDTO usuario = contexto.getUsuario();
-        return usuario == null ? null : usuario.id();
+        return usuario == null || contexto.requiereCambioClave() ? null : usuario.id();
     }
 
     @Override
@@ -90,6 +114,15 @@ public class ManejadorCliente implements Runnable, IObservadorEventos {
                 cerrar();
             }
         });
+    }
+
+    /** Respuesta de error con id 0: el Proxy la usa como motivo del cierre. */
+    private void avisarCierre(String mensaje) {
+        try {
+            enviar(Respuesta.error(0, CodigoError.COMUNICACION, mensaje));
+        } catch (IOException ignorada) {
+            // El cliente ya no está.
+        }
     }
 
     private void responder(Respuesta respuesta) throws IOException {

@@ -12,13 +12,30 @@ public class ContextoSesion {
 
     // volatile: lo lee también el hilo de otro cliente al difundir eventos.
     private volatile UsuarioDTO usuario;
+    /** Primer ingreso: hasta cambiar la clave solo se permiten cambiarClave y cerrarSesion. */
+    private volatile boolean cambioClavePendiente;
 
     public void iniciar(UsuarioDTO usuario) {
+        iniciar(usuario, false);
+    }
+
+    public void iniciar(UsuarioDTO usuario, boolean requiereCambioClave) {
         this.usuario = usuario;
+        this.cambioClavePendiente = requiereCambioClave;
     }
 
     public void cerrar() {
         usuario = null;
+        cambioClavePendiente = false;
+    }
+
+    /** El servidor confirmó el cambio de clave: se levanta la restricción del primer ingreso. */
+    public void claveCambiada() {
+        cambioClavePendiente = false;
+    }
+
+    public boolean requiereCambioClave() {
+        return usuario != null && cambioClavePendiente;
     }
 
     /** Usuario de la conexión, o null si todavía no inició sesión. */

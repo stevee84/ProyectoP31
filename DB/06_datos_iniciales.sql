@@ -3,6 +3,12 @@ SET SERVEROUTPUT ON
 DECLARE
     v_cantidad NUMBER;
     v_rol TUSUARIOS.ROL%TYPE;
+    v_clave TUSUARIOS.CLAVE%TYPE;
+
+    -- Hash PBKDF2 de la clave inicial "ADMIN" (generado con
+    -- java seguridad.ClaveHash ADMIN). La base nunca guarda texto plano.
+    c_clave_admin CONSTANT TUSUARIOS.CLAVE%TYPE :=
+        'pbkdf2$120000$TAoKTmoKzoG38O8HrY9HYA==$1aqXsAIOUQ7ZYz9hgqKg7E1YbCuTA9m08aNl4KV6kMU=';
 
     PROCEDURE crearCategoriaSiFalta (
         p_descripcion IN TCATEGORIAS.DESCRIPCION%TYPE
@@ -14,7 +20,7 @@ DECLARE
         SELECT COUNT(*)
         INTO v_existentes
         FROM TCATEGORIAS
-        WHERE DESCRIPCION = p_descripcion;
+        WHERE UPPER(TRIM(DESCRIPCION)) = UPPER(TRIM(p_descripcion));
 
         IF v_existentes = 0 THEN
             insertarCategoria(p_descripcion, v_id);
@@ -41,7 +47,7 @@ BEGIN
         VALUES (
             'ADMIN',
             'Administrador',
-            'ADMIN',
+            c_clave_admin,
             'ADMINISTRADOR',
             NULL,
             1
@@ -51,8 +57,8 @@ BEGIN
             'Usuario inicial creado: ADMIN. Clave inicial: ADMIN.'
         );
     ELSE
-        SELECT ROL
-        INTO v_rol
+        SELECT ROL, CLAVE
+        INTO v_rol, v_clave
         FROM TUSUARIOS
         WHERE ID = 'ADMIN';
 
@@ -63,9 +69,21 @@ BEGIN
             );
         END IF;
 
-        DBMS_OUTPUT.PUT_LINE(
-            'ADMIN ya existe: se conserva su clave actual.'
-        );
+        IF v_clave NOT LIKE 'pbkdf2$%' THEN
+            -- Base anterior con clave en texto plano: vuelve a la inicial con hash.
+            UPDATE TUSUARIOS
+            SET CLAVE = c_clave_admin,
+                PRIMER_INGRESO = 1
+            WHERE ID = 'ADMIN';
+
+            DBMS_OUTPUT.PUT_LINE(
+                'ADMIN tenia clave sin hash: se restablecio la clave inicial ADMIN.'
+            );
+        ELSE
+            DBMS_OUTPUT.PUT_LINE(
+                'ADMIN ya existe: se conserva su clave actual.'
+            );
+        END IF;
     END IF;
 
     crearCategoriaSiFalta('Sala para 10 personas');

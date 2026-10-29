@@ -28,7 +28,7 @@ public class LoginController {
         String clave = view.getPassword();
 
         if (id.isBlank() || clave.isBlank()) {
-            view.mostrarError("Debe ingresar identificacion y contrasena.");
+            view.mostrarError("Debe ingresar identificación y contraseña.");
             return;
         }
 
@@ -36,7 +36,7 @@ public class LoginController {
         Tarea.ejecutar(() -> modelo.iniciarSesion(id, clave),
                 resultado -> {
                     view.setOcupado(false);
-                    continuar(resultado);
+                    continuar(resultado, id, clave);
                 },
                 error -> {
                     view.setOcupado(false);
@@ -44,8 +44,8 @@ public class LoginController {
                 });
     }
 
-    private void continuar(ResultadoSesionDTO resultado) {
-        if (resultado.requiereCambioClave() && !pedirCambioClave()) {
+    private void continuar(ResultadoSesionDTO resultado, String id, String claveActual) {
+        if (resultado.requiereCambioClave() && !pedirCambioClave(id, claveActual)) {
             // Sin cambiar la clave no se permite entrar en el primer ingreso.
             Tarea.ejecutar(() -> { modelo.cerrarSesion(); return null; }, r -> { }, e -> { });
             return;
@@ -55,8 +55,10 @@ public class LoginController {
     }
 
     /** Diálogo modal; devuelve true si el servidor confirmó el cambio. */
-    private boolean pedirCambioClave() {
+    private boolean pedirCambioClave(String id, String claveActual) {
         CambioClaveDialog dialogo = new CambioClaveDialog(view);
+        dialogo.setIdUsuario(id);
+        dialogo.setClaveActual(claveActual);
         dialogo.setOnGuardar(nueva -> {
             dialogo.setOcupado(true);
             Tarea.ejecutar(

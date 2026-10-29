@@ -9,7 +9,10 @@ que aplica las reglas de negocio y persiste en Oracle.
 Cuando alguien crea una reserva, los demás usuarios conectados reciben una
 alerta asincrónica.
 
-> Se utiliza Oracle por indicación del profesor.
+> Se utiliza Oracle en lugar de MySQL (que menciona el enunciado) por indicación
+> del profesor. También por su indicación, la base es local en la computadora
+> del servidor: no se usa máquina virtual ni base de datos en red; los clientes
+> solo se conectan al Backend por sockets.
 
 ## Integrantes y responsabilidades
 
@@ -99,7 +102,7 @@ y estadísticas. `ServicioAplicacion` aplica permisos, validaciones y transaccio
 `FabricaServiciosOracle` comparte el bloqueo entre los clientes del servidor.
 La extracción Gemini se ejecuta en el Backend, sin mantener conexiones ni bloqueos.
 
-Detalles y archivos de Joshua: [Implementación Oracle](backend/IMPLEMENTACION_ORACLE.md).
+Detalles de la persistencia: [Implementación Oracle](backend/IMPLEMENTACION_ORACLE.md).
 
 ## Configuración de red
 
@@ -110,6 +113,12 @@ Detalles y archivos de Joshua: [Implementación Oracle](backend/IMPLEMENTACION_O
 | `servidor.host` | `localhost` | Dirección del Backend |
 | `servidor.puerto` | `5000` | Puerto del servidor |
 | `servidor.timeout` | `10000` | Espera máxima de una respuesta, en milisegundos |
+| `servidor.maxClientes` | `100` | Solo servidor: conexiones atendidas a la vez |
+| `servidor.timeoutSinSesion` | `60000` | Solo servidor: milisegundos que espera a que una conexión inicie sesión |
+
+Las conexiones que exceden `servidor.maxClientes` reciben un aviso y se
+cierran. Una conexión sin sesión se cierra tras `servidor.timeoutSinSesion` ms;
+con sesión iniciada no hay límite de inactividad.
 
 La deserialización utiliza `Configuracion.FILTRO_MENSAJES` para aceptar las
 clases permitidas del protocolo y los DTO.
@@ -139,12 +148,25 @@ Consultas y funciones compartidas:
 - Alertas de nuevas reservas.
 
 Los funcionarios se registran con su identificación como clave inicial.
-En el primer ingreso deben cambiarla.
+En el primer ingreso deben cambiarla. El servidor lo exige: mientras el
+cambio esté pendiente (también para `ADMIN`) rechaza toda operación salvo
+cambiar la clave y cerrar sesión, con el código `SESION` y el mensaje
+"Debe cambiar su clave antes de continuar.". La clave nueva no puede ser la
+actual ni la identificación del usuario.
+
+El teléfono del funcionario es obligatorio y solo admite dígitos, espacios,
+`+` y `-`, con 7 a 20 caracteres y al menos 7 dígitos (por ejemplo
+`8888-1111` o `+506 8888 1111`). La descripción de cada categoría es única,
+sin distinguir mayúsculas ni espacios al inicio o al final.
+
+Las claves se guardan con hash PBKDF2WithHmacSHA256 y sal aleatoria por
+usuario (`seguridad.ClaveHash`, formato `pbkdf2$iteraciones$sal$hash` en
+`TUSUARIOS.CLAVE`). La verificación se hace en Java; Oracle nunca recibe ni
+guarda una clave en texto plano, y una restricción `CHECK` lo impide.
 
 La integración opcional con Gemini utiliza `GEMINI_API_KEY` en el Backend.
 No crea reservas: entrega campos para revisar y completar en el Frontend.
-Los reportes PDF y las pantallas corresponden a Scott; no están implementados
-por el nuevo servicio Oracle.
+Los reportes PDF se generan en el Frontend a partir de los datos del servicio.
 
 ## Requisitos
 
@@ -186,7 +208,9 @@ Los scripts de pruebas deshacen sus datos temporales mediante rollback.
 El script `06` guarda sus cambios mediante commit.
 
 Si `01` muestra `ORA-00955` en un esquema ya preparado, los objetos ya
-existen. No es necesario borrarlos ni ejecutar otra vez ese archivo.
+existen. Si el esquema se creó con una versión anterior de `01` (sin el
+índice único de categorías ni la restricción de claves con hash), hay que
+borrar los objetos del esquema y ejecutar de nuevo `01`, `02` y `06`.
 
 Los números consumidos por las secuencias no se recuperan mediante
 rollback. Los saltos en los identificadores son normales.
@@ -201,7 +225,10 @@ El script `06` crea:
 - Primer ingreso pendiente.
 - Categorías: Sala para 10 personas, Laptop Windows y Sala de juntas.
 
-Si `ADMIN` ya existe, el script conserva su clave.
+La clave de `ADMIN` se escribe ya con hash (literal PBKDF2 generado con
+`java -cp backend/target/classes seguridad.ClaveHash ADMIN`).
+Si `ADMIN` ya existe, el script conserva su clave; si la tiene en texto plano
+(base anterior), la restablece a `ADMIN` con hash y primer ingreso pendiente.
 
 Las categorías iniciales se agregan solamente si no existe una con la misma
 descripción.
@@ -223,10 +250,9 @@ El driver se declara únicamente en `backend/pom.xml`.
 
 Se utiliza `ojdbc11:23.6.0.24.10`, tomado del ejemplo del profesor.
 
-Las tres pruebas JDBC de categorías ya se ejecutaron correctamente en la
-computadora de Joshua con ese driver y Oracle XE 11.2.0.2.0. Eso no certifica
-todas las combinaciones de versiones. Los nuevos escenarios Oracle deben
-validarse por separado: compilar o ejecutar pruebas sin Oracle no los valida.
+Las pruebas de integración se ejecutan con ese driver y Oracle XE 11.2.0.2.0.
+Eso no certifica todas las combinaciones de versiones: compilar o ejecutar
+pruebas sin Oracle no valida la persistencia.
 
 Referencia:
 [Documentación de compatibilidad JDBC de Oracle](https://www.oracle.com/database/technologies/faq-jdbc.html).
@@ -256,18 +282,17 @@ en el código ni en configuraciones de IntelliJ compartidas en Git.
 
 ### Conexiones y repositorios
 
-`ConexionOracle.abrir()` devuelve una conexión nueva.
-
-Quien solicita la conexión debe cerrarla al terminar la operación.
+`ConexionOracle.abrir()` devuelve una conexión nueva; quien la solicita debe
+cerrarla. El servicio no la usa por operación: cada fábrica reutiliza una sola
+conexión (`ConexionCompartida`, descrita más abajo).
 
 Los repositorios reciben esa conexión y cierran sus propias sentencias y
 cursores. No cierran la conexión ni confirman la transacción.
 
 Esto permite que varios repositorios participen en la misma operación.
 
-`red.MainServidor` conserva el modo falso de Steve. El nuevo punto de entrada
+`red.MainServidor` arranca el servidor con el servicio falso en memoria.
 `arranque.MainServidorOracle` reutiliza `red.Servidor` con la fábrica real.
-No es necesario cambiar el protocolo ni las clases de red.
 
 La aplicación reutiliza una conexión por fábrica (`ConexionCompartida`) y cada operación
 trabaja con autocommit desactivado. Abrir una conexión nueva por operación agotaba el
@@ -326,7 +351,7 @@ java -Dservidor.puerto=5000 -cp 'backend/target/classes:backend/target/dependenc
 ```
 
 Las variables de una configuración de IntelliJ no se heredan automáticamente
-en otra terminal ni en OpenCode. No guardarlas en Git ni imprimirlas. En WSL,
+en otra terminal. No guardarlas en Git ni imprimirlas. En WSL,
 si Oracle está en Windows, puede ser necesario ajustar el host de `DB_URL`
 y las reglas del firewall; `localhost` depende de la configuración de red WSL.
 
@@ -334,9 +359,25 @@ El punto de entrada comprueba la conexión antes de aceptar clientes. Con Oracle
 disponible muestra `Servidor Oracle de reservas escuchando en el puerto 5000`.
 Si falla, revisar variables, listener de Oracle, SID y dependencias.
 
-Steve puede posteriormente sustituir solamente `new FabricaServiciosFalsa()`
-por `new servicio.FabricaServiciosOracle()` en su `MainServidor`, manteniendo
-una única instancia de fábrica por servidor. No se ha modificado ese archivo.
+## Despliegue: un servidor y N clientes
+
+1. **Servidor (una computadora con Oracle):** cargar los scripts `01`, `02` y
+   `06`, definir `DB_URL`, `DB_USER` y `DB_PASSWORD` y arrancar
+   `arranque.MainServidorOracle` como se indica arriba (opcionalmente con
+   `-Dservidor.puerto=5000`, `-Dservidor.maxClientes=...` y
+   `-Dservidor.timeoutSinSesion=...`).
+2. **Firewall:** permitir conexiones TCP entrantes al puerto del servidor
+   (por defecto 5000). En Windows, por ejemplo (PowerShell como administrador):
+   `New-NetFirewallRule -DisplayName "Reservas 5000" -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow`.
+3. **Clientes (N computadoras):** ejecutar `cliente.MainCliente` con
+   `-Dservidor.host=IP_DEL_SERVIDOR -Dservidor.puerto=5000` (ver "Ejecución de
+   clientes"). Los clientes no necesitan Oracle, el driver JDBC ni
+   `DB_PASSWORD`: solo hablan con el servidor por sockets.
+
+En desarrollo, cada integrante puede tener su propio Oracle XE local con los
+mismos scripts y el mismo usuario `RESERVAS_P2`, y apuntar sus clientes a
+`localhost`; los datos de cada base son independientes. En la defensa se usa
+un solo servidor con su base, y los demás equipos se conectan a él como clientes.
 
 ### Gemini opcional
 
@@ -417,6 +458,8 @@ mvn -pl proyecto1 exec:java -Dexec.mainClass=Main
 ```
 
 Se ejecuta desde la raíz porque utiliza el directorio relativo `data/`.
+Ese directorio no está versionado: en un clon limpio la aplicación anterior
+arranca sin datos (sin usuarios ni catálogos previos).
 
 ## Pruebas
 
@@ -459,6 +502,10 @@ Comprueba:
 - Listas inmutables.
 - Rollback de una inserción.
 - CRUD de funcionarios, autenticación, primer ingreso y conservación de clave.
+- Claves guardadas con hash (la columna nunca contiene la clave) y rechazo de
+  una clave nueva igual a la actual o al ID.
+- Descripción de categoría única al registrar y al modificar.
+- Primer ingreso exigido por el servidor a través de sockets.
 - Recursos, disponibilidad y mapeo de cursores.
 - Reservas confirmadas, falta normal sin residuos, categorías repetidas,
   solapamientos y horarios contiguos.
@@ -469,11 +516,22 @@ Comprueba:
 - Sockets y Proxy originales con servicio y fábrica Oracle, incluyendo alertas.
 
 Las pruebas antiguas de categorías usan rollback. Las nuevas pruebas que hacen
-commit crean usuarios temporales `J2IT-...`, categorías y recursos propios;
-limpian exclusivamente sus IDs en `finally`/`@AfterEach`, en orden de claves
-foráneas. No utilizan ni cambian la clave del administrador del proyecto.
-Si se termina abruptamente la JVM o cae Oracle durante la limpieza, revisar los
-IDs de esa ejecución antes de retirar residuos; nunca vaciar tablas.
+commit crean usuarios temporales `J2IT-...`, categorías y recursos propios
+(`soporte.DatosOracle`); limpian exclusivamente sus IDs en `finally`/`@AfterEach`,
+en orden de claves foráneas, también si el proceso termina a mitad de una
+prueba. No cambian la clave del administrador. Si quedan residuos (proceso
+matado o caída de Oracle), en la base local de desarrollo:
+
+```sql
+DELETE FROM TRESERVA_RECURSO WHERE ID_RESERVA IN (SELECT ID FROM TRESERVAS WHERE ID_USUARIO LIKE 'J2IT-%');
+DELETE FROM TRESERVAS WHERE ID_USUARIO LIKE 'J2IT-%';
+DELETE FROM TRECURSOS WHERE CODIGO LIKE 'J2IT-%' OR DESCRIPCION LIKE '%J2IT-%';
+DELETE FROM TCATEGORIAS WHERE DESCRIPCION LIKE 'J2IT-%';
+DELETE FROM TUSUARIOS WHERE ID LIKE 'J2IT-%';
+COMMIT;
+```
+
+Nunca vaciar tablas.
 
 Desde la raíz, en PowerShell con las variables JDBC ya configuradas:
 
@@ -505,12 +563,12 @@ El servicio informa los errores al cliente con `ServicioException` y un
 | Código | Significado |
 |--------|-------------|
 | `VALIDACION` | Datos inválidos, duplicados o inexistentes |
-| `SESION` | Credenciales incorrectas o sesión no iniciada |
+| `SESION` | Credenciales incorrectas, sesión no iniciada o cambio de clave pendiente |
 | `PERMISO` | Operación no permitida para el usuario |
 | `RECURSO_EN_USO` | Eliminación de un registro con asociados |
 | `DISPONIBILIDAD` | Horario no disponible, fuera del resultado normal de reserva fallida |
 | `PERSISTENCIA` | Fallo de Oracle y operación revertida |
-| `COMUNICACION` | Fallo de red informado por el Proxy |
+| `COMUNICACION` | Fallo de red informado por el Proxy, servidor lleno o conexión cerrada por inactividad |
 
 La falta normal de recursos al reservar se devuelve mediante
 `ResultadoReservaDTO.fracaso(...)`.

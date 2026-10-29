@@ -71,11 +71,13 @@ BEGIN
 
     -- Datos propios de la prueba.
     insertarFuncionario(
-        v_autor, 'Autor temporal', '8888-1001'
+        v_autor, 'Autor temporal', '8888-1001',
+        'pbkdf2$1$UFJVRUJB$SU5JQ0lBTA=='
     );
 
     insertarFuncionario(
-        v_otro, 'Otro temporal', '8888-1002'
+        v_otro, 'Otro temporal', '8888-1002',
+        'pbkdf2$1$UFJVRUJB$SU5JQ0lBTA=='
     );
 
     insertarCategoria('Categoria A temporal', v_a);

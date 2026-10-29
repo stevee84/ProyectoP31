@@ -4,12 +4,16 @@ import protocolo.EventoReservaCreada;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Sujeto del patrón Observer: difunde cada reserva confirmada a los demás
  * usuarios autenticados. Un observador con fallas se retira sin afectar a los otros.
  */
 public class PublicadorEventos {
+
+    private static final Logger LOG = Logger.getLogger(PublicadorEventos.class.getName());
 
     private final List<IObservadorEventos> observadores = new CopyOnWriteArrayList<>();
 
@@ -30,6 +34,7 @@ public class PublicadorEventos {
             try {
                 observador.actualizar(evento);
             } catch (RuntimeException e) {
+                LOG.log(Level.WARNING, "Se retira el observador del usuario " + idUsuario + " porque falló al notificar", e);
                 eliminar(observador);
             }
         }

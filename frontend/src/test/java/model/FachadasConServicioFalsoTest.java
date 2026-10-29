@@ -70,7 +70,12 @@ class FachadasConServicioFalsoTest {
         sesion.cerrarSesion();
 
         assertTrue(sesion.iniciarSesion("F010", "F010").requiereCambioClave());
+        // Igual que el servidor: sin cambiar la clave no se opera.
+        assertEquals(CodigoError.SESION, codigo(servicio::listarCategorias));
+        assertEquals(CodigoError.VALIDACION, codigo(() -> sesion.cambiarClave("F010")));
         sesion.cambiarClave("nueva");
+        assertFalse(servicio.listarCategorias().isEmpty());
+        assertEquals(CodigoError.VALIDACION, codigo(() -> sesion.cambiarClave("nueva")));
         sesion.cerrarSesion();
 
         assertFalse(sesion.iniciarSesion("F010", "nueva").requiereCambioClave());

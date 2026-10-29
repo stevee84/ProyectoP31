@@ -172,7 +172,7 @@ class ServicioAplicacionOracleIT {
         error(CodigoError.RECURSO_EN_USO, () -> admin.eliminarFuncionario(d.autor));
         error(CodigoError.RECURSO_EN_USO, () -> admin.eliminarRecurso(d.recursoA));
         error(CodigoError.RECURSO_EN_USO, () -> admin.eliminarCategoria(d.categoriaA.id()));
-        error(CodigoError.VALIDACION, () -> admin.registrarFuncionario(new FuncionarioDTO(d.autor, "Duplicado", "123")));
+        error(CodigoError.VALIDACION, () -> admin.registrarFuncionario(new FuncionarioDTO(d.autor, "Duplicado", "8888-0123")));
         error(CodigoError.VALIDACION, () -> admin.registrarRecurso(d.recursoA, d.categoriaA.id(), "Duplicado"));
         assertEquals(1, autor.listarReservacionesSesion().size());
     }
@@ -180,12 +180,55 @@ class ServicioAplicacionOracleIT {
     @Test
     void cambioClaveSeConfirmaYActualizarFuncionarioNoLaSobrescribe() {
         autor.cambiarClave("Nueva-clave-temporal");
-        admin.actualizarFuncionario(new FuncionarioDTO(d.autor, "Nombre actualizado", "1234"));
+        admin.actualizarFuncionario(new FuncionarioDTO(d.autor, "Nombre actualizado", "8888-1234"));
         IServicioAplicacion nuevo = fabrica.crear(new ContextoSesion());
         error(CodigoError.SESION, () -> nuevo.iniciarSesion(d.autor, d.autor));
         var login = nuevo.iniciarSesion(d.autor, "Nueva-clave-temporal");
         assertFalse(login.requiereCambioClave());
         assertEquals("Nombre actualizado", login.usuario().nombre());
+    }
+
+    @Test
+    void clavesSeGuardanConHashYNuncaEnTextoPlano() throws Exception {
+        String nueva = "Clave-IT-" + UUID.randomUUID();
+        error(CodigoError.VALIDACION, () -> autor.cambiarClave(d.autor));
+        autor.cambiarClave(nueva);
+        error(CodigoError.VALIDACION, () -> autor.cambiarClave(nueva));
+        try (Connection c = ConexionOracle.abrir(); PreparedStatement s = c.prepareStatement(
+                "SELECT ID, CLAVE FROM TUSUARIOS WHERE ID IN (?,?,?)")) {
+            s.setString(1, d.autor);
+            s.setString(2, d.otro);
+            s.setString(3, d.admin);
+            try (ResultSet r = s.executeQuery()) {
+                int filas = 0;
+                while (r.next()) {
+                    filas++;
+                    String clave = r.getString("CLAVE");
+                    assertTrue(clave.startsWith("pbkdf2$"), r.getString("ID"));
+                    assertFalse(clave.contains(r.getString("ID")), "La columna no contiene la clave inicial");
+                    assertFalse(clave.contains(nueva), "La columna no contiene la clave nueva");
+                }
+                assertEquals(3, filas);
+            }
+        }
+        IServicioAplicacion nuevo = fabrica.crear(new ContextoSesion());
+        assertFalse(nuevo.iniciarSesion(d.autor, nueva).requiereCambioClave());
+        error(CodigoError.SESION, () -> nuevo.iniciarSesion(d.autor, d.autor));
+        assertTrue(nuevo.iniciarSesion(d.otro, d.otro).requiereCambioClave(), "Clave inicial = id, verificada con hash");
+    }
+
+    @Test
+    void descripcionDeCategoriaEsUnicaSinDistinguirMayusculasNiEspacios() {
+        String repetida = "  " + d.categoriaA.descripcion().toUpperCase() + " ";
+        ServicioException alta = assertThrows(ServicioException.class, () -> admin.registrarCategoria(repetida));
+        assertEquals(CodigoError.VALIDACION, alta.getCodigo());
+        assertEquals("Ya existe una categoría con esa descripción.", alta.getMessage());
+        ServicioException cambio = assertThrows(ServicioException.class, () -> admin.actualizarCategoria(
+                new CategoriaDTO(d.categoriaB.id(), d.categoriaA.descripcion().toLowerCase())));
+        assertEquals("Ya existe una categoría con esa descripción.", cambio.getMessage());
+        admin.actualizarCategoria(new CategoriaDTO(d.categoriaB.id(), d.categoriaB.descripcion() + " "));
+        assertEquals(d.categoriaB, admin.buscarCategoria(d.categoriaB.id()), "Conservar la propia descripción se permite");
+        error(CodigoError.VALIDACION, () -> admin.registrarFuncionario(new FuncionarioDTO(d.autor + "X", "Sin formato", "88-AB")));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package red;
 
 import contrato.IServicioAplicacion;
+import contrato.Reglas;
 import dto.CategoriaDTO;
 import dto.FuncionarioDTO;
 import dto.ResultadoReservaDTO;
@@ -16,14 +17,18 @@ import servicio.ContextoSesion;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Contraparte del Proxy en el servidor (skeleton): traduce cada petición a una
  * llamada del servicio de su conexión y el resultado a una respuesta. No resuelve
- * reglas de negocio: solo exige sesión iniciada, mantiene la identidad de la
- * conexión y publica las reservas confirmadas.
+ * reglas de negocio: solo exige sesión iniciada (y el cambio de clave del primer
+ * ingreso), mantiene la identidad de la conexión y publica las reservas confirmadas.
  */
 public class Despachador {
+
+    private static final Logger LOG = Logger.getLogger(Despachador.class.getName());
 
     private final IServicioAplicacion servicio;
     private final ContextoSesion contexto;
@@ -45,6 +50,10 @@ public class Despachador {
             if (peticion.operacion() != Operacion.INICIAR_SESION && !contexto.estaAutenticado()) {
                 return Respuesta.error(id, CodigoError.SESION, "Debe iniciar sesión.");
             }
+            // Único punto que exige el primer ingreso para cualquier cliente (UI, Proxy o socket crudo).
+            if (contexto.requiereCambioClave() && !permitidaConCambioPendiente(peticion.operacion())) {
+                return Respuesta.error(id, CodigoError.SESION, Reglas.MENSAJE_CAMBIO_CLAVE_PENDIENTE);
+            }
             return Respuesta.exito(id, ejecutar(peticion.operacion(), datos));
         } catch (ServicioException e) {
             return Respuesta.error(id, e.getCodigo(), e.getMessage());
@@ -52,7 +61,7 @@ public class Despachador {
             return Respuesta.error(id, CodigoError.VALIDACION, "Petición mal formada.");
         } catch (RuntimeException e) {
             // El detalle técnico queda en el servidor; al usuario solo un mensaje claro.
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Error interno al atender " + peticion.operacion(), e);
             return Respuesta.error(id, CodigoError.INTERNO, "Ocurrió un error interno en el servidor.");
         }
     }
@@ -68,6 +77,7 @@ public class Despachador {
             }
             case CAMBIAR_CLAVE -> {
                 servicio.cambiarClave((String) d[0]);
+                contexto.claveCambiada();
                 yield null;
             }
 
@@ -132,9 +142,14 @@ public class Despachador {
         };
     }
 
+    private static boolean permitidaConCambioPendiente(Operacion operacion) {
+        return operacion == Operacion.CAMBIAR_CLAVE || operacion == Operacion.CERRAR_SESION
+                || operacion == Operacion.INICIAR_SESION;
+    }
+
     private ResultadoSesionDTO iniciarSesion(String id, String clave) {
         ResultadoSesionDTO resultado = servicio.iniciarSesion(id, clave);
-        contexto.iniciar(resultado.usuario());
+        contexto.iniciar(resultado.usuario(), resultado.requiereCambioClave());
         return resultado;
     }
 
@@ -148,7 +163,7 @@ public class Despachador {
                 publicador.notificar(new EventoReservaCreada(resultado.reserva(), LocalDateTime.now()),
                         resultado.reserva().autor().id());
             } catch (RuntimeException e) {
-                e.printStackTrace();
+                LOG.log(Level.WARNING, "No se pudo difundir la reserva " + resultado.reserva().id(), e);
             }
         }
         return resultado;

@@ -1,6 +1,7 @@
 package falso;
 
 import contrato.IServicioAplicacion;
+import contrato.Reglas;
 import dto.AgendaSemanaDTO;
 import dto.CategoriaDTO;
 import dto.EstadisticaCategoriaDTO;
@@ -71,7 +72,13 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
         if (nuevaClave == null || nuevaClave.isBlank()) {
             throw new ServicioException(CodigoError.VALIDACION, "La nueva contraseña es obligatoria.");
         }
+        if (Reglas.claveIgualId(nuevaClave, id)) {
+            throw new ServicioException(CodigoError.VALIDACION, Reglas.MENSAJE_CLAVE_IGUAL_ID);
+        }
         synchronized (datos) {
+            if (nuevaClave.equals(datos.claves.get(id))) {
+                throw new ServicioException(CodigoError.VALIDACION, Reglas.MENSAJE_CLAVE_IGUAL_ACTUAL);
+            }
             datos.claves.put(id, nuevaClave);
             datos.primerIngreso.remove(id);
         }
@@ -82,6 +89,7 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
     @Override
     public void registrarFuncionario(FuncionarioDTO funcionario) {
         exigirAdministrador();
+        validarTelefono(funcionario);
         synchronized (datos) {
             if (datos.usuarios.containsKey(funcionario.id())) {
                 throw new ServicioException(CodigoError.VALIDACION, "Identificación duplicada.");
@@ -96,6 +104,7 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
     @Override
     public void actualizarFuncionario(FuncionarioDTO funcionario) {
         exigirAdministrador();
+        validarTelefono(funcionario);
         synchronized (datos) {
             existente(datos.funcionarios, funcionario.id(), "funcionario");
             datos.funcionarios.put(funcionario.id(), funcionario);
@@ -134,6 +143,10 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
     public CategoriaDTO registrarCategoria(String descripcion) {
         exigirAdministrador();
         synchronized (datos) {
+            if (datos.categorias.values().stream().anyMatch(c -> descripcion != null
+                    && c.descripcion().trim().equalsIgnoreCase(descripcion.trim()))) {
+                throw new ServicioException(CodigoError.VALIDACION, Reglas.MENSAJE_CATEGORIA_DUPLICADA);
+            }
             return datos.nuevaCategoria(descripcion);
         }
     }
@@ -143,6 +156,10 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
         exigirAdministrador();
         synchronized (datos) {
             existente(datos.categorias, categoria.id(), "categoría");
+            if (datos.categorias.values().stream().anyMatch(c -> categoria.descripcion() != null && !c.id().equals(categoria.id())
+                    && c.descripcion().trim().equalsIgnoreCase(categoria.descripcion().trim()))) {
+                throw new ServicioException(CodigoError.VALIDACION, Reglas.MENSAJE_CATEGORIA_DUPLICADA);
+            }
             datos.categorias.put(categoria.id(), categoria);
         }
     }
@@ -411,6 +428,12 @@ public class ServicioAplicacionFalso implements IServicioAplicacion {
             throw new ServicioException(CodigoError.SESION, "Debe iniciar sesión.");
         }
         return usuario;
+    }
+
+    private static void validarTelefono(FuncionarioDTO funcionario) {
+        if (funcionario == null || !Reglas.telefonoValido(funcionario.telefono())) {
+            throw new ServicioException(CodigoError.VALIDACION, Reglas.MENSAJE_TELEFONO);
+        }
     }
 
     private void exigirAdministrador() {

@@ -1,6 +1,7 @@
 package falso;
 
 import contrato.IServicioAplicacion;
+import contrato.Reglas;
 import dto.AgendaSemanaDTO;
 import dto.CategoriaDTO;
 import dto.EstadisticaCategoriaDTO;
@@ -141,15 +142,21 @@ public class ServicioClienteFalso implements IServicioAplicacion {
 
     @Override
     public synchronized void cerrarSesion() {
-        sesion();
+        sesionSinRestriccion();
         usuarioSesion = null;
     }
 
     @Override
     public synchronized void cambiarClave(String nuevaClave) {
-        String id = sesion().id();
+        String id = sesionSinRestriccion().id();
         if (nuevaClave == null || nuevaClave.isBlank()) {
             throw new ServicioException(CodigoError.VALIDACION, "La nueva contraseña es obligatoria.");
+        }
+        if (Reglas.claveIgualId(nuevaClave, id)) {
+            throw new ServicioException(CodigoError.VALIDACION, Reglas.MENSAJE_CLAVE_IGUAL_ID);
+        }
+        if (nuevaClave.equals(claves.get(id))) {
+            throw new ServicioException(CodigoError.VALIDACION, Reglas.MENSAJE_CLAVE_IGUAL_ACTUAL);
         }
         claves.put(id, nuevaClave);
         primerIngreso.remove(id);
@@ -160,6 +167,7 @@ public class ServicioClienteFalso implements IServicioAplicacion {
     @Override
     public synchronized void registrarFuncionario(FuncionarioDTO funcionario) {
         exigirAdministrador();
+        validarTelefono(funcionario);
         if (usuarios.containsKey(funcionario.id())) {
             throw new ServicioException(CodigoError.VALIDACION, "Identificación duplicada.");
         }
@@ -172,6 +180,7 @@ public class ServicioClienteFalso implements IServicioAplicacion {
     @Override
     public synchronized void actualizarFuncionario(FuncionarioDTO funcionario) {
         exigirAdministrador();
+        validarTelefono(funcionario);
         existente(funcionarios, funcionario.id(), "funcionario");
         funcionarios.put(funcionario.id(), funcionario);
         usuarios.put(funcionario.id(), new UsuarioDTO(funcionario.id(), funcionario.nombre(), Rol.FUNCIONARIO));
@@ -209,6 +218,9 @@ public class ServicioClienteFalso implements IServicioAplicacion {
         if (descripcion == null || descripcion.isBlank()) {
             throw new ServicioException(CodigoError.VALIDACION, "La descripción es obligatoria.");
         }
+        if (categorias.values().stream().anyMatch(c -> c.descripcion().trim().equalsIgnoreCase(descripcion.trim()))) {
+            throw new ServicioException(CodigoError.VALIDACION, Reglas.MENSAJE_CATEGORIA_DUPLICADA);
+        }
         return nuevaCategoria(descripcion);
     }
 
@@ -216,6 +228,10 @@ public class ServicioClienteFalso implements IServicioAplicacion {
     public synchronized void actualizarCategoria(CategoriaDTO categoria) {
         exigirAdministrador();
         existente(categorias, categoria.id(), "categoría");
+        if (categorias.values().stream().anyMatch(c -> categoria.descripcion() != null && !c.id().equals(categoria.id())
+                && c.descripcion().trim().equalsIgnoreCase(categoria.descripcion().trim()))) {
+            throw new ServicioException(CodigoError.VALIDACION, Reglas.MENSAJE_CATEGORIA_DUPLICADA);
+        }
         categorias.put(categoria.id(), categoria);
     }
 
@@ -491,12 +507,27 @@ public class ServicioClienteFalso implements IServicioAplicacion {
         }
     }
 
+    /** Igual que el Despachador: con el primer ingreso pendiente solo se cambia la clave o se sale. */
     private UsuarioDTO sesion() {
+        UsuarioDTO usuario = sesionSinRestriccion();
+        if (primerIngreso.contains(usuario.id())) {
+            throw new ServicioException(CodigoError.SESION, Reglas.MENSAJE_CAMBIO_CLAVE_PENDIENTE);
+        }
+        return usuario;
+    }
+
+    private UsuarioDTO sesionSinRestriccion() {
         llamadas++;
         if (usuarioSesion == null) {
             throw new ServicioException(CodigoError.SESION, "Debe iniciar sesión.");
         }
         return usuarioSesion;
+    }
+
+    private static void validarTelefono(FuncionarioDTO funcionario) {
+        if (funcionario == null || !Reglas.telefonoValido(funcionario.telefono())) {
+            throw new ServicioException(CodigoError.VALIDACION, Reglas.MENSAJE_TELEFONO);
+        }
     }
 
     private void exigirAdministrador() {

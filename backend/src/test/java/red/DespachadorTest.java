@@ -88,6 +88,35 @@ class DespachadorTest {
     }
 
     @Test
+    void primerIngresoSoloPermiteCambiarClaveOCerrarSesionInclusoAlAdministrador() {
+        // ADMIN registra un funcionario nuevo: su primer ingreso exige cambiar la clave.
+        atender(Operacion.INICIAR_SESION, "ADMIN", "ADMIN");
+        assertTrue(atender(Operacion.REGISTRAR_FUNCIONARIO, new dto.FuncionarioDTO("F010", "Marta", "8888-0010")).exito());
+        atender(Operacion.CERRAR_SESION);
+
+        assertTrue(atender(Operacion.INICIAR_SESION, "F010", "F010").exito());
+        for (Respuesta r : List.of(atender(Operacion.LISTAR_CATEGORIAS), reservar(),
+                atender(Operacion.LISTAR_RESERVACIONES_SESION))) {
+            assertError(r, CodigoError.SESION);
+            assertEquals(contrato.Reglas.MENSAJE_CAMBIO_CLAVE_PENDIENTE, r.mensaje());
+        }
+        assertTrue(alertasLuis.isEmpty());
+        assertTrue(atender(Operacion.CAMBIAR_CLAVE, "Nueva-1").exito());
+        assertTrue(atender(Operacion.LISTAR_CATEGORIAS).exito(), "Tras cambiar la clave ya puede operar");
+    }
+
+    @Test
+    void conCambioPendienteSePuedeCerrarSesionYUnCambioFallidoNoLiberaLaSesion() {
+        contexto.iniciar(new dto.UsuarioDTO("ADMIN", "Administrador", dto.Rol.ADMINISTRADOR), true);
+        assertError(atender(Operacion.LISTAR_FUNCIONARIOS), CodigoError.SESION);
+        assertError(atender(Operacion.CAMBIAR_CLAVE, "ADMIN"), CodigoError.VALIDACION);
+        assertTrue(contexto.requiereCambioClave(), "Un cambio rechazado no levanta la restricción");
+        assertTrue(atender(Operacion.CERRAR_SESION).exito());
+        assertFalse(contexto.estaAutenticado());
+        assertFalse(contexto.requiereCambioClave());
+    }
+
+    @Test
     void operacionNulaEsPeticionMalFormada() {
         Respuesta respuesta = atender(null);
         assertError(respuesta, CodigoError.VALIDACION);

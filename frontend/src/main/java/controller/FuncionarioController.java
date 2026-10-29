@@ -39,7 +39,7 @@ public class FuncionarioController {
                     () -> { modelo.registrar(datos[0], datos[1], datos[2]); return null; },
                     r -> {
                         dialog.cerrar();
-                        view.mostrarMensaje("Funcionario registrado. Su clave inicial es su identificacion.");
+                        view.mostrarMensaje("Funcionario registrado. Su clave inicial es su identificación.");
                         cargarDatos();
                     },
                     e -> dialog.mostrarError(e.getMessage()));

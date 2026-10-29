@@ -259,10 +259,13 @@ SHOW ERRORS PROCEDURE eliminarRecurso
 -- FUNCIONARIOS Y ACCESO
 -- =========================================================
 
+-- p_clave_hash: hash PBKDF2 de la clave inicial (= ID), calculado en Java.
+-- La base nunca recibe ni guarda claves en texto plano.
 CREATE OR REPLACE PROCEDURE insertarFuncionario (
     p_id IN TUSUARIOS.ID%TYPE,
     p_nombre IN TUSUARIOS.NOMBRE%TYPE,
-    p_telefono IN TUSUARIOS.TELEFONO%TYPE
+    p_telefono IN TUSUARIOS.TELEFONO%TYPE,
+    p_clave_hash IN TUSUARIOS.CLAVE%TYPE
 )
 AS
 BEGIN
@@ -275,13 +278,20 @@ BEGIN
         );
     END IF;
 
+    IF TRIM(p_clave_hash) IS NULL THEN
+        RAISE_APPLICATION_ERROR(
+            -20002,
+            'La clave inicial es obligatoria.'
+        );
+    END IF;
+
     INSERT INTO TUSUARIOS (
         ID, NOMBRE, CLAVE, ROL, TELEFONO, PRIMER_INGRESO
     )
     VALUES (
         TRIM(p_id),
         TRIM(p_nombre),
-        TRIM(p_id),
+        p_clave_hash,
         'FUNCIONARIO',
         TRIM(p_telefono),
         1
@@ -385,31 +395,42 @@ END listarFuncionarios;
 SHOW ERRORS FUNCTION listarFuncionarios
 
 
--- Nunca devuelve la clave.
--- Si las credenciales son incorrectas, devuelve un cursor vacio.
--- Java traduce ese resultado a CodigoError.SESION.
-CREATE OR REPLACE FUNCTION validarUsuario (
-    p_id IN TUSUARIOS.ID%TYPE,
-    p_clave IN TUSUARIOS.CLAVE%TYPE
+-- validarUsuario comparaba claves en texto plano: se retira si quedo de una
+-- version anterior del script (ORA-04043 = no existe, se ignora).
+BEGIN
+    EXECUTE IMMEDIATE 'DROP FUNCTION validarUsuario';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE <> -4043 THEN
+            RAISE;
+        END IF;
+END;
+/
+
+
+-- Devuelve el hash guardado (nunca una clave en texto plano) para que
+-- Java lo verifique con PBKDF2. Si el usuario no existe, el cursor va vacio
+-- y Java lo traduce a CodigoError.SESION.
+CREATE OR REPLACE FUNCTION obtenerCredencialesUsuario (
+    p_id IN TUSUARIOS.ID%TYPE
 )
 RETURN types.ref_cursor
 AS
     v_cursor types.ref_cursor;
 BEGIN
     OPEN v_cursor FOR
-        SELECT ID, NOMBRE, ROL, PRIMER_INGRESO
+        SELECT ID, NOMBRE, ROL, PRIMER_INGRESO, CLAVE
         FROM TUSUARIOS
-        WHERE ID = TRIM(p_id)
-          AND CLAVE = p_clave;
+        WHERE ID = TRIM(p_id);
 
     RETURN v_cursor;
-END validarUsuario;
+END obtenerCredencialesUsuario;
 /
 
-SHOW ERRORS FUNCTION validarUsuario
+SHOW ERRORS FUNCTION obtenerCredencialesUsuario
 
 
--- Java obtiene el ID del contexto de la conexion.
+-- Java obtiene el ID del contexto de la conexion y envia el hash de la nueva clave.
 CREATE OR REPLACE PROCEDURE cambiarClaveUsuario (
     p_id IN TUSUARIOS.ID%TYPE,
     p_nueva_clave IN TUSUARIOS.CLAVE%TYPE

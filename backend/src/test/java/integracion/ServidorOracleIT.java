@@ -29,7 +29,15 @@ class ServidorOracleIT {
                 otro.conectar("localhost", servidor.getPuerto());
                 assertEquals(CodigoError.SESION, assertThrows(ServicioException.class, autor::listarCategorias).getCodigo());
                 assertTrue(autor.iniciarSesion(d.autor, d.autor).requiereCambioClave());
+                // Primer ingreso exigido por el servidor, no solo por la UI.
+                ServicioException pendiente = assertThrows(ServicioException.class, autor::listarCategorias);
+                assertEquals(CodigoError.SESION, pendiente.getCodigo());
+                assertEquals("Debe cambiar su clave antes de continuar.", pendiente.getMessage());
+                assertEquals(CodigoError.VALIDACION, assertThrows(ServicioException.class,
+                        () -> autor.cambiarClave(d.autor)).getCodigo());
+                autor.cambiarClave("Clave-autor-IT");
                 otro.iniciarSesion(d.otro, d.otro);
+                otro.cambiarClave("Clave-otro-IT");
                 BlockingQueue<EventoReservaCreada> alertas = new LinkedBlockingQueue<>();
                 BlockingQueue<EventoReservaCreada> propias = new LinkedBlockingQueue<>();
                 otro.agregarReceptor(alertas::add);

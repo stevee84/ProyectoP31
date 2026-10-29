@@ -1,5 +1,7 @@
 package view;
 
+import contrato.Reglas;
+
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -27,12 +29,15 @@ public class CambioClaveDialog extends JDialog {
     private final JPasswordField campoNueva = new JPasswordField(18);
     private final JPasswordField campoConfirmar = new JPasswordField(18);
     private boolean cambiada = false;
+    /** Opcionales: si se conocen, el diálogo adelanta las reglas que el servidor aplica igual. */
+    private String idUsuario;
+    private String claveActual;
 
     // Callback
     private Consumer<String> onGuardar;
 
     public CambioClaveDialog(Frame propietario) {
-        super(propietario, "Cambio de contrasena", true);
+        super(propietario, "Cambio de contraseña", true);
 
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -43,7 +48,7 @@ public class CambioClaveDialog extends JDialog {
         mainPanel.setBackground(EstiloUI.BACKGROUND);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
-        JLabel lblTitulo = new JLabel("Cambiar contrasena", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel("Cambiar contraseña", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblTitulo.setForeground(EstiloUI.PRIMARY);
         lblTitulo.setAlignmentX(JLabel.CENTER_ALIGNMENT);
@@ -56,8 +61,8 @@ public class CambioClaveDialog extends JDialog {
         gbc.insets = new Insets(4, 4, 4, 4);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        JLabel lblNueva = new JLabel("Nueva contrasena:");
-        JLabel lblConfirmar = new JLabel("Confirmar contrasena:");
+        JLabel lblNueva = new JLabel("Nueva contraseña:");
+        JLabel lblConfirmar = new JLabel("Confirmar contraseña:");
         EstiloUI.estilizarEtiqueta(lblNueva);
         EstiloUI.estilizarEtiqueta(lblConfirmar);
 
@@ -101,20 +106,27 @@ public class CambioClaveDialog extends JDialog {
         String nueva = new String(campoNueva.getPassword());
         String confirmar = new String(campoConfirmar.getPassword());
 
-        if (nueva.isBlank()) {
-            JOptionPane.showMessageDialog(this, "La contrasena no puede estar vacia.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        if (!nueva.equals(confirmar)) {
-            JOptionPane.showMessageDialog(this, "Las contrasenas no coinciden.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
+        String error = validar(nueva, confirmar, idUsuario, claveActual);
+        if (error != null) {
+            JOptionPane.showMessageDialog(this, error, "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         if (onGuardar != null) {
             onGuardar.accept(nueva);
         }
     }
+
+    /** Mensaje de error de la clave nueva, o null si es aceptable. id y actual pueden ser null. */
+    public static String validar(String nueva, String confirmar, String idUsuario, String claveActual) {
+        if (nueva == null || nueva.isBlank()) return "La contraseña no puede estar vacía.";
+        if (!nueva.equals(confirmar)) return "Las contraseñas no coinciden.";
+        if (Reglas.claveIgualId(nueva, idUsuario)) return Reglas.MENSAJE_CLAVE_IGUAL_ID;
+        if (nueva.equals(claveActual)) return Reglas.MENSAJE_CLAVE_IGUAL_ACTUAL;
+        return null;
+    }
+
+    public void setIdUsuario(String idUsuario) { this.idUsuario = idUsuario; }
+    public void setClaveActual(String claveActual) { this.claveActual = claveActual; }
 
     /** Mientras el servidor responde, evita guardar dos veces. */
     public void setOcupado(boolean ocupado) {
