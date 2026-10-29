@@ -22,6 +22,9 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
 | 8 | Auditoría contra el enunciado, un agente por punto |
 | 9 | Aplicar los ajustes de cumplimiento con un equipo orquestado |
 | 10 | Publicar y actualizar los mensajes al equipo |
+| 11 | Integrar el frontend de Scott y rondas de pruebas orquestadas |
+| 12 | QA externo y una duda de diseño: ¿para qué sockets si la base es local? |
+| 13 | Bloques A y B: endurecer seguridad y servidor, y cierre para la entrega |
 
 ## Prompt 1 — Punto de partida: división del trabajo, estilo del profesor y spec-kit
 
@@ -236,6 +239,102 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
   - Que las validaciones ahora las hace el servidor.
   - Que los controladores deben recibir `IServicioAplicacion` y no el Proxy concreto.
   - La configuración de host y puerto para correr en máquinas distintas.
+
+## Prompt 11 — Integrar el frontend de Scott y rondas de pruebas orquestadas
+
+**Herramienta:** Claude Code (Claude Opus) con un equipo de agentes: testers por área, un corrector y un revisor de calidad con ponytail.
+
+> Prompt “Scott ha trabajado su parte, esto fue lo que me envió [resumen de su rama Integrante3-frontend].” Luego: “Termina los tests con los agentes que quedaron pendientes.”
+
+**Qué se obtuvo.**
+- El frontend de Scott se integró en `Steve` por avance rápido, sin conflictos.
+- Se organizó un ciclo que se repite hasta que no queden errores:
+  1. Tres testers en paralelo: red (Steve), frontend (Scott) y backend con Oracle (Joshua).
+  2. Un corrector aplica los arreglos, cada uno con su prueba.
+  3. Un revisor de calidad con ponytail confirma y simplifica el diff.
+  4. Una nueva ronda de testers.
+- **Ronda 1 (8 arreglos):**
+  - Red:
+    - Las conexiones se cortaban cerca de 1 MB de tráfico, porque el límite del filtro de deserialización se acumulaba en toda la sesión.
+    - `conectar` se podía colgar sin timeout.
+    - El ciclo de `accept` podía quedar girando sin pausa.
+  - Frontend:
+    - Doble clic en "Guardar" enviaba dos solicitudes y duplicaba categorías.
+    - Avisos de error repetidos.
+    - Una respuesta vieja podía reemplazar a la más reciente.
+    - Faltaba validar el rango de fechas en estadísticas.
+    - Un error dentro de `Tarea` quedaba sin manejar.
+- **Ronda 2 (5 arreglos en el backend):**
+  - El arranque de Oracle muestra mensajes claros y sale con código de error cuando falla.
+  - Los errores fuera de reservas ya no mencionan "el horario".
+  - Se corrigió la concordancia de género en los mensajes.
+- **Ronda final:** 0 errores nuevos en las tres áreas. Una sola conexión aguantó 100 000 peticiones, y el backend pasó 87 verificaciones contra Oracle.
+
+**Correcciones sobre la marcha**
+
+- Las pruebas contra Oracle no conectaban porque la clave dada era la del administrador de la base, no la del usuario del proyecto. Con autorización, se creó el usuario `RESERVAS_P2` en el Oracle local y se cargaron los scripts `01`, `02` y `06`.
+- Tres pruebas de concurrencia fallaban con `ORA-12519`, porque Oracle XE se quedaba sin procesos. Se subió `processes` a 150 en la base local.
+- Bajo carga (6000 consultas seguidas), cerca del 30 % fallaba porque el backend abría una conexión por operación. Se reutiliza una conexión por fábrica (`ConexionCompartida`): 0 fallos en la misma prueba.
+
+## Prompt 12 — QA externo y una duda de diseño: ¿para qué sockets si la base es local?
+
+**Herramienta:** Claude Code (Claude Opus) con un agente de QA externo
+
+> Prompt “Pon un agente de QA sin conocimiento del tema a revisarlo. Y tengo una duda del diseño: ¿cuál es el punto de los sockets y el Proxy si el hilo hacia la base de datos siempre es local?” Luego: “Joshua tiene una base de datos local para esto y yo tengo otra; no existe una sola base. ¿En qué parte del diseño estamos fallando?” y “¿Qué dice el documento original sobre este problema?”
+
+**Qué se obtuvo.**
+- Un QA externo, que partió solo del README como lo haría el profesor. Compiló y ejecutó todo en una copia limpia y recorrió el sistema como usuario. Lo más visible que encontró:
+  - El cambio de clave del primer ingreso solo lo exigía la interfaz.
+  - Las claves se guardaban en texto plano.
+  - Quedaban datos de prueba en la base.
+  - El README tenía notas internas.
+  - Se aceptaba como clave nueva la misma clave inicial.
+- La explicación del diseño:
+  - Los sockets separan a los clientes, que nunca tocan la base, del servidor, el único que habla con Oracle.
+  - Así las credenciales quedan solo en el servidor, las reglas y la concurrencia se resuelven en un solo lugar y muchos usuarios trabajan desde distintas máquinas.
+  - Tener una base por integrante sirve para desarrollar, pero en la defensa debe haber un solo Backend con una sola base, y los demás conectados como clientes.
+- Lo que dice el enunciado: pide máquinas separadas dentro de una red y un único Backend, pero no impone una forma de despliegue. Ante la idea de una VM en Azure o Kubernetes, se recomendó la VM. Kubernetes rompe la idea de un único Backend con estado en memoria.
+
+## Prompt 13 — Bloques A y B: endurecer seguridad y servidor, y cierre para la entrega
+
+**Herramienta:** Claude Code (Claude Opus) con corrector, revisor de calidad con ponytail y tres testers
+
+> Prompt “Pasemos los dos bloques seguidos, con lo que sería el servidor. Mi idea es poner el servidor en una máquina virtual de Microsoft Azure; es una milla extra pero funciona, o podemos extenderlo un poquito más con Kubernetes. Dime qué ves mejor.”
+
+**Qué se obtuvo.**
+- **Bloque A:**
+  - El servidor exige el cambio de clave del primer ingreso para cualquier cliente, incluso uno que se salte la interfaz. Mientras tanto, esa conexión tampoco recibe alertas.
+  - La clave nueva no puede ser el id ni la clave actual.
+  - El teléfono tiene un formato validado.
+  - Se reemplazó `printStackTrace` por logs.
+  - Las pruebas limpian sus datos.
+  - El README quedó sin notas internas.
+- **Bloque B:**
+  - Las claves se guardan con PBKDF2 y sal (`seguridad/ClaveHash`), sin dependencias nuevas, y la base rechaza claves en texto plano.
+  - El login tarda lo mismo con usuarios inexistentes, para no revelar cuáles existen.
+  - La descripción de categoría es única.
+  - El servidor tiene un máximo de clientes con aviso y un plazo para las conexiones que no inician sesión.
+- **Reglas compartidas:** quedaron en `comun/contrato/Reglas`, para que el servidor las aplique y el cliente las adelante.
+- **Calidad:** corrigió tres errores reales antes de los testers:
+  - Alertas a conexiones con cambio de clave pendiente.
+  - Diferencia de tiempo en el login.
+  - Un rechazo lento que podía bloquear la aceptación de conexiones.
+- **Ronda final:** con los tres testers, cada uno con su propio puerto y prefijo de datos, y limpiando lo que creaba. Sin hallazgos bloqueantes ni altos.
+  - El plazo sin sesión se reiniciaba con cada petición; ahora es total y hay una prueba que lo verifica.
+  - El rechazo por servidor lleno espera como máximo 200 ms.
+  - Se aclararon los mensajes de Oracle.
+  - La interfaz quedó con tildes y ñ.
+- **Decisión del profesor:** la base es local en la computadora del servidor, sin VM. Así quedó documentado en el README, junto con el uso de Oracle en lugar de MySQL.
+- **Cierre para la entrega:**
+  - Se retiró el módulo temporal del Proyecto 1.
+  - Se ensayó el despliegue: servidor con Oracle y dos clientes en procesos separados, conectados por la IP de red y con solo el JAR del frontend. La reserva de uno llegó como alerta al otro.
+  - Se armó un ZIP con fuentes, scripts y documentación, que compila desde cero.
+- **Resultado:** 126 pruebas unitarias y 36 de integración con Oracle real, todas en verde.
+
+**Correcciones sobre la marcha**
+
+- Al recargar el esquema, el corrector borró todos los datos de la base local, no solo los de prueba. La base quedó en su estado inicial (ADMIN con primer ingreso pendiente).
+- Una ronda de testers se cortó por el límite de uso y dejó datos `R2-`/`B2-` y la clave de ADMIN cambiada. Se borraron esos datos y se restauró ADMIN antes de repetir la ronda.
 
 ---
 
