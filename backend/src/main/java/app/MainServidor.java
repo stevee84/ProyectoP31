@@ -12,15 +12,28 @@ import java.sql.SQLException;
 public final class MainServidor {
     private MainServidor() { }
 
+    /** Traduce los fallos de conexión más comunes; nunca muestra la clave. */
+    private static String motivo(SQLException e) {
+        return switch (e.getErrorCode()) {
+            // Error propio de ConexionOracle (por ejemplo, falta la clave): su mensaje ya explica qué hacer.
+            case 0 -> e.getMessage() != null ? e.getMessage() : "error desconocido.";
+            case 1017 -> "usuario o clave incorrectos. Revise DB_USER y DB_PASSWORD en oracle.properties"
+                    + " (la clave es la del usuario del proyecto, no la de SYSTEM).";
+            case 28000 -> "la cuenta del usuario está bloqueada. Desbloquéela como SYSTEM:"
+                    + " ALTER USER RESERVAS_P2 ACCOUNT UNLOCK;";
+            case 12505, 12514 -> "Oracle no reconoce el SID o servicio de DB_URL (por defecto XE).";
+            case 17002 -> "no responde Oracle en el host y puerto de DB_URL. Verifique que el servicio esté iniciado.";
+            default -> "código JDBC " + e.getErrorCode() + ". Revise DB_URL, DB_USER y DB_PASSWORD en oracle.properties.";
+        };
+    }
+
     public static void main(String[] args) throws IOException {
         // Fallar antes de aceptar clientes si falta configuración o no conecta Oracle.
         try (Connection conexion = ConexionOracle.abrir()) {
             if (!conexion.isValid(5)) throw new SQLException("Conexión no válida.");
         } catch (SQLException e) {
             // errorCode 0: error propio de ConexionOracle (p. ej. falta DB_PASSWORD); su mensaje no contiene la clave.
-            System.err.println(e.getErrorCode() == 0 && e.getMessage() != null
-                    ? "No se pudo conectar a Oracle: " + e.getMessage()
-                    : "No se pudo conectar a Oracle. Revise DB_URL, DB_USER, DB_PASSWORD y el driver. Código JDBC: " + e.getErrorCode());
+            System.err.println("No se pudo conectar a Oracle: " + motivo(e));
             System.exit(1);
             return;
         }
