@@ -2,7 +2,7 @@ package controller;
 
 import model.EstadisticasModel;
 import model.TablaDatos;
-import util.Tarea;
+import utilitarios.Tarea;
 import view.AgendaSemanalPanel;
 
 import java.time.DayOfWeek;

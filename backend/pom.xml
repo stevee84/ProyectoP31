@@ -14,6 +14,11 @@
     <!-- Servidor sin interfaz gráfica. -->
     <artifactId>backend</artifactId>
 
+    <properties>
+        <!-- Punto de entrada del servidor: mvn -pl backend -am exec:java -->
+        <exec.mainClass>app.MainServidor</exec.mainClass>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>una.eif206</groupId>
@@ -60,6 +65,21 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <!-- java -jar backend/target/backend-1.0-SNAPSHOT.jar arranca el servidor -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.1</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>app.MainServidor</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>dependencias/</classpathPrefix>
+                        </manifest>
+                    </archive>
+                </configuration>
             </plugin>
         </plugins>
     </build>

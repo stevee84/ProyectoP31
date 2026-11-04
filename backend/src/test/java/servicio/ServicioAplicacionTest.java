@@ -1,6 +1,6 @@
 package servicio;
 
-import accesodatos.ProveedorConexion;
+import datos.ProveedorConexion;
 import contrato.IServicioAplicacion;
 import dto.*;
 import ia.ExtractorReservaIA;
@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import contrato.Reglas;
 import protocolo.*;
-import repositorio.*;
+import datos.*;
 import java.lang.reflect.Proxy;
 import java.sql.*;
 import java.time.*;

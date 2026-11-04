@@ -1,12 +1,12 @@
 package servicio;
 
-import accesodatos.ConexionCompartida;
-import accesodatos.ConexionOracle;
-import accesodatos.ProveedorConexion;
+import datos.ConexionCompartida;
+import datos.ConexionOracle;
+import datos.ProveedorConexion;
 import contrato.IServicioAplicacion;
 import ia.ExtractorReservaIA;
 import ia.ExtractorReservaIAGemini;
-import repositorio.FabricaRepositoriosOracle;
+import datos.FabricaRepositoriosOracle;
 import java.time.Clock;
 
 /** Usar UNA fábrica por Servidor: todos sus clientes comparten el mismo bloqueo. */

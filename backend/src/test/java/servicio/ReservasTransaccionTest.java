@@ -4,7 +4,7 @@ import contrato.IServicioAplicacion;
 import dto.*;
 import org.junit.jupiter.api.Test;
 import protocolo.*;
-import repositorio.*;
+import datos.*;
 import java.lang.reflect.Proxy;
 import java.sql.*;
 import java.time.*;

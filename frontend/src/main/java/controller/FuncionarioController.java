@@ -1,7 +1,7 @@
 package controller;
 
 import model.FuncionarioModel;
-import util.Tarea;
+import utilitarios.Tarea;
 import view.FuncionarioDialog;
 import view.FuncionarioPanel;
 

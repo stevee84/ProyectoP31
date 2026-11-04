@@ -1,7 +1,7 @@
 package controller;
 
 import model.CategoriaModel;
-import util.Tarea;
+import utilitarios.Tarea;
 import view.CategoriaDialog;
 import view.CategoriasPanel;
 

@@ -6,7 +6,7 @@ DECLARE
     v_clave TUSUARIOS.CLAVE%TYPE;
 
     -- Hash PBKDF2 de la clave inicial "ADMIN" (generado con
-    -- java seguridad.ClaveHash ADMIN). La base nunca guarda texto plano.
+    -- utilitarios.ClaveHash.generar("ADMIN") del Backend). La base nunca guarda texto plano.
     c_clave_admin CONSTANT TUSUARIOS.CLAVE%TYPE :=
         'pbkdf2$120000$TAoKTmoKzoG38O8HrY9HYA==$1aqXsAIOUQ7ZYz9hgqKg7E1YbCuTA9m08aNl4KV6kMU=';
 

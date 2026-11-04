@@ -16,7 +16,7 @@
 
     <properties>
         <!-- Punto de entrada del cliente: mvn -pl frontend -am exec:java -->
-        <exec.mainClass>cliente.MainCliente</exec.mainClass>
+        <exec.mainClass>app.MainCliente</exec.mainClass>
     </properties>
 
     <dependencies>
@@ -59,7 +59,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>cliente.MainCliente</mainClass>
+                            <mainClass>app.MainCliente</mainClass>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>dependencias/</classpathPrefix>
                         </manifest>

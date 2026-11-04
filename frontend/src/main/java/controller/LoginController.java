@@ -3,7 +3,7 @@ package controller;
 import dto.ResultadoSesionDTO;
 import dto.UsuarioDTO;
 import model.SesionModel;
-import util.Tarea;
+import utilitarios.Tarea;
 import view.CambioClaveDialog;
 import view.LoginFrame;
 

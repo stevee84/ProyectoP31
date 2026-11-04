@@ -1,10 +1,10 @@
 package soporte;
 
-import accesodatos.ConexionOracle;
+import datos.ConexionOracle;
 import contrato.IServicioAplicacion;
 import dto.*;
-import repositorio.*;
-import seguridad.ClaveHash;
+import datos.*;
+import utilitarios.ClaveHash;
 import servicio.ContextoSesion;
 import servicio.IFabricaServicios;
 import java.sql.*;

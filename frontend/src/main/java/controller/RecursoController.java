@@ -4,7 +4,7 @@ import dto.CategoriaDTO;
 import dto.RecursoDTO;
 import model.CategoriaModel;
 import model.RecursoModel;
-import util.Tarea;
+import utilitarios.Tarea;
 import view.RecursoDialog;
 import view.RecursosPanel;
 

@@ -62,7 +62,7 @@ En el Frontend, `ProxyServicio` envía la petición por socket. En el Backend,
 Los controladores trabajan contra la interfaz del servicio.
 
 Las llamadas lentas deben ejecutarse fuera del hilo de Swing utilizando
-`util.Tarea`.
+`utilitarios.Tarea`.
 
 ## Alertas asincrónicas
 
@@ -83,17 +83,31 @@ Las llamadas lentas deben ejecutarse fuera del hilo de Swing utilizando
 | `backend` | Servidor, servicios, acceso a datos y repositorios Oracle |
 | `frontend` | Proxy, utilitarios y MVC del cliente |
 | `DB` | Scripts SQL de Oracle |
-| `prompts_proyecto2` | Bitácora de uso de asistentes de IA |
+| `docs` | Documentación de la implementación Oracle, del Frontend y bitácoras de IA |
+
+Cada proceso tiene un solo punto de entrada en el paquete `app`, como en los
+ejemplos del curso: `app.MainServidor` (Backend) y `app.MainCliente` (Frontend).
+Los servicios en memoria y la demo de la interfaz existen solo en `src/test`.
 
 Paquetes del Backend:
 
 | Paquete | Responsabilidad |
 |---------|-----------------|
+| `app` | `MainServidor`: arranca el servidor con Oracle |
 | `red` | Servidor, conexiones, despacho y publicación de eventos |
 | `servicio` | Contexto de sesión, fábrica y servicios de aplicación |
-| `accesodatos` | Apertura de conexiones JDBC |
-| `repositorio` | Acceso a Oracle mediante procedimientos y funciones |
-| `falso` | Implementación en memoria para pruebas e integración temprana |
+| `datos` | Conexión JDBC y repositorios Oracle (procedimientos y funciones) |
+| `ia` | Extracción de datos de una reserva con Gemini |
+| `utilitarios` | `ClaveHash` (PBKDF2) |
+
+Paquetes del Frontend:
+
+| Paquete | Responsabilidad |
+|---------|-----------------|
+| `app` | `MainCliente`: conecta el Proxy y arranca el MVC |
+| `proxy` | `ProxyServicio`, el Proxy del servicio remoto |
+| `controller` · `model` · `view` | MVC de las pantallas y el área de alertas |
+| `utilitarios` | `Tarea`: llamadas al servidor fuera del hilo de Swing |
 
 El Backend real implementa el contrato completo con repositorios Oracle de
 categorías, funcionarios y autenticación, recursos y disponibilidad, reservas
@@ -101,7 +115,7 @@ y estadísticas. `ServicioAplicacion` aplica permisos, validaciones y transaccio
 `FabricaServiciosOracle` comparte el bloqueo entre los clientes del servidor.
 La extracción Gemini se ejecuta en el Backend, sin mantener conexiones ni bloqueos.
 
-Detalles de la persistencia: [Implementación Oracle](backend/IMPLEMENTACION_ORACLE.md).
+Detalles de la persistencia: [Implementación Oracle](docs/IMPLEMENTACION_ORACLE.md).
 
 ## Configuración de red
 
@@ -159,7 +173,7 @@ El teléfono del funcionario es obligatorio y solo admite dígitos, espacios,
 sin distinguir mayúsculas ni espacios al inicio o al final.
 
 Las claves se guardan con hash PBKDF2WithHmacSHA256 y sal aleatoria por
-usuario (`seguridad.ClaveHash`, formato `pbkdf2$iteraciones$sal$hash` en
+usuario (`utilitarios.ClaveHash`, formato `pbkdf2$iteraciones$sal$hash` en
 `TUSUARIOS.CLAVE`). La verificación se hace en Java; Oracle nunca recibe ni
 guarda una clave en texto plano, y una restricción `CHECK` lo impide.
 
@@ -225,7 +239,7 @@ El script `06` crea:
 - Categorías: Sala para 10 personas, Laptop Windows y Sala de juntas.
 
 La clave de `ADMIN` se escribe ya con hash (literal PBKDF2 generado con
-`java -cp backend/target/classes seguridad.ClaveHash ADMIN`).
+`jshell --class-path backend/target/classes`, y dentro `utilitarios.ClaveHash.generar("ADMIN")`).
 Si `ADMIN` ya existe, el script conserva su clave; si la tiene en texto plano
 (base anterior), la restablece a `ADMIN` con hash y primer ingreso pendiente.
 
@@ -256,8 +270,8 @@ pruebas sin Oracle no valida la persistencia.
 Referencia:
 [Documentación de compatibilidad JDBC de Oracle](https://www.oracle.com/database/technologies/faq-jdbc.html).
 
-En las configuraciones de ejecución del Backend o de sus pruebas en
-IntelliJ, definir estas variables de entorno:
+En la terminal (o en el IDE que se use) donde se ejecuta el Backend o sus
+pruebas, definir estas variables de entorno:
 
 | Variable | Valor |
 |----------|-------|
@@ -277,7 +291,7 @@ Si SQL Developer utiliza otros valores, ajustar `DB_URL`.
 `DB_PASSWORD` corresponde al usuario del proyecto, no a `SYSTEM`.
 
 Cada integrante configura sus propias variables. La contraseña no se guarda
-en el código ni en configuraciones de IntelliJ compartidas en Git.
+en el código ni en archivos compartidos en Git.
 
 ### Conexiones y repositorios
 
@@ -290,8 +304,7 @@ cursores. No cierran la conexión ni confirman la transacción.
 
 Esto permite que varios repositorios participen en la misma operación.
 
-`red.MainServidor` arranca el servidor con el servicio falso en memoria.
-`arranque.MainServidorOracle` reutiliza `red.Servidor` con la fábrica real.
+`app.MainServidor` arranca `red.Servidor` con la fábrica Oracle.
 
 La aplicación reutiliza una conexión por fábrica (`ConexionCompartida`) y cada operación
 trabaja con autocommit desactivado. Abrir una conexión nueva por operación agotaba el
@@ -312,23 +325,26 @@ se realizan pruebas concurrentes.
 
 ## Compilación
 
-Desde la raíz:
+Solo hace falta un JDK 17 o superior: el Maven Wrapper incluido descarga Maven
+la primera vez. No se necesita ningún IDE. Desde la raíz:
 
 ```bash
-mvn clean install
+./mvnw clean install
 ```
+
+En Windows (cmd o PowerShell): `mvnw.cmd clean install`.
 
 ## Ejecución del servidor Oracle
 
-Desde la raíz, con JDK 17 y Maven disponibles:
+Desde la raíz:
 
 ```bash
-mvn -pl backend -am package -DskipTests
+./mvnw -pl backend -am package -DskipTests
 ```
 
-Este comando copia las dependencias de ejecución a
-`backend/target/dependencias/`: incluye `comun`, **el driver Oracle** y JSON.
-No es suficiente ejecutar el servidor Oracle solo con los directorios de clases.
+Este comando genera `backend/target/backend-1.0-SNAPSHOT.jar` y copia sus
+dependencias (`comun`, **el driver Oracle** y JSON) a `backend/target/dependencias/`,
+donde el JAR las busca.
 
 Variables en la **misma terminal que ejecuta Java/Maven**, ejemplo PowerShell:
 
@@ -336,7 +352,7 @@ Variables en la **misma terminal que ejecuta Java/Maven**, ejemplo PowerShell:
 $env:DB_URL = 'jdbc:oracle:thin:@localhost:1521:XE'
 $env:DB_USER = 'RESERVAS_P2'
 $env:DB_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host 'Clave RESERVAS_P2' -AsSecureString)).Password
-java -Dservidor.puerto=5000 -cp "backend/target/classes;backend/target/dependencias/*" arranque.MainServidorOracle
+java -Dservidor.puerto=5000 -jar backend/target/backend-1.0-SNAPSHOT.jar
 ```
 
 En Bash (Linux/WSL/macOS):
@@ -346,10 +362,10 @@ export DB_URL='jdbc:oracle:thin:@localhost:1521:XE'
 export DB_USER='RESERVAS_P2'
 read -rsp 'Clave RESERVAS_P2: ' DB_PASSWORD
 export DB_PASSWORD
-java -Dservidor.puerto=5000 -cp 'backend/target/classes:backend/target/dependencias/*' arranque.MainServidorOracle
+java -Dservidor.puerto=5000 -jar backend/target/backend-1.0-SNAPSHOT.jar
 ```
 
-Las variables de una configuración de IntelliJ no se heredan automáticamente
+Las variables definidas en un IDE no se heredan automáticamente
 en otra terminal. No guardarlas en Git ni imprimirlas. En WSL,
 si Oracle está en Windows, puede ser necesario ajustar el host de `DB_URL`
 y las reglas del firewall; `localhost` depende de la configuración de red WSL.
@@ -362,13 +378,13 @@ Si falla, revisar variables, listener de Oracle, SID y dependencias.
 
 1. **Servidor (una computadora con Oracle):** cargar los scripts `01`, `02` y
    `06`, definir `DB_URL`, `DB_USER` y `DB_PASSWORD` y arrancar
-   `arranque.MainServidorOracle` como se indica arriba (opcionalmente con
+   `app.MainServidor` como se indica arriba (opcionalmente con
    `-Dservidor.puerto=5000`, `-Dservidor.maxClientes=...` y
    `-Dservidor.timeoutSinSesion=...`).
 2. **Firewall:** permitir conexiones TCP entrantes al puerto del servidor
    (por defecto 5000). En Windows, por ejemplo (PowerShell como administrador):
    `New-NetFirewallRule -DisplayName "Reservas 5000" -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow`.
-3. **Clientes (N computadoras):** ejecutar `cliente.MainCliente` con
+3. **Clientes (N computadoras):** ejecutar `app.MainCliente` con
    `-Dservidor.host=IP_DEL_SERVIDOR -Dservidor.puerto=5000` (ver "Ejecución de
    clientes"). Los clientes no necesitan Oracle, el driver JDBC ni
    `DB_PASSWORD`: solo hablan con el servidor por sockets.
@@ -404,33 +420,11 @@ una reserva no implica que Oracle la haya deshecho: consultar antes de reintenta
 Referencias oficiales: [modelos](https://ai.google.dev/gemini-api/docs/models),
 [generateContent](https://ai.google.dev/api/generate-content).
 
-### Servidor falso (alternativa sin Oracle)
+### Pruebas sin Oracle
 
-`MainServidor` conserva el servicio en memoria para pruebas y demostraciones.
-
-Usuarios disponibles en el servicio falso:
-
-- `ADMIN/ADMIN`.
-- `F001/F001`.
-- `F002/F002`.
-- `F003/F003`.
-
-En Windows:
-
-```bash
-java -Dservidor.puerto=5000 -cp "comun/target/classes;backend/target/classes" red.MainServidor
-```
-
-En Linux o macOS, utilizar `:` como separador del classpath.
-
-El servidor debe mostrar:
-
-```text
-Servidor de reservas escuchando en el puerto 5000
-```
-
-Si los clientes están en otras computadoras, debe permitirse el acceso al
-puerto del servidor en el firewall.
+El servicio en memoria (`backend/src/test/java/falso`) no forma parte del
+servidor entregado: lo usan las pruebas de red (`RedIT`, `DespachadorTest`) para
+probar sockets, sesiones y alertas sin base de datos.
 
 ## Ejecución de clientes
 
@@ -441,21 +435,27 @@ Cada cliente utiliza:
 -Dservidor.puerto=5000
 ```
 
-El punto de entrada es `cliente.MainCliente`:
+El punto de entrada es `app.MainCliente`:
 
 ```bash
-mvn -pl frontend exec:java -Dservidor.host=IP_DEL_SERVIDOR -Dservidor.puerto=5000
+./mvnw -pl frontend -am package -DskipTests
+java -Dservidor.host=IP_DEL_SERVIDOR -Dservidor.puerto=5000 -jar frontend/target/frontend-1.0-SNAPSHOT.jar
 ```
 
-Para revisar la interfaz sin servidor: `-Dexec.mainClass=cliente.MainClienteDemo`.
-Detalles del cliente, alertas y pruebas del MVC en [frontend/README.md](frontend/README.md).
+El JAR del cliente solo trae `comun` e iText en `frontend/target/dependencias/`:
+ningún driver ni referencia a la base de datos.
+
+Para revisar la interfaz sin servidor, después de `./mvnw clean install`, existe
+una demo en las pruebas:
+`./mvnw -pl frontend exec:java -Dexec.classpathScope=test -Dexec.mainClass=demo.MainClienteDemo`.
+Detalles del cliente, alertas y pruebas del MVC en [docs/FRONTEND.md](docs/FRONTEND.md).
 
 ## Pruebas
 
 | Tipo | Nombre | Ejecución |
 |------|--------|-----------|
-| Unitarias | `*Test` | `mvn test` |
-| Integración | `*IT` | `mvn verify` |
+| Unitarias | `*Test` | `./mvnw test` |
+| Integración | `*IT` | `./mvnw verify` |
 
 Las pruebas existentes incluyen:
 
@@ -471,8 +471,8 @@ Las pruebas existentes incluyen:
 Clases:
 
 ```text
-repositorio.RepositorioCategoriasOracleIT
-repositorio.RepositoriosOracleIT
+datos.RepositorioCategoriasOracleIT
+datos.RepositoriosOracleIT
 servicio.ServicioAplicacionOracleIT
 integracion.ServidorOracleIT
 ```
@@ -525,11 +525,11 @@ Desde la raíz, en PowerShell con las variables JDBC ya configuradas:
 
 ```powershell
 $env:ORACLE_IT = 'true'
-mvn -pl backend -am verify
+./mvnw -pl backend -am verify
 ```
 
 En Bash: `export ORACLE_IT=true` y ejecutar el mismo comando Maven.
-Para ejecutar todo el reactor, usar `mvn test` y `mvn verify`.
+Para ejecutar todo el reactor, usar `./mvnw test` y `./mvnw verify`.
 Sin `ORACLE_IT=true`, las pruebas Oracle se omiten.
 Que Maven termine correctamente con esas pruebas omitidas no valida la
 conexión a Oracle.
@@ -539,7 +539,7 @@ repositorios o extractor), sin Oracle ni consumo de Gemini. Comprueban sesión,
 permisos, límites, horarios, transacciones, errores y matrices de consultas.
 
 **Verificación de este trabajo:** los resultados reales y las limitaciones del
-entorno están registrados en [Implementación Oracle](backend/IMPLEMENTACION_ORACLE.md).
+entorno están registrados en [Implementación Oracle](docs/IMPLEMENTACION_ORACLE.md).
 
 ## Protocolo y errores
 
@@ -565,8 +565,8 @@ Las operaciones sin retorno terminan normalmente cuando tienen éxito.
 
 ## Bitácora de prompts
 
-- Proyecto 2: [Bitácora](prompts_proyecto2/PROMPTS_LLM.md).
-- Proyecto 1: [Bitácora anterior](bitacora_prompts.txt).
+- Proyecto 2: [Bitácora](docs/bitacoras/PROMPTS_LLM.md).
+- Proyecto 1: [Bitácora anterior](docs/bitacoras/bitacora_proyecto1.txt).
 
 ## Repositorio
 

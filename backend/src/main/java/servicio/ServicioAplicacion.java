@@ -1,13 +1,13 @@
 package servicio;
 
-import accesodatos.ProveedorConexion;
+import datos.ProveedorConexion;
 import contrato.IServicioAplicacion;
 import contrato.Reglas;
 import dto.*;
 import ia.ExtractorReservaIA;
 import protocolo.CodigoError;
 import protocolo.ServicioException;
-import repositorio.*;
+import datos.*;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.*;

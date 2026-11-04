@@ -1,13 +1,13 @@
 package servicio;
 
-import accesodatos.ConexionOracle;
+import datos.ConexionOracle;
 import contrato.IServicioAplicacion;
 import dto.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.function.Executable;
 import protocolo.*;
-import repositorio.*;
+import datos.*;
 import soporte.DatosOracle;
 import java.lang.reflect.*;
 import java.sql.*;

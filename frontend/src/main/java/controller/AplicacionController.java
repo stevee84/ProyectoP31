@@ -11,7 +11,7 @@ import model.FuncionarioModel;
 import model.RecursoModel;
 import model.ReservaModel;
 import model.SesionModel;
-import util.Tarea;
+import utilitarios.Tarea;
 import view.AgendaSemanalPanel;
 import view.AlertasPanel;
 import view.CalendarizacionRecursosPanel;

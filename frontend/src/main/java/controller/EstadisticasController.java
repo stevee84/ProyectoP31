@@ -2,7 +2,7 @@ package controller;
 
 import dto.EstadisticaSemanaDTO;
 import model.EstadisticasModel;
-import util.Tarea;
+import utilitarios.Tarea;
 import view.EstadisticasPanel;
 
 import java.time.LocalDate;

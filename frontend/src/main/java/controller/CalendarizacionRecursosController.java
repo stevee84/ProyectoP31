@@ -3,7 +3,7 @@ package controller;
 import dto.CategoriaDTO;
 import model.CalendarizacionModel;
 import model.TablaDatos;
-import util.Tarea;
+import utilitarios.Tarea;
 import view.CalendarizacionRecursosPanel;
 
 import java.time.LocalDate;

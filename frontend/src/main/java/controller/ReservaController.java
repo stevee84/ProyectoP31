@@ -6,7 +6,7 @@ import model.CategoriaModel;
 import model.ReservaModel;
 import model.TablaDatos;
 import protocolo.CodigoError;
-import util.Tarea;
+import utilitarios.Tarea;
 import view.ReservaDialog;
 import view.ReservaPanel;
 
