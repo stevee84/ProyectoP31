@@ -128,7 +128,9 @@ public class AlertasPanel extends JPanel implements IVistaAlertas {
 
     @Override
     public boolean confirmarDescarte(Alerta alerta) {
-        return JOptionPane.showConfirmDialog(this, alerta.actividad(), "Descartar?",
+        return JOptionPane.showConfirmDialog(this,
+                "¿Desea descartar la alerta de \"" + alerta.actividad() + "\"?\nLa reserva no se elimina.",
+                "Descartar alerta",
                 JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION;
     }
 
