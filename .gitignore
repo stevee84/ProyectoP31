@@ -38,3 +38,6 @@ data/
 ### IDE ###
 .idea/
 *.iml
+
+### Clave local de Oracle ###
+oracle.properties

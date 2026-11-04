@@ -1,5 +1,9 @@
 package datos;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -21,12 +25,11 @@ public final class ConexionOracle {
         );
 
         String usuario = variable("DB_USER", "RESERVAS_P2");
-        String clave = System.getenv("DB_PASSWORD");
+        String clave = variable("DB_PASSWORD", null);
 
-        if (clave == null || clave.isEmpty()) {
-            throw new SQLException(
-                    "Falta DB_PASSWORD en el entorno del proceso que ejecuta Java."
-            );
+        if (clave == null) {
+            throw new SQLException("Falta la clave de Oracle: copie oracle.properties.ejemplo como "
+                    + ARCHIVO.toAbsolutePath() + " y complete DB_PASSWORD (o defina la variable de entorno).");
         }
 
         try {
@@ -55,6 +58,10 @@ public final class ConexionOracle {
         return DriverManager.getConnection(url, propiedades);
     }
 
+    /** Archivo opcional en la carpeta desde la que se ejecuta (la raíz del proyecto). */
+    static final Path ARCHIVO = Path.of("oracle.properties");
+
+    /** Primero la variable de entorno, después oracle.properties, por último el valor por defecto. */
     private static String variable(
             String nombre,
             String valorPredeterminado
@@ -62,9 +69,25 @@ public final class ConexionOracle {
         String valor = System.getenv(nombre);
 
         if (valor == null || valor.isBlank()) {
+            valor = archivo().getProperty(nombre);
+        }
+
+        if (valor == null || valor.isBlank()) {
             return valorPredeterminado;
         }
 
         return valor.trim();
+    }
+
+    private static Properties archivo() {
+        Properties propiedades = new Properties();
+        if (Files.isRegularFile(ARCHIVO)) {
+            try (Reader lector = Files.newBufferedReader(ARCHIVO)) {
+                propiedades.load(lector);
+            } catch (IOException e) {
+                // Archivo ilegible: se sigue con las variables de entorno y los valores por defecto.
+            }
+        }
+        return propiedades;
     }
 }

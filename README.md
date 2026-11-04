@@ -14,6 +14,27 @@ alerta asincrónica.
 > del servidor: no se usa máquina virtual ni base de datos en red; los clientes
 > solo se conectan al Backend por sockets.
 
+## Ejecución rápida
+
+Requisitos: JDK 17 o superior y Oracle XE. Se abre la carpeta del proyecto en
+IntelliJ (o cualquier IDE con Maven) y se siguen estos pasos.
+
+**Una sola vez:**
+
+1. En SQL Developer o SQL*Plus, conectado como `SYSTEM`, ejecutar
+   `DB/00_crear_usuario.sql`. Pide la clave del usuario `RESERVAS_P2`.
+2. Conectado como `RESERVAS_P2`, ejecutar `DB/01`, `DB/02` y `DB/06`, en ese orden.
+3. Copiar `oracle.properties.ejemplo` como `oracle.properties`, en la misma carpeta,
+   y escribir esa clave en `DB_PASSWORD`. El archivo no se sube a Git.
+
+**Para correr:** en el menú de configuraciones de Run, elegir **Sistema completo**
+y presionar Run. Se levantan el servidor y dos clientes. Entrar con `ADMIN` / `ADMIN`:
+el sistema pide cambiar la clave en el primer ingreso. Las configuraciones
+**Servidor** y **Cliente** permiten correr cada proceso por separado.
+
+Sin IDE, los mismos pasos funcionan desde la terminal (ver "Compilación",
+"Ejecución del servidor Oracle" y "Ejecución de clientes").
+
 ## Integrantes y responsabilidades
 
 | Integrante | Responsabilidad |
@@ -204,10 +225,12 @@ Ese nombre es una etiqueta local y no sustituye al usuario ni al SID.
 ### Ejecución de scripts
 
 Abrir cada archivo en SQL Developer, seleccionar todo su contenido y
-ejecutarlo con F5 en la conexión del proyecto.
+ejecutarlo con F5: `00` en una conexión `SYSTEM` y el resto en la conexión del
+proyecto (`RESERVAS_P2`).
 
 | Archivo | Contenido | Cuándo ejecutarlo |
 |---------|-----------|-------------------|
+| `DB/00_crear_usuario.sql` | Usuario `RESERVAS_P2` y sus permisos | Una sola vez, como `SYSTEM` |
 | `DB/01_tablas_y_secuencias.sql` | Cinco tablas y dos secuencias | Una sola vez en un esquema vacío |
 | `DB/02_procedimientos_y_funciones.sql` | Cursores, CRUD, acceso, reservas y estadísticas | Después de `01`; puede repetirse para actualizar las rutinas |
 | `DB/03_pruebas_categorias.sql` | Prueba de categorías | Opcional, después de `02` |
@@ -270,8 +293,9 @@ pruebas sin Oracle no valida la persistencia.
 Referencia:
 [Documentación de compatibilidad JDBC de Oracle](https://www.oracle.com/database/technologies/faq-jdbc.html).
 
-En la terminal (o en el IDE que se use) donde se ejecuta el Backend o sus
-pruebas, definir estas variables de entorno:
+Definir estos valores en `oracle.properties` (raíz del proyecto) o como variables
+de entorno de la terminal o el IDE donde se ejecuta el Backend o sus pruebas;
+las variables de entorno tienen prioridad:
 
 | Variable | Valor |
 |----------|-------|

@@ -1,0 +1,5 @@
+# Copiar este archivo como oracle.properties (en esta misma carpeta) y poner la clave.
+# oracle.properties no se sube a Git. Las variables de entorno con el mismo nombre tienen prioridad.
+DB_URL=jdbc:oracle:thin:@localhost:1521:XE
+DB_USER=RESERVAS_P2
+DB_PASSWORD=

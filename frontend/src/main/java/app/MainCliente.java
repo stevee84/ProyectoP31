@@ -20,7 +20,17 @@ import java.io.IOException;
  */
 public final class MainCliente {
 
+    private static final int INTENTOS_INICIALES = 10;
+
     private MainCliente() {
+    }
+
+    private static void esperar(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public static void main(String[] args) {
@@ -54,12 +64,18 @@ public final class MainCliente {
             }
         };
 
-        // Se conecta al iniciar, fuera del hilo de Swing. Si falla, el login lo reintenta.
+        // Se conecta al iniciar, fuera del hilo de Swing. Si el servidor todavía está arrancando
+        // (por ejemplo, ambos se lanzaron juntos), espera unos segundos; si no, el login lo reintenta.
         String errorInicial = null;
-        try {
-            asegurarConexion.run();
-        } catch (ServicioException e) {
-            errorInicial = e.getMessage();
+        for (int intento = 1; intento <= INTENTOS_INICIALES; intento++) {
+            try {
+                asegurarConexion.run();
+                errorInicial = null;
+                break;
+            } catch (ServicioException e) {
+                errorInicial = e.getMessage();
+                esperar(1000);
+            }
         }
 
         Runnable salir = () -> {
