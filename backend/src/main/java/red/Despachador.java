@@ -43,7 +43,7 @@ public class Despachador {
     public Respuesta atender(Peticion peticion) {
         long id = peticion.idPeticion();
         if (peticion.operacion() == null) {
-            return Respuesta.error(id, CodigoError.VALIDACION, "Petición mal formada.");
+            return Respuesta.error(id, CodigoError.VALIDACION, "La solicitud no es válida.");
         }
         Object[] datos = peticion.datos() == null ? new Object[0] : peticion.datos();
         try {
@@ -58,7 +58,7 @@ public class Despachador {
         } catch (ServicioException e) {
             return Respuesta.error(id, e.getCodigo(), e.getMessage());
         } catch (ClassCastException | IndexOutOfBoundsException e) {
-            return Respuesta.error(id, CodigoError.VALIDACION, "Petición mal formada.");
+            return Respuesta.error(id, CodigoError.VALIDACION, "La solicitud no es válida.");
         } catch (RuntimeException e) {
             // El detalle técnico queda en el servidor; al usuario solo un mensaje claro.
             LOG.log(Level.SEVERE, "Error interno al atender " + peticion.operacion(), e);

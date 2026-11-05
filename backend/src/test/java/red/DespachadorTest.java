@@ -120,7 +120,7 @@ class DespachadorTest {
     void operacionNulaEsPeticionMalFormada() {
         Respuesta respuesta = atender(null);
         assertError(respuesta, CodigoError.VALIDACION);
-        assertEquals("Petición mal formada.", respuesta.mensaje());
+        assertEquals("La solicitud no es válida.", respuesta.mensaje());
     }
 
     @Test

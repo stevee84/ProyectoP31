@@ -38,7 +38,7 @@ final class ErroresOracle {
                         : "Datos inexistentes o inválidos. Revise los campos.");
         }
         return new ServicioException(CodigoError.PERSISTENCIA,
-                "No se pudo completar la operación en Oracle. Verifique el resultado antes de reintentar.");
+                "No se pudo guardar la operación. Verifique el resultado antes de reintentar.");
     }
 
     /** ORA-00001 nombra la restricción violada; solo se mira el nombre, nunca se reenvía el mensaje. */
