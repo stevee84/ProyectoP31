@@ -1,6 +1,6 @@
 # PROMPTS_LLM — Proyecto 2
 
-Bitácora de prompts del Proyecto 2 (Sistema de Reserva de Recursos: Frontend, Backend y base de datos) de EIF206 Programación 3. La bitácora del Proyecto 1 está en `bitacora_prompts.txt`, en la raíz del repositorio.
+Bitácora de prompts del Proyecto 2 (Sistema de Reserva de Recursos: Frontend, Backend y base de datos) de EIF206 Programación 3. La bitácora del Proyecto 1 está en `docs/bitacoras/bitacora_proyecto1.txt`. Cada integrante documenta su parte con su propia numeración.
 
 Repositorio: https://github.com/stevee84/ProyectoP31
 
@@ -25,6 +25,7 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
 | 11 | Integrar el frontend de Scott y rondas de pruebas orquestadas |
 | 12 | QA externo y una duda de diseño: ¿para qué sockets si la base es local? |
 | 13 | Bloques A y B: endurecer seguridad y servidor, y cierre para la entrega |
+| 14 | README fácil de entender para el profesor |
 
 ## Prompt 1 — Punto de partida: división del trabajo, estilo del profesor y spec-kit
 
@@ -86,7 +87,12 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
 > Prompt “Empecemos con la parte del Integrante 1; haz push primero y empezamos.”
 
 **Qué se obtuvo.**
-- **Maven multimódulo:** los módulos son `comun`, `backend`, `frontend` y `proyecto1`. Este último es temporal y compila el código del Proyecto 1 sin moverlo.
+- **Organización del repositorio, siguiendo los ejemplos del profesor** (un `Main` en el paquete `app` y un paquete por capa):
+  - Maven multimódulo: `comun`, `backend` y `frontend`. El código del Proyecto 1 siguió compilando mientras se repartía entre los módulos.
+  - Un solo punto de entrada por proceso: `app.MainServidor` y `app.MainCliente`.
+  - Paquetes por capa: `red`, `servicio`, `datos` y `utilitarios` en el Backend; `proxy`, `controller`, `model`, `view` y `utilitarios` en el Frontend.
+  - Lo que solo sirve para probar (servicios en memoria y la demo del cliente) vive en `src/test`, no en lo entregado.
+  - La documentación va en `docs/` y los scripts de la base en `DB/`.
 - **Módulo `comun`:**
   - El contrato `IServicioAplicacion`, que cubre todo lo que usan las fachadas `XxxModel`.
   - 13 DTO sin claves.
@@ -97,7 +103,7 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
   - `ManejadorCliente`, con su propia sesión por conexión.
   - `Despachador`, que exige sesión y traduce errores.
   - `PublicadorEventos` (Observer), que difunde cada reserva confirmada a los demás usuarios.
-  - Un servicio falso en memoria para avanzar sin Oracle.
+  - Un servicio falso en memoria, en `src/test`, para probar la red sin Oracle.
 - **Frontend:** `ProxyServicio`, con un solo hilo lector que separa las respuestas, emparejadas por id de petición, de las alertas. También tiene timeout y manejo de caídas.
 - **Pruebas:** 21 nuevas, entre protocolo, Proxy e integración con sockets reales. Cubren respuestas sin mezclar entre clientes, alertas a los demás y no al autor, competencia por el último recurso, permisos, caídas y timeout. Se corrieron 5 veces seguidas sin fallos intermitentes.
 
@@ -123,7 +129,7 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
   - **Mensajes de error.** El detalle técnico queda en el servidor y el usuario recibe un mensaje claro en español.
   - **Proxy:** la reconexión ya no se rompe y los nulos se manejan antes de enviar.
   - **Contrato:** la sesión y la fábrica pasaron al paquete neutral `servicio`. Quedó documentado quién escribe la sesión, la clave inicial de un funcionario y el código de error de cada caso. La alerta lleva la hora en que se emitió.
-  - **Para el Integrante 3:** el helper `Tarea`, que hace las llamadas fuera del hilo de Swing para que la interfaz no se congele.
+  - **Para el Integrante 3:** el helper `utilitarios.Tarea`, que hace las llamadas fuera del hilo de Swing para que la interfaz no se congele.
 - El líder descartó lo que era sobreingeniería para un proyecto del curso.
 
 **Correcciones sobre la marcha**
@@ -179,7 +185,7 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
   5. Patrón Proxy
   6. Funcionalidades 1 a 8 con validación
   7. Base de datos, pruebas y entrega
-- Lo de hoy no contradice el enunciado.
+- Lo hecho no contradice el enunciado.
 - El revisor de arquitectura comprobó la arquitectura distribuida de verdad: levantó el servidor en un proceso y dos clientes en otros, uno por la IP de red y con solo `comun` y `frontend` en el classpath.
 - Ajustes que le tocaban al Integrante 1:
   - La prueba de integración estaba en el frontend y le habría traído el driver de base de datos.
@@ -310,7 +316,7 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
   - Las pruebas limpian sus datos.
   - El README quedó sin notas internas.
 - **Bloque B:**
-  - Las claves se guardan con PBKDF2 y sal (`seguridad/ClaveHash`), sin dependencias nuevas, y la base rechaza claves en texto plano.
+  - Las claves se guardan con PBKDF2 y sal (`utilitarios.ClaveHash`), sin dependencias nuevas, y la base rechaza claves en texto plano.
   - El login tarda lo mismo con usuarios inexistentes, para no revelar cuáles existen.
   - La descripción de categoría es única.
   - El servidor tiene un máximo de clientes con aviso y un plazo para las conexiones que no inician sesión.
@@ -326,9 +332,14 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
   - La interfaz quedó con tildes y ñ.
 - **Decisión del profesor:** la base es local en la computadora del servidor, sin VM. Así quedó documentado en el README, junto con el uso de Oracle en lugar de MySQL.
 - **Cierre para la entrega:**
-  - Se retiró el módulo temporal del Proyecto 1.
+  - Se retiró el código del Proyecto 1 que quedaba en la raíz.
   - Se ensayó el despliegue: servidor con Oracle y dos clientes en procesos separados, conectados por la IP de red y con solo el JAR del frontend. La reserva de uno llegó como alerta al otro.
   - Se armó un ZIP con fuentes, scripts y documentación, que compila desde cero.
+  - El proyecto corre con cualquier JDK, sin depender del IDE:
+    - Maven Wrapper (`mvnw`) y arranque con `java -jar`.
+    - Configuraciones de Run compartidas en `.run/`, con **Sistema completo** para levantar el servidor y dos clientes con un solo clic.
+    - La clave de la base se lee de `oracle.properties`, que no se sube a Git.
+    - `DB/00_crear_usuario.sql` crea el usuario del proyecto.
 - **Resultado:** 126 pruebas unitarias y 36 de integración con Oracle real, todas en verde.
 
 **Correcciones sobre la marcha**
@@ -336,13 +347,82 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
 - Al recargar el esquema, el corrector borró todos los datos de la base local, no solo los de prueba. La base quedó en su estado inicial (ADMIN con primer ingreso pendiente).
 - Una ronda de testers se cortó por el límite de uso y dejó datos `R2-`/`B2-` y la clave de ADMIN cambiada. Se borraron esos datos y se restauró ADMIN antes de repetir la ronda.
 
+## Prompt 14 — README fácil de entender para el profesor
+
+**Herramienta:** Claude Code (Claude Opus) con dos lectores externos
+
+> Prompt “¿Podemos estar seguros de que el README es fácil de entender?”
+
+**Qué se obtuvo.**
+- Un lector sin contexto evaluó el README como lo haría el profesor y encontró:
+  - Pasos incompletos en la ejecución rápida.
+  - Dos públicos mezclados en casi 600 líneas.
+  - Contradicciones: requisitos repetidos y Maven, que con el wrapper ya no hace falta instalar.
+- El README bajó a unas 180 líneas, con este orden:
+  1. Qué es el proyecto.
+  2. Requisitos.
+  3. Ejecución rápida paso a paso, con “si algo falla”.
+  4. Ejecución sin IDE y despliegue en red.
+  5. Arquitectura y funcionalidades.
+  6. Enlaces a la documentación detallada.
+- La parte técnica pasó, sin perder contenido, a `docs/DETALLES_TECNICOS.md`.
+- La nota de la base dice las dos cosas: la base es local en el servidor por indicación del profesor, y Frontend y Backend pueden correr en máquinas distintas, como pide el enunciado.
+- Un segundo lector, también sin contexto, pudo llegar de cero al sistema corriendo. Sus tres sugerencias se aplicaron:
+  - La clave de `SYSTEM`.
+  - Que los scripts de prueba son opcionales.
+  - Cómo correr los `main` a mano si no aparece la configuración de Run.
+
 ---
 
 # Joshua — Integrante 2: Servicios, repositorios y Oracle
 
-## Prompt 11 — Backend Oracle del integrante 2 (Joshua)
+| # | Tema |
+| --- | --- |
+| 1 | Esquema Oracle y CRUD de categorías con procedimientos |
+| 2 | Procedimientos completos, datos iniciales y pruebas SQL |
+| 3 | Conexión Oracle y repositorio de categorías con pruebas |
+| 4 | Servicio real con Oracle, transacciones y pruebas de integración |
 
-**Fecha:** 24 de octubre de 2026.
+## Prompt 1 — Esquema Oracle y CRUD de categorías con procedimientos
+
+**Herramienta:** asistente LLM
+
+> Prompt “Necesito el esquema Oracle del sistema de reservas, siguiendo el ejemplo del profesor: tablas de categorías, recursos, usuarios, reservas y la relación entre reservas y recursos, con secuencias para los identificadores. Empecemos por el CRUD de categorías con procedimientos almacenados y una función que devuelva un `REF_CURSOR`, y un script para probarlo.”
+
+**Qué se obtuvo.**
+- `DB/01_tablas_y_secuencias.sql`:
+  - `TCATEGORIAS`, `TRECURSOS`, `TUSUARIOS`, `TRESERVAS` y `TRESERVA_RECURSO`, con llaves primarias y foráneas.
+  - Restricciones de rol, estado y horario.
+  - Secuencias para categorías y reservas.
+- `DB/02_procedimientos_y_funciones.sql`:
+  - El paquete `types` con el `REF_CURSOR`.
+  - `insertarCategoria`, que arma el id con formato `CAT-000001`, además de buscar, listar, modificar y eliminar.
+- `DB/03_pruebas_categorias.sql`, con pruebas que deshacen sus cambios.
+
+## Prompt 2 — Procedimientos completos, datos iniciales y pruebas SQL
+
+**Herramienta:** asistente LLM
+
+> Prompt “Completa los procedimientos y funciones para recursos, usuarios y reservas: asignación de recursos sin solapes, cancelación, calendario, agenda y estadísticas. Agrega los datos iniciales con el administrador y categorías de ejemplo, y scripts de prueba que no dejen datos en la base.”
+
+**Qué se obtuvo.**
+- Rutinas de recursos, usuarios y acceso, reservas con asignación por categoría y revalidación de solapes, cancelación y consultas para calendario, agenda y estadísticas.
+- Los procedimientos no hacen commit ni rollback: la transacción la controla el servicio Java.
+- `DB/06_datos_iniciales.sql`: el administrador con primer ingreso pendiente y tres categorías iniciales.
+- `DB/04`, `DB/05` y `DB/07`: pruebas de recursos, usuarios y reservas que se deshacen solas.
+
+## Prompt 3 — Conexión Oracle y repositorio de categorías con pruebas
+
+**Herramienta:** asistente LLM
+
+> Prompt “Conecta el Backend a Oracle como en el ejemplo del profesor, leyendo `DB_URL`, `DB_USER` y `DB_PASSWORD` del entorno, y crea el repositorio de categorías sobre los procedimientos de `DB/02`, con pruebas unitarias y una prueba de integración opcional contra Oracle.”
+
+**Qué se obtuvo.**
+- `datos.ConexionOracle`, con el driver `ojdbc11` del ejemplo del profesor y timeouts de conexión y lectura.
+- `datos.RepositorioCategoriasOracle`, con `CallableStatement` y cursores, que cierra sus sentencias y no la conexión.
+- Pruebas unitarias del repositorio y `RepositorioCategoriasOracleIT`, que solo corre con `ORACLE_IT=true`.
+
+## Prompt 4 — Servicio real con Oracle, transacciones y pruebas de integración
 
 **Herramienta:** OpenCode (GPT-6.1 Sol).
 
@@ -373,13 +453,13 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
 - Extractor Gemini real en Backend con API key del entorno, modelo configurable,
   timeout, JSON y errores sanitizados; una interfaz permite simularlo sin consumir
   la API en pruebas. No mantiene transacción ni bloqueo durante la llamada externa.
-- `arranque.MainServidorOracle` reutiliza `red.Servidor` con la fábrica real. Maven
+- `app.MainServidor` arranca `red.Servidor` con la fábrica real. Maven
   copia las dependencias de ejecución, incluido el driver Oracle, al empaquetar.
 - Se agregaron pruebas unitarias y pruebas Oracle optativas: commit y rollback real,
   fallo en segunda asignación, falta normal, cancelación, estadísticas, competencia
   entre dos servicios y sockets con fábrica y servicio reales. Los datos temporales
   se identifican con UUID y se limpian por sus IDs, sin utilizar el ADMIN del proyecto.
-- README y `backend/IMPLEMENTACION_ORACLE.md` documentan arquitectura, comandos,
+- README y `docs/IMPLEMENTACION_ORACLE.md` documentan arquitectura, comandos,
   variables, responsabilidades y límites de la validación.
 
 **Correcciones y límites durante el trabajo.**
@@ -421,3 +501,59 @@ Este trabajo se hizo como una conversación continua con Claude Code. Yo plantea
 - Pendiente local: ejecutar las 17 IT con Oracle y comprobar el arranque conectado;
   probar opcionalmente Gemini con clave/cuota configuradas. No se informa esas
   comprobaciones como aprobadas.
+
+---
+
+# Scott — Integrante 3: MVC del Frontend, pantallas y alertas
+
+| # | Tema |
+| --- | --- |
+| 1 | Pantallas del Proyecto 1 sobre el Proxy |
+| 2 | Área de alertas |
+| 3 | Servicio falso, demo y pruebas del Frontend |
+
+## Prompt 1 — Pantallas del Proyecto 1 sobre el Proxy
+
+**Herramienta:** asistente LLM
+
+> Prompt “Migra todas las pantallas del Proyecto 1 al módulo `frontend`, manteniendo el MVC: los controladores y las fachadas `XxxModel` deben llamar a `IServicioAplicacion`, que en ejecución es el `ProxyServicio`. Sin XML, sin driver ni nada de la base de datos en el cliente, y sin congelar la interfaz mientras se espera al servidor.”
+
+**Qué se obtuvo.**
+- `app.MainCliente` conecta el Proxy al servidor (`-Dservidor.host` y `-Dservidor.puerto`) y arranca el MVC.
+- `AplicacionController` y las fachadas `XxxModel` trabajan contra `IServicioAplicacion`. Las llamadas remotas pasan por `utilitarios.Tarea`, fuera del hilo de Swing.
+- Pantallas adaptadas:
+  - Login y cambio de clave, incluido el primer ingreso.
+  - CRUD, búsquedas y PDF de funcionarios, categorías y recursos.
+  - Reservas: crear, con la IA para rellenar el formulario, listar, cancelar y PDF.
+  - Calendarización, agenda y estadísticas, cada una en una sola llamada al servidor.
+- Los errores del servidor se muestran con su mensaje. Si se cae la red al crear una reserva, no se reintenta para no duplicarla.
+
+## Prompt 2 — Área de alertas
+
+**Herramienta:** asistente LLM
+
+> Prompt “Agrega el área de alertas que pide el enunciado: fija a la derecha de la ventana principal, visible en todas las pestañas, con las reservas que hacen otros usuarios durante la sesión. Cada alerta se puede ver en una ventana emergente y descartar con confirmación, sin enviar nada al Backend.”
+
+**Qué se obtuvo.**
+- `AlertasPanel` a la derecha, fuera de las pestañas, con `AlertasModel` y `AlertasController`.
+- Las alertas llegan desde el Proxy y se pasan al hilo de Swing con `invokeLater`.
+- **Ver** abre `AlertaDetalleDialog` con actividad, encargado, fecha, horas y recursos.
+- **Descartar** pide confirmación y solo quita la alerta de la lista local.
+- Al cerrar sesión la lista se limpia, y nunca se muestran las alertas del propio usuario.
+
+## Prompt 3 — Servicio falso, demo y pruebas del Frontend
+
+**Herramienta:** asistente LLM
+
+> Prompt “Necesito poder correr toda la interfaz sin servidor para revisar las pantallas, y pruebas del MVC y de las alertas, incluida una prueba de integración con el Proxy real.”
+
+**Qué se obtuvo.**
+- Para revisar la interfaz sin servidor, en `src/test`:
+  - `falso.ServicioClienteFalso`, con datos en memoria.
+  - `falso.FuenteEventosSimulada`, que genera alertas.
+  - `demo.MainClienteDemo`.
+- Pruebas:
+  - Del modelo, el controlador y el panel de alertas.
+  - De las conversiones de tablas y de las fachadas con el servicio falso.
+  - `AlertasProxyIT`, con el Proxy real.
+- Documentación del cliente en `docs/FRONTEND.md`.

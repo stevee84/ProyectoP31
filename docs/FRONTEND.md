@@ -53,8 +53,8 @@ una alerta de otro usuario cada `demo.alertas` segundos. Usuarios (clave = id):
 | `model` | Fachadas `XxxModel` que delegan en `IServicioAplicacion`; `AlertasModel`, `Alerta`, `TablaDatos` |
 | `view` | Pantallas Swing del Proyecto 1, `AlertasPanel`, `AlertaDetalleDialog`, `GeneradorPdf` |
 | `proxy` | `ProxyServicio` (Integrante 1) |
-| `util` | `Tarea`: ejecuta la llamada remota fuera del EDT y devuelve el resultado en el EDT |
-| `falso` | `ServicioClienteFalso` y `FuenteEventosSimulada`, para pruebas y demo |
+| `utilitarios` | `Tarea`: ejecuta la llamada remota fuera del EDT y devuelve el resultado en el EDT |
+| `falso` (en `src/test`) | `ServicioClienteFalso` y `FuenteEventosSimulada`, para pruebas y demo |
 
 Flujo de una acción:
 `View → Controller → XxxModel → IServicioAplicacion (ProxyServicio) → socket → Backend`.
