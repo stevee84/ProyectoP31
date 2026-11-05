@@ -2,38 +2,104 @@
 
 Curso EIF206 Programación 3 — Universidad Nacional de Costa Rica.
 
-Evolución del Proyecto 1 (aplicación Swing con persistencia XML) a una aplicación
-distribuida: varios clientes Swing se comunican por sockets con un servidor
-que aplica las reglas de negocio y persiste en Oracle.
+Versión distribuida del Proyecto 1: varios clientes Swing (Frontend) se conectan
+por sockets a un único servidor sin interfaz (Backend), que aplica las reglas y
+guarda los datos en Oracle. Cuando alguien crea una reserva, los demás usuarios
+conectados reciben una alerta al instante.
 
-Cuando alguien crea una reserva, los demás usuarios conectados reciben una
-alerta asincrónica.
+> **Base de datos:** se usa Oracle en lugar de MySQL (que menciona el enunciado)
+> por indicación del profesor. También por su indicación, la base es local en la
+> computadora del servidor. Como pide el enunciado, Frontend y Backend sí pueden
+> correr en máquinas distintas: los clientes solo hablan con el servidor por sockets.
 
-> Se utiliza Oracle en lugar de MySQL (que menciona el enunciado) por indicación
-> del profesor. También por su indicación, la base es local en la computadora
-> del servidor: no se usa máquina virtual ni base de datos en red; los clientes
-> solo se conectan al Backend por sockets.
+## Requisitos
+
+- JDK 17 o superior.
+- Oracle XE y SQL Developer (o SQL*Plus).
+- IntelliJ IDEA (u otro IDE con Maven). Es opcional: también se ejecuta desde la terminal.
+
+No hace falta instalar Maven: el proyecto trae el Maven Wrapper (`mvnw`).
 
 ## Ejecución rápida
 
-Requisitos: JDK 17 o superior y Oracle XE. Se abre la carpeta del proyecto en
-IntelliJ (o cualquier IDE con Maven) y se siguen estos pasos.
+### 1. Preparar la base (una sola vez)
 
-**Una sola vez:**
+1. En SQL Developer, crear una conexión **SYSTEM** (host `localhost`, puerto `1521`,
+   SID `XE`, con la clave de SYSTEM definida al instalar Oracle XE), abrir
+   `DB/00_crear_usuario.sql` y ejecutarlo con **F5**. Aparece un diálogo que pide
+   una clave: escribir una cualquiera, sin comillas; será la clave del usuario del
+   proyecto, `RESERVAS_P2`.
+2. Crear una segunda conexión con usuario **RESERVAS_P2** y esa clave (mismo host,
+   puerto y SID). En ella, ejecutar con F5, en este orden:
+   `DB/01_tablas_y_secuencias.sql`, `DB/02_procedimientos_y_funciones.sql` y
+   `DB/06_datos_iniciales.sql`. Los scripts `03`, `04`, `05` y `07` son pruebas de la
+   base, opcionales: deshacen sus cambios y no hace falta ejecutarlos.
+3. En la carpeta raíz del proyecto, copiar `oracle.properties.ejemplo` como
+   `oracle.properties` y escribir esa clave después de `DB_PASSWORD=`.
+   Este archivo es local y no se sube a Git.
 
-1. En SQL Developer o SQL*Plus, conectado como `SYSTEM`, ejecutar
-   `DB/00_crear_usuario.sql`. Pide la clave del usuario `RESERVAS_P2`.
-2. Conectado como `RESERVAS_P2`, ejecutar `DB/01`, `DB/02` y `DB/06`, en ese orden.
-3. Copiar `oracle.properties.ejemplo` como `oracle.properties`, en la misma carpeta,
-   y escribir esa clave en `DB_PASSWORD`. El archivo no se sube a Git.
+> Con Oracle XE 18c o 21c el servicio se llama `XEPDB1` en lugar del SID `XE`:
+> usarlo en SQL Developer y cambiar en `oracle.properties`
+> `DB_URL=jdbc:oracle:thin:@//localhost:1521/XEPDB1`.
 
-**Para correr:** en el menú de configuraciones de Run, elegir **Sistema completo**
-y presionar Run. Se levantan el servidor y dos clientes. Entrar con `ADMIN` / `ADMIN`:
-el sistema pide cambiar la clave en el primer ingreso. Las configuraciones
-**Servidor** y **Cliente** permiten correr cada proceso por separado.
+### 2. Abrir y correr
 
-Sin IDE, los mismos pasos funcionan desde la terminal (ver "Compilación",
-"Ejecución del servidor Oracle" y "Ejecución de clientes").
+1. En IntelliJ: **File → Open**, elegir el `pom.xml` de la raíz y **Open as Project**.
+   Esperar a que termine de importar Maven. Si lo pide, elegir un JDK 17 o superior.
+2. En el selector de configuraciones de Run (arriba a la derecha), elegir
+   **Sistema completo** y presionar ▶. Se abren el servidor y dos ventanas de login.
+   Las configuraciones **Servidor** y **Cliente** corren cada proceso por separado.
+   Si no aparecen en el selector, correr `backend/src/main/java/app/MainServidor.java`
+   y después, dos veces, `frontend/src/main/java/app/MainCliente.java`.
+3. Entrar con `ADMIN` / `ADMIN`. En el primer ingreso el sistema pide una clave nueva.
+   Después, el administrador registra funcionarios (su clave inicial es su
+   identificación), categorías y recursos; los funcionarios crean reservas.
+
+### Si algo falla
+
+- **El servidor muestra `No se pudo conectar a Oracle: …`.** El mensaje dice la
+  causa: clave incorrecta, Oracle detenido o SID equivocado. Revisar
+  `oracle.properties`.
+- **El cliente muestra "No se pudo conectar con el servidor".** El servidor no
+  está corriendo o se cerró: ver su consola.
+- **El puerto 5000 está en uso.** Cerrar el otro proceso o cambiar
+  `-Dservidor.puerto` en las configuraciones de Run.
+
+## Ejecución sin IDE
+
+Desde la raíz del proyecto (en Windows, `mvnw.cmd` en lugar de `./mvnw`):
+
+```bash
+./mvnw clean install -DskipTests
+```
+
+Servidor, con `oracle.properties` ya preparado:
+
+```bash
+java -Dservidor.puerto=5000 -jar backend/target/backend-1.0-SNAPSHOT.jar
+```
+
+Debe mostrar `Servidor Oracle de reservas escuchando en el puerto 5000`.
+
+Cliente, en otra terminal o en otra computadora:
+
+```bash
+java -Dservidor.host=IP_DEL_SERVIDOR -Dservidor.puerto=5000 -jar frontend/target/frontend-1.0-SNAPSHOT.jar
+```
+
+En lugar de `oracle.properties` también se pueden usar las variables de entorno
+`DB_URL`, `DB_USER` y `DB_PASSWORD`, que tienen prioridad.
+
+## Despliegue en red: un servidor y varios clientes
+
+1. **Servidor:** la computadora que tiene Oracle corre el Backend (con Sistema
+   completo, Servidor o `java -jar`).
+2. **Firewall del servidor:** permitir conexiones entrantes al puerto 5000. En
+   Windows (PowerShell como administrador):
+   `New-NetFirewallRule -DisplayName "Reservas 5000" -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow`
+3. **Clientes:** en las demás computadoras, correr el Frontend con
+   `-Dservidor.host=IP_DEL_SERVIDOR`. Los clientes no necesitan Oracle ni ninguna
+   clave de la base.
 
 ## Integrantes y responsabilidades
 
@@ -43,554 +109,76 @@ Sin IDE, los mismos pasos funcionan desde la terminal (ver "Compilación",
 | 2 — Joshua | Servicios, reglas de negocio, repositorios y base de datos Oracle |
 | 3 — Scott | MVC del Frontend, pantallas, reportes y alertas en la interfaz |
 
-## Arquitectura distribuida
+## Arquitectura
 
 ```mermaid
-flowchart TD
-    A[Cliente Swing A] -->|TCP| S[Backend]
-    B[Cliente Swing B] -->|TCP| S
-    S -->|JDBC| O[Oracle]
-    S -. Alertas .-> A
-    S -. Alertas .-> B
+flowchart LR
+    A[Cliente Swing A] -->|socket| S[Backend]
+    B[Cliente Swing B] -->|socket| S
+    S -->|JDBC| O[(Oracle)]
+    S -. alertas .-> A
+    S -. alertas .-> B
 ```
 
-- Varios Frontend se conectan a un único Backend.
-- Los clientes, el servidor y Oracle pueden ejecutarse en máquinas distintas.
-- El Frontend no accede directamente a Oracle.
-- Frontend y Backend comparten el contrato y los DTO del módulo `comun`.
-- El servidor obtiene el autor de las operaciones desde `ContextoSesion`.
-- Las vistas contienen la interfaz Swing.
-- Los controladores reciben eventos y llaman al servicio.
-- El servicio aplica las reglas de negocio.
-- Los repositorios realizan las operaciones de persistencia.
-
-## Patrón Proxy
-
-El controlador llama a `IServicioAplicacion`.
-
-En el Frontend, `ProxyServicio` envía la petición por socket. En el Backend,
-`ManejadorCliente` la recibe y `Despachador` llama al servicio creado por
-`IFabricaServicios`.
-
-| Rol | Clase |
-|-----|-------|
-| Subject | `contrato.IServicioAplicacion` |
-| Proxy | `proxy.ProxyServicio` |
-| Receptor del servidor | `red.ManejadorCliente` |
-| Despachador de operaciones | `red.Despachador` |
-| RealSubject | Servicio real creado por `servicio.IFabricaServicios` |
-
-Los controladores trabajan contra la interfaz del servicio.
-
-Las llamadas lentas deben ejecutarse fuera del hilo de Swing utilizando
-`utilitarios.Tarea`.
-
-## Alertas asincrónicas
-
-- `red.PublicadorEventos` publica una alerta cuando se crea una reserva
-  correctamente.
-- La alerta se entrega a los demás usuarios autenticados.
-- El autor no recibe su propia alerta.
-- Un observador que falla se retira sin afectar a los otros.
-- El Frontend registra un `contrato.IReceptorEventos`.
-- Las actualizaciones de Swing se realizan con
-  `SwingUtilities.invokeLater(...)`.
-
-## Estructura del proyecto
-
-| Módulo o carpeta | Contenido |
-|------------------|-----------|
-| `comun` | Contrato, DTO y protocolo compartidos |
-| `backend` | Servidor, servicios, acceso a datos y repositorios Oracle |
-| `frontend` | Proxy, utilitarios y MVC del cliente |
+| Módulo | Contenido |
+|--------|-----------|
+| `comun` | Contrato del servicio, DTO y mensajes compartidos por cliente y servidor |
+| `backend` | `app.MainServidor`, red (sockets e hilos), servicios, acceso a datos Oracle |
+| `frontend` | `app.MainCliente`, Proxy y MVC de las pantallas (`controller`, `model`, `view`) |
 | `DB` | Scripts SQL de Oracle |
-| `docs` | Documentación de la implementación Oracle, del Frontend y bitácoras de IA |
+| `docs` | Documentación técnica y bitácoras de IA |
 
-Cada proceso tiene un solo punto de entrada en el paquete `app`, como en los
-ejemplos del curso: `app.MainServidor` (Backend) y `app.MainCliente` (Frontend).
-Los servicios en memoria y la demo de la interfaz existen solo en `src/test`.
+- **Sockets e hilos:** el servidor atiende a cada cliente en su propio hilo. El
+  cliente usa una sola conexión: un hilo lector separa las respuestas de las
+  alertas, y las llamadas al servidor corren fuera del hilo de Swing para que la
+  ventana no se congele.
+- **Patrón Proxy:** las pantallas llaman a `IServicioAplicacion`. En el cliente,
+  `ProxyServicio` implementa esa interfaz y envía cada llamada por el socket; en
+  el servidor, `Despachador` la entrega al servicio real.
 
-Paquetes del Backend:
+  | Rol | Clase |
+  |-----|-------|
+  | Subject | `contrato.IServicioAplicacion` |
+  | Proxy | `proxy.ProxyServicio` |
+  | RealSubject | `servicio.ServicioAplicacion` (Oracle) |
 
-| Paquete | Responsabilidad |
-|---------|-----------------|
-| `app` | `MainServidor`: arranca el servidor con Oracle |
-| `red` | Servidor, conexiones, despacho y publicación de eventos |
-| `servicio` | Contexto de sesión, fábrica y servicios de aplicación |
-| `datos` | Conexión JDBC y repositorios Oracle (procedimientos y funciones) |
-| `ia` | Extracción de datos de una reserva con Gemini |
-| `utilitarios` | `ClaveHash` (PBKDF2) |
-
-Paquetes del Frontend:
-
-| Paquete | Responsabilidad |
-|---------|-----------------|
-| `app` | `MainCliente`: conecta el Proxy y arranca el MVC |
-| `proxy` | `ProxyServicio`, el Proxy del servicio remoto |
-| `controller` · `model` · `view` | MVC de las pantallas y el área de alertas |
-| `utilitarios` | `Tarea`: llamadas al servidor fuera del hilo de Swing |
-
-El Backend real implementa el contrato completo con repositorios Oracle de
-categorías, funcionarios y autenticación, recursos y disponibilidad, reservas
-y estadísticas. `ServicioAplicacion` aplica permisos, validaciones y transacciones;
-`FabricaServiciosOracle` comparte el bloqueo entre los clientes del servidor.
-La extracción Gemini se ejecuta en el Backend, sin mantener conexiones ni bloqueos.
-
-Detalles de la persistencia: [Implementación Oracle](docs/IMPLEMENTACION_ORACLE.md).
-
-## Configuración de red
-
-`protocolo.Configuracion` lee las siguientes propiedades del sistema:
-
-| Propiedad | Valor predeterminado | Uso |
-|-----------|----------------------|-----|
-| `servidor.host` | `localhost` | Dirección del Backend |
-| `servidor.puerto` | `5000` | Puerto del servidor |
-| `servidor.timeout` | `10000` | Espera máxima de una respuesta, en milisegundos |
-| `servidor.maxClientes` | `100` | Solo servidor: conexiones atendidas a la vez |
-| `servidor.timeoutSinSesion` | `60000` | Solo servidor: milisegundos que espera a que una conexión inicie sesión |
-
-Las conexiones que exceden `servidor.maxClientes` reciben un aviso y se
-cierran. Una conexión sin sesión se cierra tras `servidor.timeoutSinSesion` ms;
-con sesión iniciada no hay límite de inactividad.
-
-La deserialización utiliza `Configuracion.FILTRO_MENSAJES` para aceptar las
-clases permitidas del protocolo y los DTO.
+- **Alertas:** al confirmarse una reserva, `red.PublicadorEventos` (patrón
+  Observer) avisa a los demás usuarios conectados, nunca al autor. El área de
+  alertas está a la derecha de la ventana principal, en todas las pestañas;
+  descartar una alerta no envía nada al servidor.
+- **Seguridad:** las claves se guardan con hash, el primer ingreso obliga a
+  cambiar la clave y los errores llegan al usuario con mensajes claros, sin
+  detalles técnicos.
 
 ## Funcionalidades
 
-Administrador:
-
-- CRUD de funcionarios.
-- CRUD de categorías.
-- CRUD de recursos.
-- Consulta de recursos por categoría.
-
-Funcionario:
-
-- Crear reservaciones por categorías, fecha y horario.
-- Cancelar reservaciones propias.
-- Extraer datos desde una frase mediante IA, cuando esté configurada.
-
-Consultas y funciones compartidas:
-
-- Calendarización.
-- Agenda semanal.
-- Estadísticas.
-- Exportación a PDF.
-- Búsqueda en tablas.
-- Alertas de nuevas reservas.
-
-Los funcionarios se registran con su identificación como clave inicial.
-En el primer ingreso deben cambiarla. El servidor lo exige: mientras el
-cambio esté pendiente (también para `ADMIN`) rechaza toda operación salvo
-cambiar la clave y cerrar sesión, con el código `SESION` y el mensaje
-"Debe cambiar su clave antes de continuar.". La clave nueva no puede ser la
-actual ni la identificación del usuario.
-
-El teléfono del funcionario es obligatorio y solo admite dígitos, espacios,
-`+` y `-`, con 7 a 20 caracteres y al menos 7 dígitos (por ejemplo
-`8888-1111` o `+506 8888 1111`). La descripción de cada categoría es única,
-sin distinguir mayúsculas ni espacios al inicio o al final.
-
-Las claves se guardan con hash PBKDF2WithHmacSHA256 y sal aleatoria por
-usuario (`utilitarios.ClaveHash`, formato `pbkdf2$iteraciones$sal$hash` en
-`TUSUARIOS.CLAVE`). La verificación se hace en Java; Oracle nunca recibe ni
-guarda una clave en texto plano, y una restricción `CHECK` lo impide.
-
-La integración opcional con Gemini utiliza `GEMINI_API_KEY` en el Backend.
-No crea reservas: entrega campos para revisar y completar en el Frontend.
-Los reportes PDF se generan en el Frontend a partir de los datos del servicio.
-
-## Requisitos
-
-- JDK 17 o superior.
-- Maven 3.8 o superior.
-- Oracle para la persistencia del Backend.
-- Abrir el proyecto desde su carpeta raíz.
-
-## Base de datos Oracle
-
-Se trabaja con Oracle Database 11g Express Edition, versión 11.2.0.2.0.
-
-Esquema del proyecto:
-
-```text
-RESERVAS_P2
-```
-
-La conexión de SQL Developer puede llamarse `ReservasRecursos`.
-Ese nombre es una etiqueta local y no sustituye al usuario ni al SID.
-
-### Ejecución de scripts
-
-Abrir cada archivo en SQL Developer, seleccionar todo su contenido y
-ejecutarlo con F5: `00` en una conexión `SYSTEM` y el resto en la conexión del
-proyecto (`RESERVAS_P2`).
-
-| Archivo | Contenido | Cuándo ejecutarlo |
-|---------|-----------|-------------------|
-| `DB/00_crear_usuario.sql` | Usuario `RESERVAS_P2` y sus permisos | Una sola vez, como `SYSTEM` |
-| `DB/01_tablas_y_secuencias.sql` | Cinco tablas y dos secuencias | Una sola vez en un esquema vacío |
-| `DB/02_procedimientos_y_funciones.sql` | Cursores, CRUD, acceso, reservas y estadísticas | Después de `01`; puede repetirse para actualizar las rutinas |
-| `DB/03_pruebas_categorias.sql` | Prueba de categorías | Opcional, después de `02` |
-| `DB/04_pruebas_recursos.sql` | Pruebas de recursos y relaciones | Opcional, después de `02` |
-| `DB/05_pruebas_usuarios.sql` | Pruebas de funcionarios y claves | Opcional, después de `02` |
-| `DB/06_datos_iniciales.sql` | Administrador y categorías iniciales | Después de `02` |
-| `DB/07_pruebas_reservas.sql` | Pruebas de reservas, disponibilidad y estadísticas | Opcional, después de `02` |
-
-Los scripts de pruebas deshacen sus datos temporales mediante rollback.
-
-El script `06` guarda sus cambios mediante commit.
-
-Si `01` muestra `ORA-00955` en un esquema ya preparado, los objetos ya
-existen. Si el esquema se creó con una versión anterior de `01` (sin el
-índice único de categorías ni la restricción de claves con hash), hay que
-borrar los objetos del esquema y ejecutar de nuevo `01`, `02` y `06`.
-
-Los números consumidos por las secuencias no se recuperan mediante
-rollback. Los saltos en los identificadores son normales.
-
-### Datos iniciales
-
-El script `06` crea:
-
-- Usuario: `ADMIN`.
-- Clave inicial: `ADMIN`.
-- Rol: `ADMINISTRADOR`.
-- Primer ingreso pendiente.
-- Categorías: Sala para 10 personas, Laptop Windows y Sala de juntas.
-
-La clave de `ADMIN` se escribe ya con hash (literal PBKDF2 generado con
-`jshell --class-path backend/target/classes`, y dentro `utilitarios.ClaveHash.generar("ADMIN")`).
-Si `ADMIN` ya existe, el script conserva su clave; si la tiene en texto plano
-(base anterior), la restablece a `ADMIN` con hash y primer ingreso pendiente.
-
-Las categorías iniciales se agregan solamente si no existe una con la misma
-descripción.
-
-### Transacciones
-
-Los procedimientos y funciones de `02` no ejecutan commit ni rollback.
-
-El servicio Java controla la transacción completa.
-
-La creación de una reserva debe realizarse con la misma conexión JDBC,
-incluyendo la cabecera y todas las asignaciones de recursos.
-
-El servicio debe confirmar todos los cambios o deshacerlos completamente.
-
-### Configuración JDBC
-
-El driver se declara únicamente en `backend/pom.xml`.
-
-Se utiliza `ojdbc11:23.6.0.24.10`, tomado del ejemplo del profesor.
-
-Las pruebas de integración se ejecutan con ese driver y Oracle XE 11.2.0.2.0.
-Eso no certifica todas las combinaciones de versiones: compilar o ejecutar
-pruebas sin Oracle no valida la persistencia.
-
-Referencia:
-[Documentación de compatibilidad JDBC de Oracle](https://www.oracle.com/database/technologies/faq-jdbc.html).
-
-Definir estos valores en `oracle.properties` (raíz del proyecto) o como variables
-de entorno de la terminal o el IDE donde se ejecuta el Backend o sus pruebas;
-las variables de entorno tienen prioridad:
-
-| Variable | Valor |
-|----------|-------|
-| `DB_URL` | `jdbc:oracle:thin:@localhost:1521:XE` |
-| `DB_USER` | `RESERVAS_P2` |
-| `DB_PASSWORD` | Clave del usuario `RESERVAS_P2` |
-| `ORACLE_IT` | `true` para activar las pruebas de integración Oracle |
-
-La URL utiliza:
-
-- Host: `localhost`.
-- Puerto: `1521`.
-- SID: `XE`.
-
-Si SQL Developer utiliza otros valores, ajustar `DB_URL`.
-
-`DB_PASSWORD` corresponde al usuario del proyecto, no a `SYSTEM`.
-
-Cada integrante configura sus propias variables. La contraseña no se guarda
-en el código ni en archivos compartidos en Git.
-
-### Conexiones y repositorios
-
-`ConexionOracle.abrir()` devuelve una conexión nueva; quien la solicita debe
-cerrarla. El servicio no la usa por operación: cada fábrica reutiliza una sola
-conexión (`ConexionCompartida`, descrita más abajo).
-
-Los repositorios reciben esa conexión y cierran sus propias sentencias y
-cursores. No cierran la conexión ni confirman la transacción.
-
-Esto permite que varios repositorios participen en la misma operación.
-
-`app.MainServidor` arranca `red.Servidor` con la fábrica Oracle.
-
-La aplicación reutiliza una conexión por fábrica (`ConexionCompartida`) y cada operación
-trabaja con autocommit desactivado. Abrir una conexión nueva por operación agotaba el
-listener de Oracle XE (ORA-12519) con muchas operaciones seguidas; si la conexión deja de
-ser válida, se abre otra.
-Confirma antes de devolver éxito y revierte ante errores. Al reservar,
-consulta disponibilidad y selecciona recursos antes de insertar; la falta
-normal de recursos no deja cabecera ni asignaciones parciales. Las categorías
-repetidas solicitan recursos distintos. Se asignan en orden de código para
-los bloqueos de fila de Oracle.
-
-Una sola fábrica por servidor serializa las operaciones JDBC, también las
-modificaciones administrativas y cancelaciones. Es una solución sencilla para
-el servidor único del proyecto, no un bloqueo distribuido entre varios
-procesos Backend. Las rutinas Oracle mantienen además sus bloqueos y la
-revalidación de solapamientos. Evitar modificar datos manualmente mientras
-se realizan pruebas concurrentes.
-
-## Compilación
-
-Solo hace falta un JDK 17 o superior: el Maven Wrapper incluido descarga Maven
-la primera vez. No se necesita ningún IDE. Desde la raíz:
-
-```bash
-./mvnw clean install
-```
-
-En Windows (cmd o PowerShell): `mvnw.cmd clean install`.
-
-## Ejecución del servidor Oracle
-
-Desde la raíz:
-
-```bash
-./mvnw -pl backend -am package -DskipTests
-```
-
-Este comando genera `backend/target/backend-1.0-SNAPSHOT.jar` y copia sus
-dependencias (`comun`, **el driver Oracle** y JSON) a `backend/target/dependencias/`,
-donde el JAR las busca.
-
-Variables en la **misma terminal que ejecuta Java/Maven**, ejemplo PowerShell:
-
-```powershell
-$env:DB_URL = 'jdbc:oracle:thin:@localhost:1521:XE'
-$env:DB_USER = 'RESERVAS_P2'
-$env:DB_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host 'Clave RESERVAS_P2' -AsSecureString)).Password
-java -Dservidor.puerto=5000 -jar backend/target/backend-1.0-SNAPSHOT.jar
-```
-
-En Bash (Linux/WSL/macOS):
-
-```bash
-export DB_URL='jdbc:oracle:thin:@localhost:1521:XE'
-export DB_USER='RESERVAS_P2'
-read -rsp 'Clave RESERVAS_P2: ' DB_PASSWORD
-export DB_PASSWORD
-java -Dservidor.puerto=5000 -jar backend/target/backend-1.0-SNAPSHOT.jar
-```
-
-Las variables definidas en un IDE no se heredan automáticamente
-en otra terminal. No guardarlas en Git ni imprimirlas. En WSL,
-si Oracle está en Windows, puede ser necesario ajustar el host de `DB_URL`
-y las reglas del firewall; `localhost` depende de la configuración de red WSL.
-
-El punto de entrada comprueba la conexión antes de aceptar clientes. Con Oracle
-disponible muestra `Servidor Oracle de reservas escuchando en el puerto 5000`.
-Si falla, revisar variables, listener de Oracle, SID y dependencias.
-
-## Despliegue: un servidor y N clientes
-
-1. **Servidor (una computadora con Oracle):** cargar los scripts `01`, `02` y
-   `06`, definir `DB_URL`, `DB_USER` y `DB_PASSWORD` y arrancar
-   `app.MainServidor` como se indica arriba (opcionalmente con
-   `-Dservidor.puerto=5000`, `-Dservidor.maxClientes=...` y
-   `-Dservidor.timeoutSinSesion=...`).
-2. **Firewall:** permitir conexiones TCP entrantes al puerto del servidor
-   (por defecto 5000). En Windows, por ejemplo (PowerShell como administrador):
-   `New-NetFirewallRule -DisplayName "Reservas 5000" -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow`.
-3. **Clientes (N computadoras):** ejecutar `app.MainCliente` con
-   `-Dservidor.host=IP_DEL_SERVIDOR -Dservidor.puerto=5000` (ver "Ejecución de
-   clientes"). Los clientes no necesitan Oracle, el driver JDBC ni
-   `DB_PASSWORD`: solo hablan con el servidor por sockets.
-
-En desarrollo, cada integrante puede tener su propio Oracle XE local con los
-mismos scripts y el mismo usuario `RESERVAS_P2`, y apuntar sus clientes a
-`localhost`; los datos de cada base son independientes. En la defensa se usa
-un solo servidor con su base, y los demás equipos se conectan a él como clientes.
-
-### Gemini opcional
-
-| Variable del Backend | Uso |
-|----------------------|-----|
-| `GEMINI_API_KEY` | Clave privada de Google AI Studio; no se envía al Frontend |
-| `GEMINI_MODEL` | Modelo disponible para su cuenta; por defecto `gemini-3.5-flash-lite` |
-| `GEMINI_TIMEOUT_SECONDS` | Entre 1 y 120; por defecto 8 segundos |
-
-Sin clave, sin cuota, sin conexión o con respuesta inválida se devuelve un
-`ResultadoExtraccionDTO` fallido y comprensible, sin cuerpos de errores externos.
-El modelo predeterminado figura en la documentación oficial consultada durante
-este trabajo; la disponibilidad y facturación dependen de Google y de su cuenta.
-Se puede cambiar sin recompilar. No se ejecutan llamadas reales de pago en pruebas.
-
-Se usa REST `generateContent`, respuesta JSON y cabecera `x-goog-api-key` (no
-clave en la URL). Solo se aceptan IDs del catálogo real; se admiten campos
-incompletos y se conservan las cantidades de categorías repetidas.
-
-Si se aumenta el tiempo de Gemini, el timeout del Proxy del cliente debe ser
-mayor que la operación completa (por ejemplo, `-Dservidor.timeout=40000` si
-la construcción del Proxy utiliza esa configuración). Un timeout de red tras
-una reserva no implica que Oracle la haya deshecho: consultar antes de reintentar.
-
-Referencias oficiales: [modelos](https://ai.google.dev/gemini-api/docs/models),
-[generateContent](https://ai.google.dev/api/generate-content).
-
-### Pruebas sin Oracle
-
-El servicio en memoria (`backend/src/test/java/falso`) no forma parte del
-servidor entregado: lo usan las pruebas de red (`RedIT`, `DespachadorTest`) para
-probar sockets, sesiones y alertas sin base de datos.
-
-## Ejecución de clientes
-
-Cada cliente utiliza:
-
-```text
--Dservidor.host=IP_DEL_SERVIDOR
--Dservidor.puerto=5000
-```
-
-El punto de entrada es `app.MainCliente`:
-
-```bash
-./mvnw -pl frontend -am package -DskipTests
-java -Dservidor.host=IP_DEL_SERVIDOR -Dservidor.puerto=5000 -jar frontend/target/frontend-1.0-SNAPSHOT.jar
-```
-
-El JAR del cliente solo trae `comun` e iText en `frontend/target/dependencias/`:
-ningún driver ni referencia a la base de datos.
-
-Para revisar la interfaz sin servidor, después de `./mvnw clean install`, existe
-una demo en las pruebas:
-`./mvnw -pl frontend exec:java -Dexec.classpathScope=test -Dexec.mainClass=demo.MainClienteDemo`.
-Detalles del cliente, alertas y pruebas del MVC en [docs/FRONTEND.md](docs/FRONTEND.md).
+- **Administrador:** funcionarios, categorías y recursos (registrar, modificar,
+  eliminar y buscar).
+- **Funcionario:** crear reservas por categoría, fecha y horario; cancelar las
+  propias; extraer los datos de una reserva desde una frase con IA (opcional,
+  requiere `GEMINI_API_KEY` en el servidor).
+- **Todos:** calendarización, agenda semanal, estadísticas, reportes PDF,
+  búsqueda en tablas y área de alertas.
 
 ## Pruebas
 
-| Tipo | Nombre | Ejecución |
-|------|--------|-----------|
-| Unitarias | `*Test` | `./mvnw test` |
-| Integración | `*IT` | `./mvnw verify` |
+| Tipo | Ejecución |
+|------|-----------|
+| Unitarias (`*Test`, Surefire) | `./mvnw test` |
+| Integración (`*IT`, Failsafe) | `./mvnw verify` |
 
-Las pruebas existentes incluyen:
+Cubren protocolo, Proxy, sockets con varios clientes, sesiones y permisos,
+alertas, reglas del servicio y acceso a Oracle. Las pruebas contra Oracle se
+activan con la variable `ORACLE_IT=true` y la base preparada; sin ella se omiten.
 
-- Protocolo y serialización.
-- Proxy del Frontend.
-- Despachador, sesiones y errores.
-- Reglas del servicio falso.
-- Comunicación real por sockets.
-- Alertas.
+## Documentación adicional
 
-### Pruebas contra Oracle
-
-Clases:
-
-```text
-datos.RepositorioCategoriasOracleIT
-datos.RepositoriosOracleIT
-servicio.ServicioAplicacionOracleIT
-integracion.ServidorOracleIT
-```
-
-Requiere:
-
-- Scripts `01` y `02` ejecutados en Oracle.
-- Variables JDBC configuradas.
-- `ORACLE_IT=true`.
-
-Comprueba:
-
-- Conexión con el usuario configurado.
-- Inserción, búsqueda, listado, modificación y eliminación de categorías.
-- Listas inmutables.
-- Rollback de una inserción.
-- CRUD de funcionarios, autenticación, primer ingreso y conservación de clave.
-- Claves guardadas con hash (la columna nunca contiene la clave) y rechazo de
-  una clave nueva igual a la actual o al ID.
-- Descripción de categoría única al registrar y al modificar.
-- Primer ingreso exigido por el servidor a través de sockets.
-- Recursos, disponibilidad y mapeo de cursores.
-- Reservas confirmadas, falta normal sin residuos, categorías repetidas,
-  solapamientos y horarios contiguos.
-- Rollback real tras la primera asignación, fallo en la segunda.
-- Cancelación propia, ajena, repetida e iniciada; restauración de disponibilidad.
-- Restricciones de borrado sin eliminar historial, estadísticas, agenda y calendario.
-- Dos servicios de la misma fábrica compitiendo por el último recurso.
-- Sockets y Proxy originales con servicio y fábrica Oracle, incluyendo alertas.
-
-Las pruebas antiguas de categorías usan rollback. Las nuevas pruebas que hacen
-commit crean usuarios temporales `J2IT-...`, categorías y recursos propios
-(`soporte.DatosOracle`); limpian exclusivamente sus IDs en `finally`/`@AfterEach`,
-en orden de claves foráneas, también si el proceso termina a mitad de una
-prueba. No cambian la clave del administrador. Si quedan residuos (proceso
-matado o caída de Oracle), en la base local de desarrollo:
-
-```sql
-DELETE FROM TRESERVA_RECURSO WHERE ID_RESERVA IN (SELECT ID FROM TRESERVAS WHERE ID_USUARIO LIKE 'J2IT-%');
-DELETE FROM TRESERVAS WHERE ID_USUARIO LIKE 'J2IT-%';
-DELETE FROM TRECURSOS WHERE CODIGO LIKE 'J2IT-%' OR DESCRIPCION LIKE '%J2IT-%';
-DELETE FROM TCATEGORIAS WHERE DESCRIPCION LIKE 'J2IT-%';
-DELETE FROM TUSUARIOS WHERE ID LIKE 'J2IT-%';
-COMMIT;
-```
-
-Nunca vaciar tablas.
-
-Desde la raíz, en PowerShell con las variables JDBC ya configuradas:
-
-```powershell
-$env:ORACLE_IT = 'true'
-./mvnw -pl backend -am verify
-```
-
-En Bash: `export ORACLE_IT=true` y ejecutar el mismo comando Maven.
-Para ejecutar todo el reactor, usar `./mvnw test` y `./mvnw verify`.
-Sin `ORACLE_IT=true`, las pruebas Oracle se omiten.
-Que Maven termine correctamente con esas pruebas omitidas no valida la
-conexión a Oracle.
-
-Las pruebas unitarias nuevas utilizan dependencias simuladas (conexión,
-repositorios o extractor), sin Oracle ni consumo de Gemini. Comprueban sesión,
-permisos, límites, horarios, transacciones, errores y matrices de consultas.
-
-**Verificación de este trabajo:** los resultados reales y las limitaciones del
-entorno están registrados en [Implementación Oracle](docs/IMPLEMENTACION_ORACLE.md).
-
-## Protocolo y errores
-
-Cada llamada viaja como `Peticion` y devuelve una `Respuesta`.
-
-El servicio informa los errores al cliente con `ServicioException` y un
-`CodigoError`.
-
-| Código | Significado |
-|--------|-------------|
-| `VALIDACION` | Datos inválidos, duplicados o inexistentes |
-| `SESION` | Credenciales incorrectas, sesión no iniciada o cambio de clave pendiente |
-| `PERMISO` | Operación no permitida para el usuario |
-| `RECURSO_EN_USO` | Eliminación de un registro con asociados |
-| `DISPONIBILIDAD` | Horario no disponible, fuera del resultado normal de reserva fallida |
-| `PERSISTENCIA` | Fallo de Oracle y operación revertida |
-| `COMUNICACION` | Fallo de red informado por el Proxy, servidor lleno o conexión cerrada por inactividad |
-
-La falta normal de recursos al reservar se devuelve mediante
-`ResultadoReservaDTO.fracaso(...)`.
-
-Las operaciones sin retorno terminan normalmente cuando tienen éxito.
-
-## Bitácora de prompts
-
-- Proyecto 2: [Bitácora](docs/bitacoras/PROMPTS_LLM.md).
-- Proyecto 1: [Bitácora anterior](docs/bitacoras/bitacora_proyecto1.txt).
+- [Detalles técnicos](docs/DETALLES_TECNICOS.md): paquetes, configuración de red,
+  scripts y transacciones, Gemini, pruebas contra Oracle y códigos de error.
+- [Implementación Oracle](docs/IMPLEMENTACION_ORACLE.md).
+- [Frontend](docs/FRONTEND.md).
+- Bitácoras de prompts: [Proyecto 2](docs/bitacoras/PROMPTS_LLM.md) ·
+  [Proyecto 1](docs/bitacoras/bitacora_proyecto1.txt).
 
 ## Repositorio
 
