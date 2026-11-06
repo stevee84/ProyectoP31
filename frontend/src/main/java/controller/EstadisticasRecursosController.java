@@ -29,13 +29,13 @@ public class EstadisticasRecursosController {
         try {
             desde = LocalDate.parse(view.getDesde());
         } catch (DateTimeParseException e) {
-            view.mostrarError("Formato de fecha 'desde' invalido. Use aaaa-mm-dd.");
+            view.mostrarError("Formato de fecha 'desde' inválido. Use aaaa-mm-dd.");
             return;
         }
         try {
             hasta = LocalDate.parse(view.getHasta());
         } catch (DateTimeParseException e) {
-            view.mostrarError("Formato de fecha 'hasta' invalido. Use aaaa-mm-dd.");
+            view.mostrarError("Formato de fecha 'hasta' inválido. Use aaaa-mm-dd.");
             return;
         }
 

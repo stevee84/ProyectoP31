@@ -55,7 +55,7 @@ public class RecursoDialog extends JDialog {
         gbc.insets = new Insets(4, 4, 4, 4);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        String[] etiquetas = {"Codigo:", "Categoria:", "Descripcion:"};
+        String[] etiquetas = {"Codigo:", "Categoría:", "Descripcion:"};
         Component[] fieldArray = {campoCodigo, comboCategoria, campoDescripcion};
         for (int i = 0; i < etiquetas.length; i++) {
             JLabel lbl = new JLabel(etiquetas[i]);
@@ -114,7 +114,7 @@ public class RecursoDialog extends JDialog {
             return;
         }
         if (cat == null) {
-            JOptionPane.showMessageDialog(this, "Seleccione una categoria.",
+            JOptionPane.showMessageDialog(this, "Seleccione una categoría.",
                     "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }

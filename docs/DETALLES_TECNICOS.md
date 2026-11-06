@@ -329,3 +329,43 @@ La falta normal de recursos al reservar se devuelve mediante
 `ResultadoReservaDTO.fracaso(...)`.
 
 Las operaciones sin retorno terminan normalmente cuando tienen éxito.
+
+## Mensajes que puede recibir el usuario
+
+Los errores de instalación y arranque están en la sección "Errores comunes" del
+README. Estos son los mensajes del uso normal. Ninguno revela si un usuario
+existe, código SQL, mensajes del driver, trazas ni claves.
+
+| Situación | Mensaje |
+|-----------|---------|
+| Campos de inicio de sesión vacíos | "Debe ingresar identificación y contraseña." |
+| Usuario o clave incorrectos (mismo texto en los dos casos) | "Usuario o contraseña incorrectos." |
+| Primer ingreso pendiente | "Debe cambiar su clave antes de continuar." |
+| Clave nueva vacía, igual al id o igual a la actual | "La contraseña no puede estar vacía.", "La nueva clave no puede ser igual a su identificación.", "La nueva clave debe ser diferente de la clave actual." |
+| Confirmación de clave distinta | "Las contraseñas no coinciden." |
+| Opción de administrador usada por un funcionario | "Solo el administrador puede realizar esta acción." |
+| Administrador intentando reservar | "Solo los funcionarios pueden gestionar reservas." |
+| Cancelar una reserva ajena | "Solo puede cancelar sus propias reservas." |
+| Cancelar una reserva iniciada o cancelada | "Solo se cancelan reservas activas que aún no hayan iniciado." |
+| Teléfono con formato inválido | "El teléfono solo admite dígitos, espacios, + y -, con 7 a 20 caracteres (al menos 7 dígitos)." |
+| Identificador repetido | "Ya existe un registro con ese identificador." |
+| Categoría repetida | "Ya existe una categoría con esa descripción." |
+| Registro inexistente | "No existe un registro con ese identificador." |
+| Borrar algo con datos asociados | "El registro tiene datos asociados; se conserva su historial." |
+| Fecha u hora mal escrita | "Formato de fecha inválido. Use aaaa-mm-dd.", "Formato de hora inicio inválido. Use HH:mm." |
+| Rango de fechas invertido | "La fecha inicial no puede ser posterior a la final." |
+| Reserva sin categorías o sin actividad | "Seleccione al menos una categoría.", "La actividad es obligatoria." |
+| Reserva fuera de horario o en el pasado | "La reserva debe ser de un mismo día, entre las 07:00 y las 18:00.", "No se pueden crear reservas en el pasado." |
+| Otro usuario tomó el último recurso | "La disponibilidad cambió. Consulte e intente nuevamente." |
+| IA sin configurar en el servidor | "La extracción con IA no está configurada en el servidor. Complete el formulario manualmente." |
+| IA sin respuesta o sin cuota | "No se pudo contactar a la IA dentro del tiempo de espera. Intente más tarde.", "La IA no está disponible…" |
+| IA que no reconoce la frase | "La IA no reconoció las categorías del catálogo. Complete el formulario manualmente." |
+| No se pudo guardar un PDF | "No se pudo guardar el PDF. Verifique que el archivo no esté abierto en otro programa y que tenga permiso para guardar en esa carpeta." |
+| El servidor se cayó durante el uso | "Se perdió la conexión con el servidor." / "No hay conexión con el servidor." |
+| El servidor no respondió | "El servidor no respondió a tiempo." |
+| Servidor lleno | "El servidor alcanzó el máximo de clientes conectados. Intente de nuevo más tarde." |
+| Conexión abierta sin iniciar sesión | "Se cerró la conexión por inactividad: no se inició sesión a tiempo." |
+| Falla de la base al consultar | "No se pudo consultar la información. Si el problema sigue, revise que la base tenga los scripts de DB/ actualizados." |
+| Falla de la base al guardar | "No se pudo guardar la operación. Verifique el resultado antes de reintentar." |
+| Error imprevisto del servidor | "Ocurrió un error interno en el servidor." |
+| Solicitud alterada fuera de la aplicación | "La solicitud no es válida." |

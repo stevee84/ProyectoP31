@@ -37,8 +37,14 @@ final class ErroresOracle {
                         ? "Datos inexistentes o inválidos. Revise los campos y el horario."
                         : "Datos inexistentes o inválidos. Revise los campos.");
         }
-        return new ServicioException(CodigoError.PERSISTENCIA,
-                "No se pudo guardar la operación. Verifique el resultado antes de reintentar.");
+        return new ServicioException(CodigoError.PERSISTENCIA, accion == Accion.CONSULTA
+                ? "No se pudo consultar la información. Si el problema sigue, revise que la base tenga los scripts de DB/ actualizados."
+                : "No se pudo guardar la operación. Verifique el resultado antes de reintentar.");
+    }
+
+    /** Códigos de Oracle que indican tablas o procedimientos ausentes o desactualizados. */
+    private static boolean faltanScripts(int codigo) {
+        return codigo == 942 || codigo == 904 || codigo == 4043 || codigo == 4063 || codigo == 6550 || codigo == 6576;
     }
 
     /** ORA-00001 nombra la restricción violada; solo se mira el nombre, nunca se reenvía el mensaje. */
@@ -49,6 +55,10 @@ final class ErroresOracle {
 
     static void registrar(SQLException e) {
         // No registrar getMessage(): puede incluir SQL, valores o credenciales.
-        LOG.warning("Fallo JDBC: código=" + e.getErrorCode() + ", estado=" + e.getSQLState());
+        int codigo = Math.abs(e.getErrorCode());
+        LOG.warning("Fallo JDBC: código=" + codigo + ", estado=" + e.getSQLState()
+                + (faltanScripts(codigo)
+                        ? ". Falta una tabla o un procedimiento: ejecute DB/01, DB/02 y DB/06 con el usuario del proyecto."
+                        : ""));
     }
 }

@@ -94,7 +94,8 @@ public final class GeneradorPdf {
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(padre,
-                    "Error al generar el PDF: " + ex.getMessage(),
+                    "No se pudo guardar el PDF. Verifique que el archivo no esté abierto en otro programa\n"
+                            + "y que tenga permiso para guardar en esa carpeta.",
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }

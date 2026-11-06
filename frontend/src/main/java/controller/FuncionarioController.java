@@ -66,7 +66,7 @@ public class FuncionarioController {
 
     private void eliminar(int filaModelo) {
         String id = view.getDatosFila(filaModelo)[0];
-        if (!view.confirmarAccion("Desea eliminar al funcionario " + id + "?")) {
+        if (!view.confirmarAccion("¿Desea eliminar al funcionario " + id + "?")) {
             return;
         }
         Tarea.ejecutar(() -> { modelo.eliminar(id); return null; },

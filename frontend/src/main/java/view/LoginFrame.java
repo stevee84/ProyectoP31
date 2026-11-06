@@ -29,7 +29,7 @@ public class LoginFrame extends JFrame {
     private Runnable onLogin;
 
     public LoginFrame() {
-        super("Sistema de Reservas - Iniciar sesion");
+        super("Sistema de Reservas - Iniciar sesión");
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
@@ -45,7 +45,7 @@ public class LoginFrame extends JFrame {
         lblTitulo.setForeground(EstiloUI.PRIMARY);
         lblTitulo.setAlignmentX(JLabel.CENTER_ALIGNMENT);
 
-        JLabel lblSubtitulo = new JLabel("Inicie sesion para continuar", SwingConstants.CENTER);
+        JLabel lblSubtitulo = new JLabel("Inicie sesión para continuar", SwingConstants.CENTER);
         lblSubtitulo.setFont(EstiloUI.NORMAL);
         lblSubtitulo.setForeground(EstiloUI.TEXT_LIGHT);
         lblSubtitulo.setAlignmentX(JLabel.CENTER_ALIGNMENT);

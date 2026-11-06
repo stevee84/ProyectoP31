@@ -57,7 +57,7 @@ public class EstadisticasRecursosPanel extends JPanel {
         panelFechas.add(btnPdf);
 
         DefaultTableModel modeloTabla = new DefaultTableModel(
-                new String[]{"Categoria", "Cantidad"}, 0
+                new String[]{"Categoría", "Cantidad"}, 0
         );
         tablaEstadisticas = new JTable(modeloTabla);
         tablaEstadisticas.setDefaultEditor(Object.class, null);

@@ -289,5 +289,9 @@ class ServicioAplicacionTest {
         assertEquals(CodigoError.VALIDACION, ErroresOracle.traducir(new SQLException("", "", 20003), ErroresOracle.Accion.RESERVA).getCodigo());
         assertEquals(CodigoError.DISPONIBILIDAD, ErroresOracle.traducir(new SQLException("", "", 20004), ErroresOracle.Accion.RESERVA).getCodigo());
         assertEquals(CodigoError.PERSISTENCIA, ErroresOracle.traducir(new SQLException("", "", 20004), ErroresOracle.Accion.ESCRITURA).getCodigo());
+        assertTrue(ErroresOracle.traducir(new SQLException("", "", 6550), ErroresOracle.Accion.CONSULTA)
+                .getMessage().startsWith("No se pudo consultar"));
+        assertTrue(ErroresOracle.traducir(new SQLException("", "", 6550), ErroresOracle.Accion.ESCRITURA)
+                .getMessage().startsWith("No se pudo guardar"));
     }
 }

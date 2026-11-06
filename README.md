@@ -24,6 +24,11 @@ No hace falta instalar Maven: el proyecto trae el Maven Wrapper (`mvnw`).
 
 ### 1. Preparar la base (una sola vez)
 
+> **La aplicación no crea la base de datos.** Sin ejecutar los scripts de `DB/`
+> el servidor no puede funcionar: no existen las tablas, los procedimientos ni el
+> usuario `ADMIN`. Cada script se abre en SQL Developer y se ejecuta completo con
+> **F5**, en la conexión que se indica.
+
 1. En SQL Developer, crear una conexión **SYSTEM** (host `localhost`, puerto `1521`,
    SID `XE`, con la clave de SYSTEM definida al instalar Oracle XE), abrir
    `DB/00_crear_usuario.sql` y ejecutarlo con **F5**. Aparece un diálogo que pide
@@ -55,15 +60,40 @@ No hace falta instalar Maven: el proyecto trae el Maven Wrapper (`mvnw`).
    Después, el administrador registra funcionarios (su clave inicial es su
    identificación), categorías y recursos; los funcionarios crean reservas.
 
-### Si algo falla
+### Errores comunes
 
-- **El servidor muestra `No se pudo conectar a Oracle: …`.** El mensaje dice la
-  causa: clave incorrecta, Oracle detenido o SID equivocado. Revisar
-  `oracle.properties`.
-- **El cliente muestra "No se pudo conectar con el servidor".** El servidor no
-  está corriendo o se cerró: ver su consola.
-- **El puerto 5000 está en uso.** Cerrar el otro proceso o cambiar
-  `-Dservidor.puerto` en las configuraciones de Run.
+**Al preparar la base:**
+
+| Síntoma | Por qué ocurre | Cómo se resuelve |
+|---------|----------------|------------------|
+| `ORA-01920` al ejecutar `00` | El usuario `RESERVAS_P2` ya existe | Saltar `00`, o empezar de cero como `SYSTEM` con `DROP USER RESERVAS_P2 CASCADE;` y volver a ejecutar `00` |
+| `ORA-01031` (privilegios insuficientes) al ejecutar `01` o `02` | No se ejecutó `00`, o se usó otro usuario | Ejecutar `00` como `SYSTEM` y después `01`, `02` y `06` en la conexión `RESERVAS_P2` |
+| `ORA-00955` al ejecutar `01` | Las tablas ya existen | Si la base viene de una versión anterior del proyecto, empezar de cero (ver la fila anterior) |
+| Solo se ejecutó una parte del script | Se usó **F9** o **Ctrl+Enter**, que corren una sola sentencia | Ejecutar el archivo completo con **F5** (Run Script) |
+| Las tablas quedaron en `SYSTEM` | `01`, `02` o `06` se ejecutaron en la conexión `SYSTEM` | Volver a ejecutarlos en la conexión `RESERVAS_P2` (arriba a la derecha de la hoja de SQL Developer) |
+
+**Al arrancar el servidor** (el mensaje aparece en su consola):
+
+| Mensaje | Por qué ocurre | Cómo se resuelve |
+|---------|----------------|------------------|
+| `Falta la clave de Oracle` | No existe `oracle.properties` | Copiar `oracle.properties.ejemplo` como `oracle.properties` y completar `DB_PASSWORD` |
+| `usuario o clave incorrectos` | La clave no es la de `RESERVAS_P2` (por ejemplo, es la de `SYSTEM`), o no se ejecutó `00` | Escribir en `oracle.properties` la clave elegida al ejecutar `00` |
+| `la cuenta del usuario está bloqueada` | Demasiados intentos fallidos | Como `SYSTEM`: `ALTER USER RESERVAS_P2 ACCOUNT UNLOCK;` |
+| `Oracle no reconoce el SID o servicio` | Oracle XE 18c o 21c usa el servicio `XEPDB1` en lugar del SID `XE` | Usar `DB_URL=jdbc:oracle:thin:@//localhost:1521/XEPDB1` en `oracle.properties` |
+| `no responde Oracle` | El servicio de Oracle está detenido | Iniciar el servicio `OracleServiceXE` (Servicios de Windows) |
+| `No se pudo abrir el puerto 5000` | Otro proceso usa el puerto, por ejemplo otro servidor abierto | Cerrar el otro proceso o cambiar `-Dservidor.puerto` |
+
+**Al usar la aplicación:**
+
+| Mensaje en la ventana | Por qué ocurre | Cómo se resuelve |
+|-----------------------|----------------|------------------|
+| "No se pudo consultar la información…" al iniciar sesión | Faltan scripts o están desactualizados (la consola del servidor lo confirma con "Falta una tabla o un procedimiento") | Ejecutar `DB/02` y `DB/06` en `RESERVAS_P2`; si la base es de una versión anterior, empezar de cero |
+| "Usuario o contraseña incorrectos." con `ADMIN` / `ADMIN` | No se ejecutó `06`, o la clave de `ADMIN` ya se cambió en un ingreso anterior | Ejecutar `06`, o entrar con la clave nueva |
+| "No se pudo conectar con el servidor…" | El servidor no está corriendo, se cerró por un error, o el firewall bloquea el puerto | Revisar la consola del servidor; en otra computadora, abrir el puerto 5000 en el firewall del servidor |
+
+Los mensajes que puede recibir el usuario durante el uso normal (validaciones,
+permisos, reservas, IA, PDF y red) están en
+[Detalles técnicos](docs/DETALLES_TECNICOS.md#mensajes-que-puede-recibir-el-usuario).
 
 ## Ejecución sin IDE
 

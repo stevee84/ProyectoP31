@@ -36,7 +36,7 @@ public class CategoriasPanel extends JPanel {
         configurarColumnasBotones();
 
         JScrollPane scroll = new JScrollPane(tablaCategorias);
-        scroll.setBorder(EstiloUI.crearTitledBorder("Listado de categorias"));
+        scroll.setBorder(EstiloUI.crearTitledBorder("Listado de categorías"));
         add(scroll, BorderLayout.CENTER);
 
         add(construirPanelInferior(), BorderLayout.SOUTH);
@@ -69,7 +69,7 @@ public class CategoriasPanel extends JPanel {
         JButton btnAgregar = new JButton("Agregar", Iconos.agregar());
         JButton btnPdf = new JButton("Generar PDF", Iconos.pdf());
         btnPdf.addActionListener(e -> GeneradorPdf.exportar(this, tablaCategorias,
-                "Listado de Categorias", "categorias.pdf"));
+                "Listado de Categorías", "categorías.pdf"));
 
         EstiloUI.estilizarBotonPrimario(btnAgregar);
         EstiloUI.estilizarBoton(btnPdf);

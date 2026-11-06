@@ -88,8 +88,8 @@ public final class MainCliente {
             new AplicacionController(proxy, fuente, asegurarConexion::run, salir).iniciar();
             if (aviso != null) {
                 JOptionPane.showMessageDialog(null,
-                        aviso + "\nSe intentara de nuevo al iniciar sesion.",
-                        "Sin conexion", JOptionPane.WARNING_MESSAGE);
+                        aviso + "\nSe intentará de nuevo al iniciar sesión.",
+                        "Sin conexión", JOptionPane.WARNING_MESSAGE);
             }
         });
     }

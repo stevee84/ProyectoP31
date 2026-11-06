@@ -47,9 +47,9 @@ public final class ExtractorReservaIAGemini implements ExtractorReservaIA {
 
     @Override
     public ResultadoExtraccionDTO extraer(String frase, List<CategoriaDTO> categorias) {
-        if (clave == null || clave.isBlank()) return ResultadoExtraccionDTO.fallo("Falta configurar GEMINI_API_KEY en el Backend.");
+        if (clave == null || clave.isBlank()) return ResultadoExtraccionDTO.fallo("La extracción con IA no está configurada en el servidor. Complete el formulario manualmente.");
         if (modelo == null || !modelo.matches("[a-zA-Z0-9._-]+"))
-            return ResultadoExtraccionDTO.fallo("Revise GEMINI_MODEL en la configuración del Backend.");
+            return ResultadoExtraccionDTO.fallo("La extracción con IA no está configurada en el servidor. Complete el formulario manualmente.");
         try {
             HttpRequest solicitud = HttpRequest.newBuilder(URI.create(URL + modelo + ":generateContent"))
                     .header("Content-Type", "application/json")

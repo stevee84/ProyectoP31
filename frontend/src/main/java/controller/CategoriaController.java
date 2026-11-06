@@ -38,7 +38,7 @@ public class CategoriaController {
                     () -> modelo.registrar(datos[1]),
                     creada -> {
                         dialog.cerrar();
-                        view.mostrarMensaje("Categoria registrada con id " + creada.id() + ".");
+                        view.mostrarMensaje("Categoría registrada con id " + creada.id() + ".");
                         cargarDatos();
                     },
                     e -> dialog.mostrarError(e.getMessage()));
@@ -55,7 +55,7 @@ public class CategoriaController {
                     () -> { modelo.actualizar(nuevos[0], nuevos[1]); return null; },
                     r -> {
                         dialog.cerrar();
-                        view.mostrarMensaje("Categoria modificada.");
+                        view.mostrarMensaje("Categoría modificada.");
                         cargarDatos();
                     },
                     e -> dialog.mostrarError(e.getMessage()));
@@ -65,12 +65,12 @@ public class CategoriaController {
 
     private void eliminar(int filaModelo) {
         String id = view.getDatosFila(filaModelo)[0];
-        if (!view.confirmarAccion("Desea eliminar la categoria " + id + "?")) {
+        if (!view.confirmarAccion("¿Desea eliminar la categoría " + id + "?")) {
             return;
         }
         Tarea.ejecutar(() -> { modelo.eliminar(id); return null; },
                 r -> {
-                    view.mostrarMensaje("Categoria eliminada.");
+                    view.mostrarMensaje("Categoría eliminada.");
                     cargarDatos();
                 },
                 e -> view.mostrarError(e.getMessage()));

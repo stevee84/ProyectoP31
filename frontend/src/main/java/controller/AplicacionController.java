@@ -96,7 +96,7 @@ public class AplicacionController {
 
             CategoriasPanel categoriasPanel = new CategoriasPanel();
             new CategoriaController(categoriasPanel, categoriaModel);
-            agregar(paneles, nombres, iconos, categoriasPanel, "Categorias", Iconos.etiqueta());
+            agregar(paneles, nombres, iconos, categoriasPanel, "Categorías", Iconos.etiqueta());
 
             RecursosPanel recursosPanel = new RecursosPanel();
             new RecursoController(recursosPanel, recursoModel, categoriaModel);
@@ -121,7 +121,7 @@ public class AplicacionController {
                 usuario.id(), rol, usuario.nombre(), alertasPanel);
 
         ventana.setOnCerrarSesion(() -> {
-            if (!ventana.confirmarAccion("Desea cerrar la sesion?")) return;
+            if (!ventana.confirmarAccion("¿Desea cerrar la sesión?")) return;
             terminarSesion(() -> {
                 ventana.dispose();
                 iniciar();

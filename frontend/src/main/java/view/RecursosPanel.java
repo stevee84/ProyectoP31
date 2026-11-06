@@ -15,7 +15,7 @@ import java.util.function.IntConsumer;
 public class RecursosPanel extends JPanel {
 
     private final DefaultTableModel modeloTabla =
-            new DefaultTableModel(new String[]{"Codigo", "Categoria", "Descripcion", "", ""}, 0) {
+            new DefaultTableModel(new String[]{"Codigo", "Categoría", "Descripcion", "", ""}, 0) {
                 @Override
                 public boolean isCellEditable(int row, int column) {
                     return column >= 3;
@@ -93,7 +93,7 @@ public class RecursosPanel extends JPanel {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, EstiloUI.GAP, EstiloUI.GAP));
         panel.setBackground(EstiloUI.BACKGROUND);
         panel.setBorder(EstiloUI.crearTitledBorder("Filtrar recursos"));
-        JLabel lblCat = new JLabel("Categoria:");
+        JLabel lblCat = new JLabel("Categoría:");
         EstiloUI.estilizarEtiqueta(lblCat);
         EstiloUI.estilizarBoton(btnFiltrar);
 

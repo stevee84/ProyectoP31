@@ -81,7 +81,7 @@ public class RecursoController {
 
     private void eliminar(int filaModelo) {
         String codigo = view.getRecurso(filaModelo).codigo();
-        if (!view.confirmarAccion("Desea eliminar el recurso " + codigo + "?")) {
+        if (!view.confirmarAccion("¿Desea eliminar el recurso " + codigo + "?")) {
             return;
         }
         Tarea.ejecutar(() -> { modelo.eliminar(codigo); return null; },

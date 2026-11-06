@@ -102,7 +102,7 @@ public class ReservaDialog extends JDialog {
         listaCategorias.setListData(categorias.toArray(new CategoriaDTO[0]));
 
         JScrollPane scrollCategorias = new JScrollPane(listaCategorias);
-        scrollCategorias.setBorder(EstiloUI.crearTitledBorder("Categorias requeridas (seleccion multiple)"));
+        scrollCategorias.setBorder(EstiloUI.crearTitledBorder("Categorías requeridas (selección múltiple)"));
 
         // Botones
         JButton btnAplicar = new JButton("Aplicar");

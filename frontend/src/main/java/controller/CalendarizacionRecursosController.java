@@ -27,7 +27,7 @@ public class CalendarizacionRecursosController {
     private void mostrar() {
         CategoriaDTO categoria = view.getCategoriaSeleccionada();
         if (categoria == null) {
-            view.mostrarError("Seleccione una categoria.");
+            view.mostrarError("Seleccione una categoría.");
             return;
         }
 
@@ -35,7 +35,7 @@ public class CalendarizacionRecursosController {
         try {
             fecha = LocalDate.parse(view.getFecha());
         } catch (DateTimeParseException e) {
-            view.mostrarError("Formato de fecha invalido. Use aaaa-mm-dd.");
+            view.mostrarError("Formato de fecha inválido. Use aaaa-mm-dd.");
             return;
         }
 
@@ -43,7 +43,7 @@ public class CalendarizacionRecursosController {
         Tarea.ejecutar(() -> modelo.obtener(fecha, categoria.id()),
                 matriz -> {
                     if (matriz.recursos().isEmpty()) {
-                        view.mostrarError("No hay recursos en esta categoria.");
+                        view.mostrarError("No hay recursos en esta categoría.");
                         return;
                     }
                     TablaDatos tabla = CalendarizacionModel.aTabla(matriz);

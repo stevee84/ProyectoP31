@@ -18,7 +18,7 @@ public class CategoriaDialog extends JDialog {
     private Consumer<String[]> onGuardar;
 
     public CategoriaDialog(Frame propietario, boolean esModificar, String id, String descripcion) {
-        super(propietario, esModificar ? "Modificar Categoria" : "Agregar Categoria", true);
+        super(propietario, esModificar ? "Modificar Categoría" : "Agregar Categoría", true);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         setResizable(false);
         getContentPane().setBackground(EstiloUI.BACKGROUND);
@@ -28,7 +28,7 @@ public class CategoriaDialog extends JDialog {
         mainPanel.setBackground(EstiloUI.BACKGROUND);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
-        JLabel lblTitulo = new JLabel(esModificar ? "Modificar Categoria" : "Agregar Categoria",
+        JLabel lblTitulo = new JLabel(esModificar ? "Modificar Categoría" : "Agregar Categoría",
                 SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblTitulo.setForeground(EstiloUI.PRIMARY);

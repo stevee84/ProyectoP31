@@ -85,7 +85,7 @@ public class VentanaPrincipal extends JFrame {
             if (onCambiarClave != null) onCambiarClave.run();
         });
 
-        JMenuItem itemCerrarSesion = new JMenuItem("Cerrar sesion");
+        JMenuItem itemCerrarSesion = new JMenuItem("Cerrar sesión");
         itemCerrarSesion.setFont(EstiloUI.NORMAL);
         itemCerrarSesion.addActionListener(e -> {
             if (onCerrarSesion != null) onCerrarSesion.run();

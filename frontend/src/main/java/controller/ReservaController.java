@@ -50,7 +50,7 @@ public class ReservaController {
     private void abrirDialogoNueva() {
         Tarea.ejecutar(categoriaModelo::listar, categorias -> {
             if (categorias.isEmpty()) {
-                view.mostrarError("No hay categorias registradas.");
+                view.mostrarError("No hay categorías registradas.");
                 return;
             }
             ReservaDialog dialog = new ReservaDialog(getFrame(), categorias);
@@ -69,7 +69,7 @@ public class ReservaController {
             return;
         }
         if (categorias.isEmpty()) {
-            dialog.mostrarError("Seleccione al menos una categoria.");
+            dialog.mostrarError("Seleccione al menos una categoría.");
             return;
         }
 
@@ -79,19 +79,19 @@ public class ReservaController {
         try {
             fecha = LocalDate.parse(dialog.getFecha());
         } catch (DateTimeParseException e) {
-            dialog.mostrarError("Formato de fecha invalido. Use aaaa-mm-dd.");
+            dialog.mostrarError("Formato de fecha inválido. Use aaaa-mm-dd.");
             return;
         }
         try {
             horaInicio = LocalTime.parse(dialog.getHoraInicio(), HORA);
         } catch (DateTimeParseException e) {
-            dialog.mostrarError("Formato de hora inicio invalido. Use HH:mm.");
+            dialog.mostrarError("Formato de hora inicio inválido. Use HH:mm.");
             return;
         }
         try {
             horaFin = LocalTime.parse(dialog.getHoraFin(), HORA);
         } catch (DateTimeParseException e) {
-            dialog.mostrarError("Formato de hora fin invalido. Use HH:mm.");
+            dialog.mostrarError("Formato de hora fin inválido. Use HH:mm.");
             return;
         }
 
@@ -105,7 +105,7 @@ public class ReservaController {
                     dialog.setOcupado(false);
                     if (resultado.exito()) {
                         dialog.cerrar();
-                        view.mostrarMensaje("Reservacion creada exitosamente (ID: " + resultado.reserva().id() + ").");
+                        view.mostrarMensaje("Reservación creada exitosamente (ID: " + resultado.reserva().id() + ").");
                         cargarReservas();
                     } else {
                         dialog.mostrarError(ReservaModel.mensajeSinDisponibilidad(resultado));
@@ -163,12 +163,12 @@ public class ReservaController {
 
     private void cancelar(int filaModelo) {
         int id = view.getReservaIdEnFila(filaModelo);
-        if (!view.confirmarAccion("Desea cancelar la reservacion " + id + "?")) {
+        if (!view.confirmarAccion("¿Desea cancelar la reservación " + id + "?")) {
             return;
         }
         Tarea.ejecutar(() -> { modelo.cancelar(id); return null; },
                 r -> {
-                    view.mostrarMensaje("Reservacion cancelada.");
+                    view.mostrarMensaje("Reservación cancelada.");
                     cargarReservas();
                 },
                 e -> view.mostrarError(e.getMessage()));

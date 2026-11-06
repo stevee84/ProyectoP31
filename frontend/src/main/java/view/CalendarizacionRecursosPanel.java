@@ -41,7 +41,7 @@ public class CalendarizacionRecursosPanel extends JPanel {
         panelSeleccion.setBorder(EstiloUI.crearTitledBorder("Consultar calendarizacion"));
 
         JLabel lblFecha = new JLabel("Fecha:");
-        JLabel lblCat = new JLabel("Categoria:");
+        JLabel lblCat = new JLabel("Categoría:");
         EstiloUI.estilizarEtiqueta(lblFecha);
         EstiloUI.estilizarEtiqueta(lblCat);
         EstiloUI.estilizarBoton(btnMostrar);
